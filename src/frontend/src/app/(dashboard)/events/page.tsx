@@ -1,0 +1,231 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Info } from "lucide-react";
+import { toast } from "sonner";
+
+import { events, type EventCreate } from "@/lib/api";
+import { colors } from "@/lib/theme";
+import { EventCard } from "@/components/dashboard/event-card";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+export default function EventsPage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["events"],
+    queryFn: () => events.list({ per_page: 50 }),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: EventCreate) => events.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      setDialogOpen(false);
+      toast.success("Event created successfully");
+    },
+    onError: () => {
+      toast.error("Failed to create event");
+    },
+  });
+
+  const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const name = form.get("name") as string;
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    createMutation.mutate({
+      name,
+      slug,
+      event_date: form.get("start_date") as string,
+      event_end_date: (form.get("end_date") as string) || undefined,
+      pricing_model:
+        (form.get("pricing") as "fixed" | "donation" | "free") || "donation",
+      fixed_price_cents: form.get("price")
+        ? Math.round(parseFloat(form.get("price") as string) * 100)
+        : undefined,
+      meeting_point_a: (form.get("meeting_a") as string) || undefined,
+    });
+  };
+
+  const eventList = data?.data ?? [];
+  const activeCount = eventList.filter((e) => e.status === "active").length;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">
+            Events
+          </p>
+          <h2
+            className="text-2xl font-bold tracking-tight"
+            style={{
+              color: colors.forest,
+              fontFamily: "var(--font-dm-serif), serif",
+            }}
+          >
+            Events
+          </h2>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Manage your events and registrations
+          </p>
+        </div>
+
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              className="text-white font-semibold rounded-xl"
+              style={{ background: colors.canopy }}
+            >
+              <Plus size={15} />
+              New Event
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-2xl rounded-2xl">
+            <DialogHeader>
+              <DialogTitle
+                style={{
+                  color: colors.forest,
+                  fontFamily: "var(--font-dm-serif), serif",
+                }}
+              >
+                Create New Event
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Event Name *
+                  </Label>
+                  <Input
+                    name="name"
+                    required
+                    placeholder="Summer Solstice Gathering"
+                    className="mt-1 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Start Date *
+                  </Label>
+                  <Input
+                    name="start_date"
+                    type="date"
+                    required
+                    className="mt-1 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    End Date
+                  </Label>
+                  <Input
+                    name="end_date"
+                    type="date"
+                    className="mt-1 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Pricing *
+                  </Label>
+                  <select
+                    name="pricing"
+                    className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm bg-white"
+                  >
+                    <option value="donation">Pay-what-you-want</option>
+                    <option value="fixed">Fixed price</option>
+                    <option value="free">Free</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Fixed Price ($)
+                  </Label>
+                  <Input
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    placeholder="45.00"
+                    className="mt-1 rounded-xl"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Meeting Point A *
+                  </Label>
+                  <Input
+                    name="meeting_a"
+                    placeholder="Arrival location..."
+                    className="mt-1 rounded-xl"
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-400 flex items-center gap-1.5">
+                <Info size={12} />
+                Webhooks route automatically — no per-event config needed.
+              </p>
+              <Button
+                type="submit"
+                className="w-full py-3 text-white font-semibold rounded-xl"
+                style={{ background: colors.canopy }}
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending ? "Creating..." : "Create Event"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="text-xs text-gray-400 font-medium">
+        {activeCount} active event{activeCount !== 1 ? "s" : ""}
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-white rounded-2xl border border-gray-100 p-5 h-24 animate-pulse"
+            />
+          ))}
+        </div>
+      ) : eventList.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <p className="text-sm">No events yet. Create your first event!</p>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {eventList.map((event, i) => (
+            <EventCard
+              key={event.id}
+              event={event}
+              index={i}
+              onClick={() => router.push(`/dashboard/${event.id}`)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
