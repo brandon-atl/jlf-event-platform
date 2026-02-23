@@ -23,8 +23,10 @@ import {
   registrations,
   events as eventsApi,
   type RegistrationDetail,
+  type EventResponse,
 } from "@/lib/api";
 import { colors } from "@/lib/theme";
+import { DEMO_EVENTS, DEMO_REGISTRATIONS, isDemoMode } from "@/lib/demo-data";
 import { formatCents, initials } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -110,7 +112,13 @@ export default function AttendeesPage({
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => eventsApi.get(eventId),
+    queryFn: () => {
+      if (isDemoMode()) {
+        const ev = DEMO_EVENTS.find(e => e.id === eventId) || DEMO_EVENTS[0];
+        return Promise.resolve(ev as unknown as EventResponse);
+      }
+      return eventsApi.get(eventId);
+    },
   });
 
   const { data, isLoading } = useQuery({
@@ -120,12 +128,20 @@ export default function AttendeesPage({
       statusFilter === "all" ? undefined : statusFilter,
       search || undefined,
     ],
-    queryFn: () =>
-      registrations.list(eventId, {
+    queryFn: () => {
+      if (isDemoMode()) {
+        const demo = DEMO_REGISTRATIONS(eventId);
+        let filtered = demo.data;
+        if (statusFilter !== "all") filtered = filtered.filter(r => r.status === statusFilter);
+        if (search) filtered = filtered.filter(r => r.attendee_name?.toLowerCase().includes(search.toLowerCase()) || r.attendee_email?.toLowerCase().includes(search.toLowerCase()));
+        return Promise.resolve({ data: filtered as unknown as RegistrationDetail[], meta: { ...demo.meta, total: filtered.length } });
+      }
+      return registrations.list(eventId, {
         status: statusFilter === "all" ? undefined : statusFilter,
         search: search || undefined,
         per_page: 100,
-      }),
+      });
+    },
   });
 
   const updateMutation = useMutation({

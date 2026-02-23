@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { colors } from "@/lib/theme";
+import { enableDemo } from "@/lib/demo-data";
 
 const FEATURES = [
   "Automated reconciliation",
@@ -190,7 +191,23 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-gray-300 mt-6">
+          <div className="mt-6 text-center">
+            <div className="relative mb-4">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
+              <div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-gray-400">or</span></div>
+            </div>
+            <button
+              onClick={() => { enableDemo(); router.push("/events"); }}
+              className="w-full py-3 font-semibold rounded-xl border-2 border-dashed transition-all hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2 text-sm"
+              style={{ borderColor: colors.canopy, color: colors.canopy }}
+            >
+              <TreePine size={16} />
+              Explore Demo — Real JLF Events
+            </button>
+            <p className="text-[11px] text-gray-300 mt-2">No login required · Sample data from justloveforest.com</p>
+          </div>
+
+          <p className="text-center text-xs text-gray-300 mt-4">
             Protected by JWT + TLS 1.3 encryption
           </p>
         </div>

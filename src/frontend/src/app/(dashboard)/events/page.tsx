@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { events, type EventCreate } from "@/lib/api";
 import { colors } from "@/lib/theme";
+import { DEMO_EVENTS, isDemoMode } from "@/lib/demo-data";
 import { EventCard } from "@/components/dashboard/event-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +28,12 @@ export default function EventsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["events"],
-    queryFn: () => events.list({ per_page: 50 }),
+    queryFn: () => {
+      if (isDemoMode()) {
+        return Promise.resolve({ data: DEMO_EVENTS as unknown as import("@/lib/api").EventResponse[], meta: { total: DEMO_EVENTS.length, page: 1, per_page: 50 } });
+      }
+      return events.list({ per_page: 50 });
+    },
   });
 
   const createMutation = useMutation({

@@ -24,8 +24,9 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 
-import { dashboard, events as eventsApi } from "@/lib/api";
+import { dashboard, events as eventsApi, type EventResponse, type EventDashboard } from "@/lib/api";
 import { colors, PIE_COLORS } from "@/lib/theme";
+import { DEMO_EVENTS, DEMO_DASHBOARD, isDemoMode } from "@/lib/demo-data";
 import { formatCents, formatDateLong } from "@/lib/format";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Button } from "@/components/ui/button";
@@ -60,12 +61,21 @@ export default function EventDashboardPage({
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => eventsApi.get(eventId),
+    queryFn: () => {
+      if (isDemoMode()) {
+        const ev = DEMO_EVENTS.find(e => e.id === eventId) || DEMO_EVENTS[0];
+        return Promise.resolve(ev as unknown as EventResponse);
+      }
+      return eventsApi.get(eventId);
+    },
   });
 
   const { data: dash } = useQuery({
     queryKey: ["dashboard", eventId],
-    queryFn: () => dashboard.event(eventId),
+    queryFn: () => {
+      if (isDemoMode()) return Promise.resolve(DEMO_DASHBOARD(eventId) as unknown as EventDashboard);
+      return dashboard.event(eventId);
+    },
   });
 
   if (!event || !dash) {

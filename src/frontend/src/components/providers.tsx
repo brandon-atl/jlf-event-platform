@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthContext, AuthUser } from "@/hooks/use-auth";
 import { auth as authApi } from "@/lib/api";
+import { isDemoMode, disableDemo } from "@/lib/demo-data";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +24,13 @@ export function Providers({ children }: { children: ReactNode }) {
 
   // Check for existing token on mount
   useEffect(() => {
+    // Demo mode — skip real auth
+    if (isDemoMode()) {
+      setUser({ id: "demo", email: "brian@justloveforest.com", name: "Brian Y.", role: "admin" });
+      setToken("demo-token");
+      setIsLoading(false);
+      return;
+    }
     const stored = localStorage.getItem("jlf_token");
     if (stored) {
       setToken(stored);
@@ -47,6 +55,7 @@ export function Providers({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
+    disableDemo();
     localStorage.removeItem("jlf_token");
     setToken(null);
     setUser(null);
