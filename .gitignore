@@ -2,12 +2,19 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-venv/
-.venv/
 *.egg-info/
 dist/
 build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Node
+node_modules/
+.next/
+dist/
 
 # Environment
 .env
@@ -19,17 +26,11 @@ build/
 .idea/
 *.swp
 *.swo
+*~
+
+# OS
 .DS_Store
-
-# Docker
-docker-compose.override.yml
-
-# Node (frontend)
-node_modules/
-.next/
-
-# Streamlit
-.streamlit/secrets.toml
+Thumbs.db
 
 # Database
 *.db
@@ -37,3 +38,11 @@ node_modules/
 
 # Logs
 *.log
+
+# Test
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Build
+*.egg-info/
