@@ -36,7 +36,13 @@ export default function DashboardLayout({
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
+
+  // Redirect to login if not authenticated
+  if (!isLoading && !user) {
+    router.push("/login");
+    return null;
+  }
 
   const isActive = (href: string) => {
     if (href === "/events") return pathname === "/events";
@@ -184,7 +190,7 @@ export default function DashboardLayout({
           <button
             onClick={() => {
               logout();
-              router.push("/");
+              router.push("/login");
             }}
             title={collapsed ? "Sign Out" : undefined}
             className={`w-full flex items-center ${
