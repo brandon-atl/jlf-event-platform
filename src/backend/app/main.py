@@ -48,6 +48,7 @@ def create_app() -> FastAPI:
         notifications,
         portal,
         registration,
+        registrations,
         webhooks,
     )
 
@@ -55,6 +56,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(webhooks.router, prefix="/api/v1")
     app.include_router(events.router, prefix="/api/v1")
+    app.include_router(registrations.router, prefix="/api/v1")
     app.include_router(dashboard.router, prefix="/api/v1")
     app.include_router(portal.router, prefix="/api/v1")
     app.include_router(notifications.router, prefix="/api/v1")
