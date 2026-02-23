@@ -355,26 +355,32 @@ export default function AttendeesPage({
                   {new Date(a.created_at).toLocaleDateString()}
                 </span>
               </div>
-              {a.intake_data?.emergency_contact && (
-                <div>
-                  <span className="text-gray-400 block mb-0.5">
-                    Emergency Contact
-                  </span>
-                  <span className="text-gray-700 font-medium">
-                    {String(a.intake_data.emergency_contact)}
-                  </span>
-                </div>
-              )}
-              {a.intake_data?.how_heard && (
-                <div>
-                  <span className="text-gray-400 block mb-0.5">
-                    How They Heard
-                  </span>
-                  <span className="text-gray-700 font-medium">
-                    {String(a.intake_data.how_heard)}
-                  </span>
-                </div>
-              )}
+              {(() => {
+                const intake = a.intake_data as Record<string, string> | undefined;
+                return intake?.emergency_contact ? (
+                  <div>
+                    <span className="text-gray-400 block mb-0.5">
+                      Emergency Contact
+                    </span>
+                    <span className="text-gray-700 font-medium">
+                      {intake.emergency_contact}
+                    </span>
+                  </div>
+                ) : null;
+              })()}
+              {(() => {
+                const intake = a.intake_data as Record<string, string> | undefined;
+                return intake?.how_heard ? (
+                  <div>
+                    <span className="text-gray-400 block mb-0.5">
+                      How They Heard
+                    </span>
+                    <span className="text-gray-700 font-medium">
+                      {intake.how_heard}
+                    </span>
+                  </div>
+                ) : null;
+              })()}
               {a.notes && (
                 <div className="col-span-full p-2.5 rounded-lg bg-rose-50 border border-rose-100">
                   <span className="text-rose-600 font-semibold flex items-center gap-1.5 text-xs">
