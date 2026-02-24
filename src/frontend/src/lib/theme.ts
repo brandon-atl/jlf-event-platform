@@ -17,6 +17,29 @@ export const colors = {
   berry: "#9b5ba5",
 } as const;
 
+/** Dark mode palette — Midnight Forest */
+export const darkColors = {
+  forest: "#c8e6d0",
+  canopy: "#4a9e6a",
+  moss: "#6bbd88",
+  sage: "#92d4a8",
+  meadow: "#2d5a3d",
+  cream: "#0f1720",
+  bark: "#c4a472",
+  earth: "#dcc18e",
+  sun: "#f0c860",
+  ember: "#e07860",
+  sky: "#7bb8e8",
+  berry: "#b87ec4",
+  // Dark-specific surfaces
+  surface: "#161f2a",
+  surfaceHover: "#1c2736",
+  surfaceBorder: "#243044",
+  textPrimary: "#e8ecf0",
+  textSecondary: "#8899aa",
+  textMuted: "#556677",
+} as const;
+
 export const PIE_COLORS = [colors.canopy, colors.sun, colors.sky, colors.ember];
 
 export const fonts = {
