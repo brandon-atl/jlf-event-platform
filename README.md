@@ -1,4 +1,4 @@
-# 🌲 Just Love Forest — Event Management Platform
+# Just Love Forest — Event Management Platform
 
 A custom event management system built for [Just Love Forest](https://justloveforest.com), a 716-acre nature sanctuary in Poetry, Georgia. Replaces a fragmented Acuity + Stripe + Google Sheets workflow with a unified, modern platform.
 
@@ -30,12 +30,12 @@ A single-system architecture where attendees register and pay in one atomic flow
 |---|---|
 | **Backend** | Python / FastAPI (async) |
 | **Database** | PostgreSQL (SQLAlchemy 2.0 + Alembic) |
-| **Frontend** | React (Vite) |
+| **Frontend** | Next.js (React, App Router) |
 | **Payments** | Stripe Checkout + Webhooks |
 | **SMS** | Twilio |
 | **Email** | Resend |
 | **Auth** | JWT + Magic Links |
-| **Deployment** | Railway + Vercel |
+| **Deployment** | Railway (backend) + Vercel (frontend) |
 
 ## Architecture
 
@@ -60,20 +60,27 @@ PENDING_PAYMENT → EXPIRED (auto, after timeout)
 
 ```
 src/
-├── backend/           # FastAPI API server
+├── backend/                  # FastAPI API server
 │   ├── app/
-│   │   ├── models/    # SQLAlchemy models
-│   │   ├── schemas/   # Pydantic schemas
-│   │   ├── routers/   # API routes
-│   │   ├── services/  # Business logic
-│   │   └── tasks/     # Background jobs
-│   ├── alembic/       # Database migrations
-│   └── tests/         # API tests
-└── frontend/          # React dashboard + registration
+│   │   ├── main.py           # FastAPI app factory + startup
+│   │   ├── config.py         # Settings (pydantic-settings)
+│   │   ├── database.py       # SQLAlchemy engine + session
+│   │   ├── models/           # SQLAlchemy models
+│   │   ├── schemas/          # Pydantic request/response schemas
+│   │   ├── routers/          # API route handlers
+│   │   ├── services/         # Business logic (stripe, email, sms, auth)
+│   │   └── tasks/            # Background jobs (reminders, expiry, day-of SMS)
+│   ├── alembic/              # Database migrations
+│   └── tests/                # API tests (pytest)
+└── frontend/                 # Next.js dashboard + registration
     ├── src/
-    │   ├── components/
-    │   ├── pages/
-    │   └── lib/
+    │   ├── app/
+    │   │   ├── (auth)/       # Login, magic link verify
+    │   │   ├── (dashboard)/  # Operator dashboard (events, day-of, settings)
+    │   │   └── register/     # Public registration form
+    │   ├── components/       # Reusable UI components
+    │   ├── hooks/            # Custom React hooks
+    │   └── lib/              # API client, theme, utilities
     └── public/
 ```
 
@@ -97,13 +104,29 @@ cp .env.example .env  # Configure API URL
 npm run dev
 ```
 
+## Deployment
+
+### Backend (Railway)
+- Connects to Railway-provisioned PostgreSQL
+- `DATABASE_URL` is auto-injected; the app auto-converts `postgresql://` to `postgresql+asyncpg://`
+- Set all environment variables from `.env.example` in the Railway dashboard
+- Uses `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+### Frontend (Vercel)
+- Deploy from `src/frontend` directory
+- Set `NEXT_PUBLIC_API_URL` to your Railway backend URL (e.g., `https://your-app.railway.app/api/v1`)
+- Framework preset: Next.js (auto-detected)
+
+### Stripe Webhooks
+- Point the Stripe webhook endpoint to `https://your-backend-url/api/v1/webhooks/stripe`
+- Events to listen for: `checkout.session.completed`, `checkout.session.expired`
+
 ## Environment Variables
 
 See `src/backend/.env.example` and `src/frontend/.env.example` for required configuration.
 
 ## Documentation
 
-- [PRD v3](docs/PRD_v3.md) — Full product requirements
 - [API Contracts](reference/API_CONTRACTS.md) — Endpoint specifications
 - [Data Model](reference/DATA_MODEL.md) — Database schema
 - [Architecture Decisions](reference/ARCHITECTURE_DECISIONS.md) — Design rationale

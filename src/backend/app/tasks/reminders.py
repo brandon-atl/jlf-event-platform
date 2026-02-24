@@ -5,9 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from ..database import async_session
-from ..models import AuditLog, Registration
-from ..models.models import RegistrationStatus
-from ..services.email_service import send_payment_reminder_email
+from ..models import AuditLog, Registration, RegistrationStatus
+from ..services.email_service import send_reminder_email
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ async def check_pending_reminders() -> int:
             select(Registration)
             .options(joinedload(Registration.event), joinedload(Registration.attendee))
             .where(
-                Registration.status == RegistrationStatus.PENDING_PAYMENT,
+                Registration.status == RegistrationStatus.pending_payment,
                 Registration.reminder_sent_at.is_(None),
             )
         )
@@ -48,11 +47,7 @@ async def check_pending_reminders() -> int:
                 continue
 
             # Send reminder email
-            success = await send_payment_reminder_email(
-                to_email=reg.attendee.email,
-                event_name=reg.event.name,
-                attendee_name=reg.attendee.first_name,
-            )
+            success = await send_reminder_email(reg, reg.event)
 
             if success:
                 reg.reminder_sent_at = now
@@ -80,7 +75,7 @@ async def check_expired_registrations() -> int:
         result = await db.execute(
             select(Registration)
             .options(joinedload(Registration.event))
-            .where(Registration.status == RegistrationStatus.PENDING_PAYMENT)
+            .where(Registration.status == RegistrationStatus.pending_payment)
         )
         registrations = result.unique().scalars().all()
 
@@ -99,7 +94,7 @@ async def check_expired_registrations() -> int:
                 continue
 
             old_status = reg.status
-            reg.status = RegistrationStatus.EXPIRED
+            reg.status = RegistrationStatus.expired
             reg.updated_at = now
 
             # Audit log entry
@@ -110,7 +105,7 @@ async def check_expired_registrations() -> int:
                     action="status_change",
                     actor="system",
                     old_value={"status": old_status.value},
-                    new_value={"status": RegistrationStatus.EXPIRED.value},
+                    new_value={"status": RegistrationStatus.expired.value},
                 )
             )
 

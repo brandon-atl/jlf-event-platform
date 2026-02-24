@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     # Resend
     resend_api_key: str = ""
-    from_email: str = "noreply@justloveforest.com"
+    from_email: str = "onboarding@resend.dev"
 
     # JWT
     jwt_secret_key: str = "change-me-in-production"

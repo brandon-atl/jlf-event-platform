@@ -29,3 +29,13 @@ async def send_sms(to: str, body: str) -> bool:
     except Exception:
         logger.exception("Failed to send SMS to %s", to)
         return False
+
+
+async def send_day_of_sms(to_phone: str, event_name: str, meeting_point: str) -> bool:
+    """Send a day-of logistics SMS with event name and meeting point."""
+    body = (
+        f"Hi! Today is the day — {event_name} at Just Love Forest. "
+        f"Your meeting point: {meeting_point}. "
+        f"See you soon!"
+    )
+    return await send_sms(to_phone, body)

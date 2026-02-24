@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 from sqlalchemy import select
 
-from app.models.models import Registration, RegistrationStatus, WebhookRaw
+from app.models import Registration, RegistrationStatus, WebhookRaw
 
 pytestmark = pytest.mark.asyncio
 
@@ -57,7 +57,7 @@ async def test_checkout_completed(client, sample_registration, db_session):
         select(Registration).where(Registration.id == reg_id)
     )
     reg = result.scalar_one()
-    assert reg.status == RegistrationStatus.COMPLETE
+    assert reg.status == RegistrationStatus.complete
     assert reg.payment_amount_cents == 25000
     assert reg.stripe_payment_intent_id == "pi_test_123"
 
@@ -137,4 +137,4 @@ async def test_checkout_expired(client, sample_registration, db_session):
         select(Registration).where(Registration.id == reg_id)
     )
     reg = result.scalar_one()
-    assert reg.status == RegistrationStatus.EXPIRED
+    assert reg.status == RegistrationStatus.expired
