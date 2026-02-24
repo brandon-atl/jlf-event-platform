@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { DM_Sans, DM_Serif_Display } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { ErrorBoundary } from "@/components/error-boundary";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -27,13 +28,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Blocking script to prevent FOUC — applies dark class before first paint
+  const themeScript = `(function(){try{var t=localStorage.getItem('jlf-theme');if(t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`;
+
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body
         className={`${dmSans.variable} ${dmSerif.variable} antialiased`}
-        style={{ fontFamily: "var(--font-dm-sans), sans-serif", background: "#faf8f2" }}
+        style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
       >
-        <Providers>{children}</Providers>
+        <ErrorBoundary>
+          <Providers>{children}</Providers>
+        </ErrorBoundary>
       </body>
     </html>
   );

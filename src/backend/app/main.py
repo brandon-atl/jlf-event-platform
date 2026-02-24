@@ -68,6 +68,53 @@ def create_app() -> FastAPI:
     async def health_check():
         return {"status": "healthy", "service": "jlf-erp"}
 
+    @app.get("/health/deep")
+    async def deep_health_check():
+        """Check database connectivity. Returns sanitized status only."""
+        from sqlalchemy import text
+
+        from app.database import async_session
+
+        checks = {"service": "jlf-erp", "database": "unknown"}
+        try:
+            async with async_session() as session:
+                result = await session.execute(text("SELECT 1"))
+                result.scalar()
+                checks["database"] = "connected"
+        except Exception as e:
+            # Log full error server-side, return sanitized status to caller
+            logger.error("Deep health check — database error: %s", e)
+            checks["database"] = "unavailable"
+            return JSONResponse(status_code=503, content=checks)
+
+        checks["status"] = "healthy"
+        return checks
+
+    # Request logging middleware
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        from time import perf_counter
+
+        start = perf_counter()
+        status_code = 500
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+            return response
+        except Exception:
+            raise
+        finally:
+            duration_ms = (perf_counter() - start) * 1000
+            # Log slow requests (>2s) and errors
+            if duration_ms > 2000 or status_code >= 500:
+                logger.warning(
+                    "%s %s → %d (%.0fms)",
+                    request.method,
+                    request.url.path,
+                    status_code,
+                    duration_ms,
+                )
+
     # Global exception handlers
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError):
@@ -75,7 +122,12 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
-        logger.exception("Unhandled exception: %s", exc)
+        logger.exception(
+            "Unhandled exception on %s %s: %s",
+            request.method,
+            request.url.path,
+            exc,
+        )
         return JSONResponse(
             status_code=500,
             content={"detail": "Internal server error"},
