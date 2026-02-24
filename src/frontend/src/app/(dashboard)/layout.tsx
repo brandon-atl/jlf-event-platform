@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -39,10 +39,13 @@ export default function DashboardLayout({
   const { user, logout, isLoading } = useAuth();
 
   // Redirect to login if not authenticated
-  if (!isLoading && !user) {
-    router.push("/login");
-    return null;
-  }
+  React.useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/login");
+    }
+  }, [isLoading, user, router]);
+
+  if (!isLoading && !user) return null;
 
   const isActive = (href: string) => {
     if (href === "/events") return pathname === "/events";

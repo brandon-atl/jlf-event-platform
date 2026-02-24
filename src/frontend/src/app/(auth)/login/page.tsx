@@ -197,7 +197,7 @@ export default function LoginPage() {
               <div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-gray-400">or</span></div>
             </div>
             <button
-              onClick={() => { enableDemo(); router.push("/events"); }}
+              onClick={() => { enableDemo(); window.location.href = "/events"; }}
               className="w-full py-3 font-semibold rounded-xl border-2 border-dashed transition-all hover:shadow-md active:scale-[0.98] flex items-center justify-center gap-2 text-sm"
               style={{ borderColor: colors.canopy, color: colors.canopy }}
             >
