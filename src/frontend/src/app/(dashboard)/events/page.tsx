@@ -79,18 +79,21 @@ export default function EventsPage() {
   const [showPast, setShowPast] = useState(false);
   const eventList = data?.data ?? [];
 
-  // Split into active/upcoming vs past
-  const now = new Date();
-  const upcomingEvents = eventList.filter((e) => {
+  // Determine if an event is past — shared logic (also used by EventCard)
+  const isEventPast = (e: { event_end_date?: string; event_date: string; status: string }) => {
+    if (e.status === "completed" || e.status === "cancelled") return true;
     const end = new Date(e.event_end_date || e.event_date);
     end.setHours(23, 59, 59, 999);
-    return end >= now && e.status !== "completed" && e.status !== "cancelled";
-  });
-  const pastEvents = eventList.filter((e) => {
-    const end = new Date(e.event_end_date || e.event_date);
-    end.setHours(23, 59, 59, 999);
-    return end < now || e.status === "completed" || e.status === "cancelled";
-  });
+    return end < new Date();
+  };
+
+  // Split into active/upcoming vs past, sorted by date
+  const upcomingEvents = eventList
+    .filter((e) => !isEventPast(e))
+    .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
+  const pastEvents = eventList
+    .filter((e) => isEventPast(e))
+    .sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
   const activeCount = upcomingEvents.filter((e) => e.status === "active").length;
 
   return (
@@ -291,6 +294,7 @@ export default function EventsPage() {
                 key={event.id}
                 event={event}
                 index={i}
+                isPast={false}
                 onClick={() => router.push(`/dashboard/${event.id}`)}
               />
             ))}
@@ -300,7 +304,10 @@ export default function EventsPage() {
           {pastEvents.length > 0 && (
             <div className="mt-6">
               <button
+                type="button"
                 onClick={() => setShowPast(!showPast)}
+                aria-expanded={showPast}
+                aria-controls="past-events-list"
                 className="flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-gray-600 transition mb-3"
               >
                 <Clock size={14} />
@@ -308,12 +315,13 @@ export default function EventsPage() {
                 {showPast ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
               {showPast && (
-                <div className="grid gap-3">
+                <div id="past-events-list" className="grid gap-3">
                   {pastEvents.map((event, i) => (
                     <EventCard
                       key={event.id}
                       event={event}
                       index={i}
+                      isPast
                       onClick={() => router.push(`/dashboard/${event.id}`)}
                     />
                   ))}

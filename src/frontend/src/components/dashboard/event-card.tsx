@@ -10,6 +10,7 @@ interface EventCardProps {
   event: EventResponse;
   onClick: () => void;
   index?: number;
+  isPast?: boolean;
 }
 
 function CountPill({
@@ -36,14 +37,16 @@ function CountPill({
   );
 }
 
-export function EventCard({ event, onClick, index = 0 }: EventCardProps) {
+export function EventCard({ event, onClick, index = 0, isPast: isPastProp }: EventCardProps) {
   const { isDark } = useDarkMode();
   const c = isDark ? darkColors : colors;
 
-  // Compare date-only (end of event day) so events aren't dimmed on their actual day
-  const eventEnd = new Date(event.event_end_date || event.event_date);
-  eventEnd.setHours(23, 59, 59, 999);
-  const isPast = eventEnd < new Date();
+  // Use prop if provided, otherwise compute
+  const isPast = isPastProp ?? (() => {
+    const eventEnd = new Date(event.event_end_date || event.event_date);
+    eventEnd.setHours(23, 59, 59, 999);
+    return eventEnd < new Date() || event.status === "completed" || event.status === "cancelled";
+  })();
   const displayStatus = isPast && event.status === "active" ? "past" : event.status;
   const statusColor = isPast ? (isDark ? "#475569" : "#9ca3af") : event.status === "active" ? c.canopy : eventStatusColor(event.status);
 
