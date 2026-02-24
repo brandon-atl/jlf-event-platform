@@ -70,7 +70,7 @@ def create_app() -> FastAPI:
 
     @app.get("/health/deep")
     async def deep_health_check():
-        """Check database connectivity and return diagnostics."""
+        """Check database connectivity. Returns sanitized status only."""
         from sqlalchemy import text
 
         from app.database import async_session
@@ -82,7 +82,9 @@ def create_app() -> FastAPI:
                 result.scalar()
                 checks["database"] = "connected"
         except Exception as e:
-            checks["database"] = f"error: {e}"
+            # Log full error server-side, return sanitized status to caller
+            logger.error("Deep health check — database error: %s", e)
+            checks["database"] = "unavailable"
             return JSONResponse(status_code=503, content=checks)
 
         checks["status"] = "healthy"

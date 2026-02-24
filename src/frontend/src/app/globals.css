@@ -139,7 +139,11 @@
   }
 }
 
-/* ─── JLF Dark Mode — Card & surface overrides ─── */
+/* ─── JLF Dark Mode — Card & surface overrides ───
+ * Pragmatic approach: override Tailwind utility classes under .dark
+ * to avoid touching every component file. Will migrate to semantic
+ * CSS variables (dark: variants) in a future cleanup pass.
+ */
 .dark .bg-white {
   background-color: #161f2a !important;
 }

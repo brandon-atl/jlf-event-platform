@@ -4,18 +4,7 @@ import { Moon, Sun } from "lucide-react";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 
 export function DarkModeToggle({ collapsed = false }: { collapsed?: boolean }) {
-  const { isDark, toggle, mounted } = useDarkMode();
-
-  // Prevent hydration mismatch — render nothing until mounted
-  if (!mounted) {
-    return (
-      <div
-        className={`${
-          collapsed ? "w-8 h-8" : "w-9 h-9"
-        } rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse`}
-      />
-    );
-  }
+  const { isDark, toggle } = useDarkMode();
 
   return (
     <button
