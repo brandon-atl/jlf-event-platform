@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Info } from "lucide-react";
+import { Plus, Info, ChevronDown, ChevronUp, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 import { events, type EventCreate } from "@/lib/api";
@@ -76,8 +76,25 @@ export default function EventsPage() {
     });
   };
 
+  const [showPast, setShowPast] = useState(false);
   const eventList = data?.data ?? [];
-  const activeCount = eventList.filter((e) => e.status === "active").length;
+
+  // Determine if an event is past — shared logic (also used by EventCard)
+  const isEventPast = (e: { event_end_date?: string; event_date: string; status: string }) => {
+    if (e.status === "completed" || e.status === "cancelled") return true;
+    const end = new Date(e.event_end_date || e.event_date);
+    end.setHours(23, 59, 59, 999);
+    return end < new Date();
+  };
+
+  // Split into active/upcoming vs past, sorted by date
+  const upcomingEvents = eventList
+    .filter((e) => !isEventPast(e))
+    .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
+  const pastEvents = eventList
+    .filter((e) => isEventPast(e))
+    .sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
+  const activeCount = upcomingEvents.filter((e) => e.status === "active").length;
 
   return (
     <div className="space-y-5">
@@ -250,6 +267,9 @@ export default function EventsPage() {
 
       <div className="text-xs text-gray-400 font-medium">
         {activeCount} active event{activeCount !== 1 ? "s" : ""}
+        {pastEvents.length > 0 && (
+          <span className="ml-2">· {pastEvents.length} past</span>
+        )}
       </div>
 
       {isLoading ? (
@@ -266,16 +286,50 @@ export default function EventsPage() {
           <p className="text-sm">No events yet. Create your first event!</p>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {eventList.map((event, i) => (
-            <EventCard
-              key={event.id}
-              event={event}
-              index={i}
-              onClick={() => router.push(`/dashboard/${event.id}`)}
-            />
-          ))}
-        </div>
+        <>
+          {/* Active / Upcoming Events */}
+          <div className="grid gap-4">
+            {upcomingEvents.map((event, i) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                index={i}
+                isPast={false}
+                onClick={() => router.push(`/dashboard/${event.id}`)}
+              />
+            ))}
+          </div>
+
+          {/* Past Events — collapsed by default */}
+          {pastEvents.length > 0 && (
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => setShowPast(!showPast)}
+                aria-expanded={showPast}
+                aria-controls="past-events-list"
+                className="flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-gray-600 transition mb-3"
+              >
+                <Clock size={14} />
+                {pastEvents.length} past event{pastEvents.length !== 1 ? "s" : ""}
+                {showPast ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              {showPast && (
+                <div id="past-events-list" className="grid gap-3">
+                  {pastEvents.map((event, i) => (
+                    <EventCard
+                      key={event.id}
+                      event={event}
+                      index={i}
+                      isPast
+                      onClick={() => router.push(`/dashboard/${event.id}`)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

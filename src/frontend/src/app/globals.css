@@ -85,36 +85,36 @@
 
 /* ─── JLF Dark Mode — Midnight Forest (Vibrant) ─── */
 .dark {
-  --background: #0c1117;
-  --foreground: #f0f4f8;
-  --card: #151b23;
-  --card-foreground: #f0f4f8;
-  --popover: #151b23;
-  --popover-foreground: #f0f4f8;
+  --background: #080c10;
+  --foreground: #f1f5f9;
+  --card: #111820;
+  --card-foreground: #f1f5f9;
+  --popover: #111820;
+  --popover-foreground: #f1f5f9;
   --primary: #34d399;
-  --primary-foreground: #0c1117;
-  --secondary: #1c2432;
+  --primary-foreground: #080c10;
+  --secondary: #182230;
   --secondary-foreground: #e2e8f0;
-  --muted: #1c2432;
+  --muted: #182230;
   --muted-foreground: #94a3b8;
-  --accent: #1c2432;
+  --accent: #182230;
   --accent-foreground: #e2e8f0;
   --destructive: #f87171;
-  --border: #2a3546;
-  --input: #2a3546;
+  --border: #263348;
+  --input: #263348;
   --ring: #34d399;
   --chart-1: #34d399;
   --chart-2: #fbbf24;
   --chart-3: #60a5fa;
   --chart-4: #f87171;
   --chart-5: #c084fc;
-  --sidebar: #0f1319;
+  --sidebar: #060a0e;
   --sidebar-foreground: #e2e8f0;
   --sidebar-primary: #34d399;
-  --sidebar-primary-foreground: #0c1117;
-  --sidebar-accent: #1c2432;
+  --sidebar-primary-foreground: #080c10;
+  --sidebar-accent: #111820;
   --sidebar-accent-foreground: #e2e8f0;
-  --sidebar-border: #2a3546;
+  --sidebar-border: #263348;
   --sidebar-ring: #34d399;
 
   color-scheme: dark;
@@ -122,7 +122,7 @@
 
 /* JLF dark mode overrides for inline-styled elements */
 .dark body {
-  background: #0c1117 !important;
+  background: #080c10 !important;
 }
 
 @layer base {
@@ -145,20 +145,20 @@
  * 3 text levels: primary (#f0f4f8) → secondary (#94a3b8) → muted (#64748b)
  */
 .dark .bg-white {
-  background-color: #151b23 !important;
+  background-color: #111820 !important;
 }
 
 .dark .border-gray-100,
 .dark .border-gray-50 {
-  border-color: #2a3546 !important;
+  border-color: #263348 !important;
 }
 
 .dark .bg-gray-50 {
-  background-color: #1c2432 !important;
+  background-color: #182230 !important;
 }
 
 .dark .bg-gray-100 {
-  background-color: #1c2432 !important;
+  background-color: #182230 !important;
 }
 
 .dark .text-gray-300 {
@@ -190,24 +190,24 @@
 }
 
 .dark .hover\:bg-gray-50:hover {
-  background-color: #222d3d !important;
+  background-color: #1e2a3a !important;
 }
 
 .dark .hover\:bg-gray-100:hover {
-  background-color: #222d3d !important;
+  background-color: #1e2a3a !important;
 }
 
 .dark .shadow-sm {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(42, 53, 70, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(38, 51, 72, 0.6) !important;
 }
 
 /* Dark mode input styling */
 .dark input,
 .dark select,
 .dark textarea {
-  background-color: #1c2432 !important;
-  border-color: #2a3546 !important;
-  color: #f0f4f8 !important;
+  background-color: #182230 !important;
+  border-color: #263348 !important;
+  color: #f1f5f9 !important;
 }
 
 .dark input::placeholder,
@@ -219,34 +219,34 @@
 .dark select:focus,
 .dark textarea:focus {
   border-color: #34d399 !important;
-  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.15) !important;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2) !important;
 }
 
 /* Dark mode dialog/modal — scoped to Radix dialog content only */
 .dark [role="dialog"] {
-  background-color: #151b23 !important;
-  border-color: #2a3546 !important;
+  background-color: #111820 !important;
+  border-color: #263348 !important;
 }
 
 /* Dark mode table rows — scoped to our attendee/data tables */
 .dark .hover\:bg-gray-50\/30:hover,
 .dark table.jlf-table tr:hover,
 .dark [data-jlf-table] tr:hover {
-  background-color: rgba(34, 45, 61, 0.5) !important;
+  background-color: rgba(30, 42, 58, 0.5) !important;
 }
 
 /* Scrollbar dark mode */
 .dark ::-webkit-scrollbar-track {
-  background: #0c1117;
+  background: #080c10;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: #2a3546;
+  background: #263348;
   border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #3a4b60;
+  background: #354763;
 }
 
 /* JLF Custom Animations */
