@@ -15,11 +15,16 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Startup: initialize database tables. Shutdown: cleanup."""
+    """Startup: initialize database tables + scheduler. Shutdown: cleanup."""
+    from app.tasks.scheduler import start_scheduler, stop_scheduler
+
     logger.info("Starting JLF ERP backend...")
     await init_db()
     logger.info("Database initialized.")
+    start_scheduler()
+    logger.info("Background scheduler started.")
     yield
+    stop_scheduler()
     logger.info("Shutting down JLF ERP backend.")
 
 

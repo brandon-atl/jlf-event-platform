@@ -22,12 +22,10 @@ class Settings(BaseSettings):
     # JWT
     jwt_secret_key: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
-    jwt_expiration_minutes: int = 1440
-    jwt_expiry_hours: int = 24
+    jwt_expiration_minutes: int = 1440  # 24 hours
 
     # Magic Links
     magic_link_expiration_hours: int = 72
-    magic_link_expiry_hours: int = 48
 
     # Application
     app_env: str = "development"

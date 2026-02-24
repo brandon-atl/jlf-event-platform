@@ -144,7 +144,9 @@ async def create_registration(
     await db.flush()
 
     # Create Stripe Checkout session
-    checkout_url = await create_checkout_session(registration, event)
+    checkout_url = await create_checkout_session(
+        registration, event, custom_amount_cents=data.donation_amount_cents
+    )
 
     if not checkout_url and event.pricing_model.value == "free":
         registration.status = RegistrationStatus.complete

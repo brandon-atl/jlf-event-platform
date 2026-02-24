@@ -24,6 +24,7 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { dashboard, events as eventsApi, type EventResponse, type EventDashboard } from "@/lib/api";
 import { colors, PIE_COLORS } from "@/lib/theme";
 import { DEMO_EVENTS, DEMO_DASHBOARD, isDemoMode } from "@/lib/demo-data";
@@ -58,6 +59,7 @@ export default function EventDashboardPage({
 }) {
   const { eventId } = use(params);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
@@ -330,7 +332,12 @@ export default function EventDashboardPage({
         <Button
           variant="outline"
           className="rounded-xl font-semibold"
-          onClick={() => toast.success("Sync complete — all data up to date")}
+          onClick={() => {
+            queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+            queryClient.invalidateQueries({ queryKey: ["dashboard", eventId] });
+            queryClient.invalidateQueries({ queryKey: ["registrations", eventId] });
+            toast.success("Data refreshed");
+          }}
         >
           <RefreshCw size={14} />
           Sync Now

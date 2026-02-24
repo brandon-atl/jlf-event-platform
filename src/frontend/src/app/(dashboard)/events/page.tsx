@@ -60,12 +60,17 @@ export default function EventsPage() {
     createMutation.mutate({
       name,
       slug,
+      description: (form.get("description") as string) || undefined,
       event_date: form.get("start_date") as string,
       event_end_date: (form.get("end_date") as string) || undefined,
+      event_type: (form.get("event_type") as string) || "Retreats",
       pricing_model:
         (form.get("pricing") as "fixed" | "donation" | "free") || "donation",
       fixed_price_cents: form.get("price")
         ? Math.round(parseFloat(form.get("price") as string) * 100)
+        : undefined,
+      capacity: form.get("capacity")
+        ? parseInt(form.get("capacity") as string, 10)
         : undefined,
       meeting_point_a: (form.get("meeting_a") as string) || undefined,
     });
@@ -129,6 +134,45 @@ export default function EventsPage() {
                     className="mt-1 rounded-xl"
                   />
                 </div>
+                <div className="col-span-2">
+                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Description
+                  </Label>
+                  <Input
+                    name="description"
+                    placeholder="A brief description of this event..."
+                    className="mt-1 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Event Type *
+                  </Label>
+                  <select
+                    name="event_type"
+                    className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm bg-white"
+                  >
+                    <option value="Retreats">Retreat</option>
+                    <option value="Community Weekend">Community Weekend</option>
+                    <option value="Ashram">Ashram</option>
+                    <option value="Forest Therapy">Forest Therapy</option>
+                    <option value="Green Burial">Green Burial Tour</option>
+                    <option value="Meditation">Meditation / Satsang</option>
+                    <option value="Workshop">Workshop</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Capacity
+                  </Label>
+                  <Input
+                    name="capacity"
+                    type="number"
+                    placeholder="30"
+                    className="mt-1 rounded-xl"
+                  />
+                </div>
                 <div>
                   <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     Start Date *
@@ -177,7 +221,7 @@ export default function EventsPage() {
                 </div>
                 <div className="col-span-2">
                   <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Meeting Point A *
+                    Meeting Point
                   </Label>
                   <Input
                     name="meeting_a"

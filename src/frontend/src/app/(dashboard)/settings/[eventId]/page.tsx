@@ -6,8 +6,9 @@ import { useForm } from "react-hook-form";
 import { FileText, Bell, MapPin, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
-import { events as eventsApi, type EventCreate } from "@/lib/api";
+import { events as eventsApi, type EventCreate, type EventResponse } from "@/lib/api";
 import { colors } from "@/lib/theme";
+import { isDemoMode, DEMO_EVENTS } from "@/lib/demo-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,7 +36,13 @@ export default function SettingsPage({
 
   const { data: event, isLoading } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => eventsApi.get(eventId),
+    queryFn: () => {
+      if (isDemoMode()) {
+        const ev = DEMO_EVENTS.find(e => e.id === eventId) || DEMO_EVENTS[0];
+        return Promise.resolve(ev as unknown as EventResponse);
+      }
+      return eventsApi.get(eventId);
+    },
   });
 
   const { register, handleSubmit, reset } = useForm<EventConfigForm>();
@@ -77,7 +84,13 @@ export default function SettingsPage({
       status: data.status,
       meeting_point_a: data.meeting_point_a || undefined,
       meeting_point_b: data.meeting_point_b || undefined,
-    });
+      reminder_delay_minutes: data.reminder_delay_minutes
+        ? parseInt(data.reminder_delay_minutes, 10)
+        : undefined,
+      auto_expire_hours: data.auto_expire_hours
+        ? parseInt(data.auto_expire_hours, 10)
+        : undefined,
+    } as Partial<EventCreate> & { reminder_delay_minutes?: number; auto_expire_hours?: number });
   };
 
   if (isLoading || !event) {

@@ -257,6 +257,10 @@ export const registrations = {
       method: "PUT",
       body: JSON.stringify(data),
     }),
+  remind: (id: string) =>
+    request<{ detail: string; attendee_email: string }>(`/registrations/${id}/remind`, {
+      method: "POST",
+    }),
   createManual: (eventId: string, data: ManualRegistration) =>
     request(`/events/${eventId}/registrations/manual`, {
       method: "POST",
@@ -464,6 +468,8 @@ export interface EventCreate {
   capacity?: number;
   meeting_point_a?: string;
   meeting_point_b?: string;
+  reminder_delay_minutes?: number;
+  auto_expire_hours?: number;
   status?: "draft" | "active" | "completed" | "cancelled";
 }
 
@@ -516,6 +522,7 @@ export interface RegistrationCreate {
   dietary_restrictions?: string;
   waiver_accepted: boolean;
   intake_data?: Record<string, unknown>;
+  donation_amount_cents?: number;
 }
 
 export interface EventPublicInfo {
@@ -531,6 +538,7 @@ export interface EventPublicInfo {
   capacity?: number;
   spots_remaining?: number;
   registration_fields?: Record<string, unknown>;
+  meeting_point_a?: string;
 }
 
 export interface OverviewDashboard {
