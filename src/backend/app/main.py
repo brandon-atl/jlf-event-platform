@@ -68,6 +68,47 @@ def create_app() -> FastAPI:
     async def health_check():
         return {"status": "healthy", "service": "jlf-erp"}
 
+    @app.get("/health/deep")
+    async def deep_health_check():
+        """Check database connectivity and return diagnostics."""
+        from sqlalchemy import text
+
+        from app.database import async_session
+
+        checks = {"service": "jlf-erp", "database": "unknown"}
+        try:
+            async with async_session() as session:
+                result = await session.execute(text("SELECT 1"))
+                result.scalar()
+                checks["database"] = "connected"
+        except Exception as e:
+            checks["database"] = f"error: {e}"
+            return JSONResponse(status_code=503, content=checks)
+
+        checks["status"] = "healthy"
+        return checks
+
+    # Request logging middleware
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        import time
+
+        start = time.time()
+        response = await call_next(request)
+        duration_ms = (time.time() - start) * 1000
+
+        # Log slow requests (>2s) and errors
+        if duration_ms > 2000 or response.status_code >= 500:
+            logger.warning(
+                "%s %s → %d (%.0fms)",
+                request.method,
+                request.url.path,
+                response.status_code,
+                duration_ms,
+            )
+
+        return response
+
     # Global exception handlers
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError):
@@ -75,7 +116,12 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(Exception)
     async def general_exception_handler(request: Request, exc: Exception):
-        logger.exception("Unhandled exception: %s", exc)
+        logger.exception(
+            "Unhandled exception on %s %s: %s",
+            request.method,
+            request.url.path,
+            exc,
+        )
         return JSONResponse(
             status_code=500,
             content={"detail": "Internal server error"},
