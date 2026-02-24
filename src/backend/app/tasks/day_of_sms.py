@@ -1,3 +1,4 @@
+import hashlib
 import logging
 from datetime import datetime, timezone
 
@@ -5,11 +6,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from ..database import async_session
-from ..models import Event, NotificationLog, Registration
-from ..models.models import (
+from ..models import (
+    Event,
     EventStatus,
     NotificationChannel,
+    NotificationLog,
     NotificationStatus,
+    Registration,
     RegistrationStatus,
 )
 from ..services.sms_service import send_day_of_sms
@@ -34,7 +37,7 @@ async def send_day_of_notifications() -> int:
         # Find active events happening today with SMS configured
         result = await db.execute(
             select(Event).where(
-                Event.status == EventStatus.ACTIVE,
+                Event.status == EventStatus.active,
                 Event.day_of_sms_time.isnot(None),
             )
         )
@@ -48,16 +51,9 @@ async def send_day_of_notifications() -> int:
             if event_date.strftime("%Y-%m-%d") != today_str:
                 continue
 
-            # Parse day_of_sms_time (stored as "HH:MM" string)
-            try:
-                sms_hour, sms_minute = map(int, event.day_of_sms_time.split(":"))
-            except (ValueError, AttributeError):
-                logger.warning(
-                    "Invalid day_of_sms_time for event %s: %s",
-                    event.id,
-                    event.day_of_sms_time,
-                )
-                continue
+            # day_of_sms_time is a time column
+            sms_time = event.day_of_sms_time
+            sms_hour, sms_minute = sms_time.hour, sms_time.minute
 
             # Only send if current time is within the 30-minute job window
             sms_time_utc = event_date.replace(
@@ -73,7 +69,7 @@ async def send_day_of_notifications() -> int:
                 .options(joinedload(Registration.attendee))
                 .where(
                     Registration.event_id == event.id,
-                    Registration.status == RegistrationStatus.COMPLETE,
+                    Registration.status == RegistrationStatus.complete,
                 )
             )
             registrations = reg_result.unique().scalars().all()
@@ -100,15 +96,17 @@ async def send_day_of_notifications() -> int:
                     meeting_point=meeting_point,
                 )
 
+                content = f"day_of_sms:{event.id}:{reg.id}"
                 db.add(
                     NotificationLog(
                         registration_id=reg.id,
-                        channel=NotificationChannel.SMS,
+                        channel=NotificationChannel.sms,
                         template_id="day_of_sms",
+                        content_hash=hashlib.sha256(content.encode()).hexdigest()[:64],
                         status=(
-                            NotificationStatus.SENT
+                            NotificationStatus.sent
                             if success
-                            else NotificationStatus.FAILED
+                            else NotificationStatus.failed
                         ),
                     )
                 )

@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 resend.api_key = settings.resend_api_key
 
-FROM_EMAIL = "Just Love Forest <noreply@justloveforest.com>"
+FROM_EMAIL = f"Just Love Forest <{settings.from_email}>"
 
 
 async def send_confirmation_email(registration: Registration, event: Event) -> bool:

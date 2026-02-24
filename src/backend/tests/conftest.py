@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.database import Base, get_db
 from app.main import app
-from app.models.models import (
+from app.models import (
     AccommodationType,
     Attendee,
     Event,
@@ -76,13 +76,13 @@ async def sample_event(db_session: AsyncSession) -> Event:
         event_date=datetime(2026, 3, 15, 13, 0, tzinfo=timezone.utc),
         event_end_date=datetime(2026, 3, 16, 11, 30, tzinfo=timezone.utc),
         event_type="retreat",
-        pricing_model=PricingModel.FIXED,
+        pricing_model=PricingModel.fixed,
         fixed_price_cents=25000,
         capacity=20,
         meeting_point_a="Main gate parking area",
         reminder_delay_minutes=60,
         auto_expire_hours=24,
-        status=EventStatus.ACTIVE,
+        status=EventStatus.active,
     )
     db_session.add(event)
     await db_session.commit()
@@ -100,9 +100,9 @@ async def free_event(db_session: AsyncSession) -> Event:
         description="Free guided tour",
         event_date=datetime(2026, 3, 20, 10, 0, tzinfo=timezone.utc),
         event_type="green_burial_tour",
-        pricing_model=PricingModel.FREE,
+        pricing_model=PricingModel.free,
         capacity=None,
-        status=EventStatus.ACTIVE,
+        status=EventStatus.active,
     )
     db_session.add(event)
     await db_session.commit()
@@ -120,10 +120,10 @@ async def full_event(db_session: AsyncSession) -> Event:
         description="This event is full",
         event_date=datetime(2026, 4, 1, 13, 0, tzinfo=timezone.utc),
         event_type="retreat",
-        pricing_model=PricingModel.FIXED,
+        pricing_model=PricingModel.fixed,
         fixed_price_cents=25000,
         capacity=1,
-        status=EventStatus.ACTIVE,
+        status=EventStatus.active,
     )
     db_session.add(event)
     await db_session.flush()
@@ -142,9 +142,9 @@ async def full_event(db_session: AsyncSession) -> Event:
         id=str(uuid.uuid4()),
         attendee_id=attendee.id,
         event_id=event.id,
-        status=RegistrationStatus.COMPLETE,
+        status=RegistrationStatus.complete,
         waiver_accepted_at=datetime.now(timezone.utc),
-        source=RegistrationSource.REGISTRATION_FORM,
+        source=RegistrationSource.registration_form,
     )
     db_session.add(registration)
     await db_session.commit()
@@ -177,11 +177,11 @@ async def sample_registration(
         id=str(uuid.uuid4()),
         attendee_id=sample_attendee.id,
         event_id=sample_event.id,
-        status=RegistrationStatus.PENDING_PAYMENT,
+        status=RegistrationStatus.pending_payment,
         stripe_checkout_session_id="cs_test_123",
         waiver_accepted_at=datetime.now(timezone.utc),
-        accommodation_type=AccommodationType.BELL_TENT,
-        source=RegistrationSource.REGISTRATION_FORM,
+        accommodation_type=AccommodationType.bell_tent,
+        source=RegistrationSource.registration_form,
     )
     db_session.add(registration)
     await db_session.commit()
@@ -196,7 +196,7 @@ async def sample_user(db_session: AsyncSession) -> User:
         id=str(uuid.uuid4()),
         email="admin@justloveforest.com",
         name="Admin User",
-        role=UserRole.ADMIN,
+        role=UserRole.admin,
         password_hash=hash_password("testpassword123"),
     )
     db_session.add(user)
