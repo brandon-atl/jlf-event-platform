@@ -12,7 +12,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { colors } from "@/lib/theme";
+import { useDarkMode } from "@/hooks/use-dark-mode";
+import { DarkModeToggle } from "@/components/dark-mode-toggle";
+import { colors, darkColors } from "@/lib/theme";
 import { enableDemo } from "@/lib/demo-data";
 
 const FEATURES = [
@@ -30,6 +32,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+  const { isDark } = useDarkMode();
+
+  const formBg = isDark ? darkColors.surface : "#ffffff";
+  const textMain = isDark ? darkColors.textPrimary : colors.forest;
+  const textSub = isDark ? darkColors.textSecondary : "#9ca3af";
+  const inputBg = isDark ? darkColors.cream : "#ffffff";
+  const inputBorder = isDark ? darkColors.surfaceBorder : "#e5e7eb";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -92,7 +101,14 @@ export default function LoginPage() {
       </div>
 
       {/* Right side — login form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-white lg:rounded-l-[3rem]">
+      <div
+        className="flex-1 flex items-center justify-center p-8 lg:rounded-l-[3rem] transition-colors duration-300 relative"
+        style={{ background: formBg }}
+      >
+        {/* Dark mode toggle — top right of form area */}
+        <div className="absolute top-5 right-5">
+          <DarkModeToggle />
+        </div>
         <div className="w-full max-w-md animate-in fade-in duration-300">
           {/* Mobile-only logo */}
           <div className="lg:hidden mb-8 text-center">
@@ -105,7 +121,7 @@ export default function LoginPage() {
             <h1
               className="text-2xl font-bold"
               style={{
-                color: colors.forest,
+                color: textMain,
                 fontFamily: "var(--font-dm-serif), serif",
               }}
             >
@@ -116,13 +132,13 @@ export default function LoginPage() {
           <h2
             className="text-2xl font-bold mb-1"
             style={{
-              color: colors.forest,
+              color: textMain,
               fontFamily: "var(--font-dm-serif), serif",
             }}
           >
             Welcome back
           </h2>
-          <p className="text-gray-400 text-sm mb-8">
+          <p className="text-sm mb-8" style={{ color: textSub }}>
             Sign in to manage events and attendees
           </p>
 
@@ -134,13 +150,14 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: textSub }}>
                 Email
               </label>
               <div className="relative">
                 <Mail
                   size={15}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2"
+                  style={{ color: textSub }}
                 />
                 <input
                   type="email"
@@ -148,19 +165,21 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="brian@justloveforest.com"
                   required
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+                  className="w-full pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+                  style={{ background: inputBg, borderColor: inputBorder, color: textMain, border: `1px solid ${inputBorder}` }}
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: textSub }}>
                 Password
               </label>
               <div className="relative">
                 <Shield
                   size={15}
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2"
+                  style={{ color: textSub }}
                 />
                 <input
                   type={showPassword ? "text" : "password"}
@@ -168,12 +187,14 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="w-full pl-10 pr-12 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+                  className="w-full pl-10 pr-12 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
+                  style={{ background: inputBg, borderColor: inputBorder, color: textMain, border: `1px solid ${inputBorder}` }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: textSub }}
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
@@ -193,8 +214,8 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <div className="relative mb-4">
-              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200" /></div>
-              <div className="relative flex justify-center text-xs"><span className="bg-white px-3 text-gray-400">or</span></div>
+              <div className="absolute inset-0 flex items-center"><div className="w-full" style={{ borderTop: `1px solid ${inputBorder}` }} /></div>
+              <div className="relative flex justify-center text-xs"><span className="px-3" style={{ background: formBg, color: textSub }}>or</span></div>
             </div>
             <button
               onClick={() => { enableDemo(); window.location.href = "/events"; }}
@@ -207,7 +228,7 @@ export default function LoginPage() {
             <p className="text-[11px] text-gray-300 mt-2">No login required · Sample data from justloveforest.com</p>
           </div>
 
-          <p className="text-center text-xs text-gray-300 mt-4">
+          <p className="text-center text-xs mt-4" style={{ color: textSub }}>
             Protected by JWT + TLS 1.3 encryption
           </p>
         </div>
