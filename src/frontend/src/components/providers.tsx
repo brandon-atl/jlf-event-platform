@@ -34,6 +34,28 @@ export function Providers({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("jlf_token");
     if (stored) {
       setToken(stored);
+      // Decode JWT payload to check role.
+      // Security note: this client-side decode is only for UI routing/display.
+      // The JWT is verified server-side on every API call; all data shown in the
+      // app comes from authenticated API responses, not from this decoded payload.
+      try {
+        // JWTs use base64url encoding (- instead of +, _ instead of /, no padding).
+        const base64 = stored.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+        const payload = JSON.parse(atob(base64));
+        if (payload.role === "co_creator") {
+          // Co-creator tokens can't call /auth/me — use JWT payload directly
+          setUser({
+            id: payload.sub,
+            email: payload.email,
+            name: payload.name || payload.email.split("@")[0],
+            role: "co_creator",
+          });
+          setIsLoading(false);
+          return;
+        }
+      } catch {
+        // Invalid token format — fall through to /auth/me
+      }
       authApi
         .me()
         .then((u) => setUser(u))

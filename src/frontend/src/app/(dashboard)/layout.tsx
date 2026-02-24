@@ -38,14 +38,17 @@ export default function DashboardLayout({
   const router = useRouter();
   const { user, logout, isLoading } = useAuth();
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated, or portal if co-creator
   React.useEffect(() => {
     if (!isLoading && !user) {
       router.push("/login");
+    } else if (!isLoading && user?.role === "co_creator") {
+      router.push("/portal");
     }
   }, [isLoading, user, router]);
 
   if (!isLoading && !user) return null;
+  if (!isLoading && user?.role === "co_creator") return null;
 
   const isActive = (href: string) => {
     if (href === "/events") return pathname === "/events";

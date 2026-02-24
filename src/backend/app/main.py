@@ -43,6 +43,7 @@ def create_app() -> FastAPI:
     # Routers
     from app.routers import (
         auth,
+        co_creators,
         dashboard,
         events,
         notifications,
@@ -60,6 +61,7 @@ def create_app() -> FastAPI:
     app.include_router(dashboard.router, prefix="/api/v1")
     app.include_router(portal.router, prefix="/api/v1")
     app.include_router(notifications.router, prefix="/api/v1")
+    app.include_router(co_creators.router, prefix="/api/v1")
 
     # Health check
     @app.get("/health")
