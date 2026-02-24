@@ -222,16 +222,16 @@
   box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.15) !important;
 }
 
-/* Dark mode dialog/modal */
-.dark [role="dialog"],
-.dark [data-radix-popper-content-wrapper] > div {
+/* Dark mode dialog/modal — scoped to Radix dialog content only */
+.dark [role="dialog"] {
   background-color: #151b23 !important;
   border-color: #2a3546 !important;
 }
 
-/* Dark mode table rows */
+/* Dark mode table rows — scoped to our attendee/data tables */
 .dark .hover\:bg-gray-50\/30:hover,
-.dark tr:hover {
+.dark table.jlf-table tr:hover,
+.dark [data-jlf-table] tr:hover {
   background-color: rgba(34, 45, 61, 0.5) !important;
 }
 
