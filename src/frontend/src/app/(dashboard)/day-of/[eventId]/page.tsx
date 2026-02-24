@@ -5,8 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { MapPin, Send } from "lucide-react";
 import { toast } from "sonner";
 
-import { dashboard, events as eventsApi, notifications } from "@/lib/api";
+import { dashboard, events as eventsApi, notifications, type EventResponse, type EventDashboard } from "@/lib/api";
 import { colors } from "@/lib/theme";
+import { isDemoMode, DEMO_EVENTS, DEMO_DASHBOARD } from "@/lib/demo-data";
 
 export default function DayOfPage({
   params,
@@ -17,12 +18,21 @@ export default function DayOfPage({
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
-    queryFn: () => eventsApi.get(eventId),
+    queryFn: () => {
+      if (isDemoMode()) {
+        const ev = DEMO_EVENTS.find(e => e.id === eventId) || DEMO_EVENTS[0];
+        return Promise.resolve(ev as unknown as EventResponse);
+      }
+      return eventsApi.get(eventId);
+    },
   });
 
   const { data: dash } = useQuery({
     queryKey: ["dashboard", eventId],
-    queryFn: () => dashboard.event(eventId),
+    queryFn: () => {
+      if (isDemoMode()) return Promise.resolve(DEMO_DASHBOARD(eventId) as unknown as EventDashboard);
+      return dashboard.event(eventId);
+    },
   });
 
   if (!event || !dash) {

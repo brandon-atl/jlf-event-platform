@@ -36,25 +36,30 @@ function CountPill({
 }
 
 export function EventCard({ event, onClick, index = 0 }: EventCardProps) {
-  const statusColor = eventStatusColor(event.status);
+  // Compare date-only (end of event day) so events aren't dimmed on their actual day
+  const eventEnd = new Date(event.event_end_date || event.event_date);
+  eventEnd.setHours(23, 59, 59, 999);
+  const isPast = eventEnd < new Date();
+  const displayStatus = isPast && event.status === "active" ? "past" : event.status;
+  const statusColor = isPast && event.status === "active" ? "#9ca3af" : eventStatusColor(event.status);
 
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-5 cursor-pointer hover:translate-y-[-2px] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,.08)] active:translate-y-0 transition-all duration-250 group shadow-sm animate-in slide-in-from-bottom-2 fade-in"
+      className={`bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-5 cursor-pointer hover:translate-y-[-2px] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,.08)] active:translate-y-0 transition-all duration-250 group shadow-sm animate-in slide-in-from-bottom-2 fade-in ${isPast ? "opacity-70" : ""}`}
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: "both" }}
     >
       <div
         className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
         style={{ background: `${colors.canopy}10` }}
       >
-        <Mountain size={24} style={{ color: colors.canopy }} />
+        <Mountain size={24} style={{ color: isPast ? "#9ca3af" : colors.canopy }} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2.5 mb-1 flex-wrap">
           <h3
             className="text-base font-bold truncate group-hover:opacity-80 transition"
-            style={{ color: colors.forest }}
+            style={{ color: isPast ? "#6b7280" : colors.forest }}
           >
             {event.name}
           </h3>
@@ -63,7 +68,7 @@ export function EventCard({ event, onClick, index = 0 }: EventCardProps) {
             style={{ background: statusColor }}
           />
           <span className="text-xs text-gray-400 capitalize">
-            {event.status}
+            {displayStatus}
           </span>
           {event.event_type && (
             <span

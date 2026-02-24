@@ -50,9 +50,11 @@ async def get_event_info(event_slug: str, db: AsyncSession = Depends(get_db)):
         event_type=event.event_type,
         pricing_model=event.pricing_model.value,
         fixed_price_cents=event.fixed_price_cents,
+        min_donation_cents=event.min_donation_cents,
         capacity=event.capacity,
         spots_remaining=spots_remaining,
         registration_fields=event.registration_fields,
+        description=event.description,
     )
     return {"event": info.model_dump(mode="json")}
 
@@ -144,7 +146,9 @@ async def create_registration(
     await db.flush()
 
     # Create Stripe Checkout session
-    checkout_url = await create_checkout_session(registration, event)
+    checkout_url = await create_checkout_session(
+        registration, event, custom_amount_cents=data.donation_amount_cents
+    )
 
     if not checkout_url and event.pricing_model.value == "free":
         registration.status = RegistrationStatus.complete

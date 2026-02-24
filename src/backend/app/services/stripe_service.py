@@ -8,7 +8,7 @@ stripe.api_key = settings.stripe_secret_key
 
 
 async def create_checkout_session(
-    registration: Registration, event: Event
+    registration: Registration, event: Event, custom_amount_cents: int | None = None
 ) -> str:
     """Create a Stripe Checkout Session and return the URL."""
     params: dict = {
@@ -38,18 +38,26 @@ async def create_checkout_session(
             }
         ]
     elif event.pricing_model == "donation":
+        # Use custom amount from attendee, falling back to event minimum
+        if custom_amount_cents is not None and custom_amount_cents > 0:
+            amount = custom_amount_cents
+        elif event.min_donation_cents is not None and event.min_donation_cents > 0:
+            amount = event.min_donation_cents
+        else:
+            amount = 100  # $1.00 absolute floor
+        # Enforce minimum if set
+        if event.min_donation_cents and amount < event.min_donation_cents:
+            amount = event.min_donation_cents
         params["line_items"] = [
             {
                 "price_data": {
                     "currency": "usd",
-                    "unit_amount": event.min_donation_cents or 100,
+                    "unit_amount": amount,
                     "product_data": {"name": event.name},
                 },
                 "quantity": 1,
-                "adjustable_quantity": {"enabled": False},
             }
         ]
-        params["custom_fields"] = []
     else:
         # Free event — no Stripe needed
         return ""

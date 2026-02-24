@@ -36,6 +36,7 @@ const registrationSchema = z.object({
   phone: z.string().optional(),
   accommodation_type: z.string().optional(),
   dietary_restrictions: z.string().optional(),
+  donation_amount: z.string().optional(),
   waiver_accepted: z.literal(true, {
     error: "You must accept the visitor agreement to register",
   }),
@@ -89,6 +90,18 @@ export function RegistrationForm({
   const onSubmit = async (data: RegistrationFormData) => {
     setSubmitError(null);
     try {
+      const rawDonation = data.donation_amount?.trim();
+      const donationCents = rawDonation
+        ? Math.round(parseFloat(rawDonation) * 100)
+        : undefined;
+      // Validate donation minimum client-side
+      if (event.pricing_model === "donation" && donationCents !== undefined) {
+        const minCents = event.min_donation_cents || 100;
+        if (isNaN(donationCents) || donationCents < minCents) {
+          setSubmitError(`Minimum contribution is ${formatCents(minCents)}`);
+          return;
+        }
+      }
       const result = await register.submit(slug, {
         first_name: data.first_name,
         last_name: data.last_name,
@@ -97,6 +110,7 @@ export function RegistrationForm({
         accommodation_type: data.accommodation_type || undefined,
         dietary_restrictions: data.dietary_restrictions || undefined,
         waiver_accepted: true,
+        donation_amount_cents: donationCents,
         intake_data: {
           ...(data.questions_for_team
             ? { questions_for_team: data.questions_for_team }
@@ -311,6 +325,43 @@ export function RegistrationForm({
               </h2>
 
               <div className="space-y-4">
+                {/* Donation amount for pay-what-you-want events */}
+                {event.pricing_model === "donation" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="donation_amount">
+                      Your contribution (USD)
+                    </Label>
+                    <div className="relative">
+                      <DollarSign
+                        size={16}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      />
+                      <Input
+                        id="donation_amount"
+                        type="number"
+                        step="0.01"
+                        min={
+                          event.min_donation_cents
+                            ? (event.min_donation_cents / 100).toFixed(2)
+                            : "1.00"
+                        }
+                        placeholder={
+                          event.min_donation_cents
+                            ? (event.min_donation_cents / 100).toFixed(2)
+                            : "25.00"
+                        }
+                        {...registerField("donation_amount")}
+                        className="rounded-xl pl-8"
+                      />
+                    </div>
+                    {event.min_donation_cents && (
+                      <p className="text-xs text-gray-400">
+                        Suggested minimum: {formatCents(event.min_donation_cents)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label>Accommodation preference</Label>
                   <Select

@@ -159,10 +159,32 @@ export default function AttendeesPage({
   const attendees = data?.data ?? [];
   const totalCount = data?.meta?.total ?? 0;
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    if (isDemoMode()) {
+      toast.info("CSV export is not available in demo mode");
+      return;
+    }
     const url = registrations.exportCsv(eventId);
-    window.open(url, "_blank");
-    toast.success("CSV export started");
+    const token = localStorage.getItem("jlf_token");
+    try {
+      const res = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `${event?.slug || "registrations"}_export.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Delay revocation so the browser finishes reading
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      toast.success("CSV exported");
+    } catch {
+      toast.error("Failed to export CSV");
+    }
   };
 
   return (
@@ -424,9 +446,15 @@ export default function AttendeesPage({
                 variant="outline"
                 size="sm"
                 className="rounded-xl text-[11px] h-7"
-                onClick={(e) => {
+                disabled={a.status !== "pending_payment"}
+                onClick={async (e) => {
                   e.stopPropagation();
-                  toast.success(`Reminder sent to ${name}`);
+                  try {
+                    await registrations.remind(a.id);
+                    toast.success(`Reminder sent to ${name}`);
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Failed to send reminder");
+                  }
                 }}
               >
                 <Send size={11} />
