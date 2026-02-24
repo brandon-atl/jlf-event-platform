@@ -17,31 +17,32 @@ export const colors = {
   berry: "#9b5ba5",
 } as const;
 
-/** Dark mode palette — Midnight Forest */
+/** Dark mode palette — Midnight Forest (vibrant, high-contrast) */
 export const darkColors = {
-  forest: "#c8e6d0",
-  canopy: "#4a9e6a",
-  moss: "#6bbd88",
-  sage: "#92d4a8",
-  meadow: "#2d5a3d",
-  cream: "#0f1720",
-  bark: "#c4a472",
-  earth: "#dcc18e",
-  sun: "#f0c860",
-  ember: "#e07860",
-  sky: "#7bb8e8",
-  berry: "#b87ec4",
+  forest: "#e4f0e8",       // Near-white with green tint — primary headings
+  canopy: "#34d399",       // Vibrant emerald — accent color, buttons, active states
+  moss: "#6ee7b7",         // Bright mint — links, interactive elements
+  sage: "#a7f3d0",         // Light green — hover accents
+  meadow: "#1a3a2a",       // Deep forest — subtle backgrounds
+  cream: "#0c1117",        // Near-black — page background
+  bark: "#d4a574",         // Warm amber — avatar, warm accents
+  earth: "#e8c99a",        // Bright sand
+  sun: "#fbbf24",          // Vivid gold — warnings, pending badges
+  ember: "#f87171",        // Bright coral — errors, alerts
+  sky: "#60a5fa",          // Bright blue — info
+  berry: "#c084fc",        // Vivid purple — special tags
   // Dark-specific surfaces
-  surface: "#161f2a",
-  surfaceHover: "#1c2736",
-  surfaceBorder: "#243044",
-  textPrimary: "#e8ecf0",
-  textSecondary: "#8899aa",
-  textMuted: "#556677",
+  surface: "#151b23",      // Card background — distinct from page bg
+  surfaceElevated: "#1c2432", // Elevated cards, modals
+  surfaceHover: "#222d3d", // Hover states
+  surfaceBorder: "#2a3546", // Visible borders
+  textPrimary: "#f0f4f8",  // Bright white — primary text (95% white)
+  textSecondary: "#94a3b8", // Clear gray — secondary text (slate-400)
+  textMuted: "#64748b",    // Mid gray — tertiary text (slate-500)
 } as const;
 
 export const PIE_COLORS = [colors.canopy, colors.sun, colors.sky, colors.ember];
-export const DARK_PIE_COLORS = [darkColors.canopy, darkColors.sun, darkColors.sky, darkColors.ember];
+export const DARK_PIE_COLORS = [darkColors.canopy, darkColors.sun, darkColors.sky, darkColors.ember, darkColors.berry];
 
 export const fonts = {
   sans: "'DM Sans', sans-serif",
