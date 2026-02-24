@@ -3,7 +3,11 @@ import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from .day_of_sms import send_day_of_notifications
-from .reminders import check_expired_registrations, check_pending_reminders
+from .reminders import (
+    check_expired_registrations,
+    check_pending_reminders,
+    send_escalation_reminders,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +34,13 @@ def start_scheduler() -> None:
         replace_existing=True,
     )
     scheduler.add_job(
+        send_escalation_reminders,
+        "interval",
+        minutes=15,
+        id="send_escalation_reminders",
+        replace_existing=True,
+    )
+    scheduler.add_job(
         send_day_of_notifications,
         "interval",
         minutes=30,
@@ -38,7 +49,7 @@ def start_scheduler() -> None:
     )
 
     scheduler.start()
-    logger.info("Background scheduler started with 3 periodic jobs")
+    logger.info("Background scheduler started with 4 periodic jobs")
 
 
 def stop_scheduler() -> None:

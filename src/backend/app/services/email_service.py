@@ -169,3 +169,45 @@ async def send_reminder_email(registration: Registration, event: Event) -> bool:
     except Exception:
         logger.exception("Failed to send reminder to %s", attendee.email)
         return False
+
+
+async def send_escalation_email(registration: Registration, event: Event) -> bool:
+    """Send an urgent escalation reminder — registration is about to expire."""
+    attendee = registration.attendee
+    register_url = f"{settings.app_url}/register/{event.slug}"
+    event_date_str = event.event_date.strftime("%B %d, %Y")
+
+    body = f"""\
+<h2 style="margin:0 0 16px;color:#1a3a2a;font-size:20px;">Hi {attendee.first_name},</h2>
+<p style="margin:0 0 8px;color:#444;font-size:15px;line-height:1.6;">
+  <strong>Your registration for {event.name} ({event_date_str}) is about to expire.</strong>
+</p>
+<p style="margin:0 0 20px;color:#444;font-size:15px;line-height:1.6;">
+  We noticed you haven't completed payment yet. If you still want to attend, please finish
+  your registration soon — your spot will be released automatically once the hold expires.
+</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+<tr><td style="background-color:#d4644a;border-radius:8px;text-align:center;">
+  <a href="{register_url}"
+     style="display:inline-block;padding:14px 32px;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;">
+    Complete Registration Now
+  </a>
+</td></tr>
+</table>
+<p style="margin:0;color:#888;font-size:13px;">
+  If you no longer wish to attend, no action is needed — your registration will expire automatically.
+</p>"""
+
+    try:
+        resend.Emails.send(
+            {
+                "from": FROM_EMAIL,
+                "to": [attendee.email],
+                "subject": f"Last chance: complete your registration for {event.name}",
+                "html": _base_template(body),
+            }
+        )
+        return True
+    except Exception:
+        logger.exception("Failed to send escalation email to %s", attendee.email)
+        return False

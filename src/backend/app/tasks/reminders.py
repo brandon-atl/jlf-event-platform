@@ -6,7 +6,7 @@ from sqlalchemy.orm import joinedload
 
 from ..database import async_session
 from ..models import AuditLog, Registration, RegistrationStatus
-from ..services.email_service import send_reminder_email
+from ..services.email_service import send_escalation_email, send_reminder_email
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +61,75 @@ async def check_pending_reminders() -> int:
         await db.commit()
 
     logger.info("check_pending_reminders completed: %d reminders sent", sent_count)
+    return sent_count
+
+
+async def send_escalation_reminders() -> int:
+    """Send escalation emails for registrations that already received a first reminder
+    but still haven't completed payment.
+
+    Uses auto_expire_hours / 2 as the escalation delay after reminder_sent_at.
+    Idempotent: skips registrations that already have escalation_sent_at set.
+    Returns the number of escalation emails sent.
+    """
+    sent_count = 0
+    async with async_session() as db:
+        result = await db.execute(
+            select(Registration)
+            .options(joinedload(Registration.event), joinedload(Registration.attendee))
+            .where(
+                Registration.status == RegistrationStatus.pending_payment,
+                Registration.reminder_sent_at.isnot(None),
+                Registration.escalation_sent_at.is_(None),
+            )
+        )
+        registrations = result.unique().scalars().all()
+
+        now = datetime.now(timezone.utc)
+
+        for reg in registrations:
+            if not reg.event or not reg.attendee:
+                continue
+
+            # Escalation delay = half the auto-expire window
+            escalation_delay = timedelta(hours=reg.event.auto_expire_hours / 2)
+            reminder_at = reg.reminder_sent_at
+            if reminder_at.tzinfo is None:
+                reminder_at = reminder_at.replace(tzinfo=timezone.utc)
+
+            if now < reminder_at + escalation_delay:
+                continue
+
+            success = await send_escalation_email(reg, reg.event)
+
+            if success:
+                reg.escalation_sent_at = now
+                sent_count += 1
+
+                # Audit log
+                db.add(
+                    AuditLog(
+                        entity_type="registration",
+                        entity_id=reg.id,
+                        action="escalation_sent",
+                        actor="system",
+                        old_value={"reminder_sent_at": str(reg.reminder_sent_at)},
+                        new_value={"escalation_sent_at": str(now)},
+                    )
+                )
+
+                logger.info(
+                    "Sent escalation reminder for registration %s (event: %s)",
+                    reg.id,
+                    reg.event.name,
+                )
+
+        await db.commit()
+
+    logger.info(
+        "send_escalation_reminders completed: %d escalation emails sent",
+        sent_count,
+    )
     return sent_count
 
 
