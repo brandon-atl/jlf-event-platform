@@ -281,6 +281,33 @@ export const notifications = {
   },
 };
 
+// ── Co-Creators ────────────────────────────────
+export const coCreators = {
+  list: () => request<CoCreatorDetail[]>("/co-creators"),
+  create: (data: { name: string; email: string }) =>
+    request<CoCreatorDetail>("/co-creators", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<void>(`/co-creators/${id}`, { method: "DELETE" }),
+  assignEvent: (id: string, data: { event_id: string; can_see_amounts?: boolean }) =>
+    request<void>(`/co-creators/${id}/events`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  removeEvent: (id: string, eventId: string) =>
+    request<void>(`/co-creators/${id}/events/${eventId}`, { method: "DELETE" }),
+  sendInvite: (id: string) =>
+    request<void>(`/co-creators/${id}/invite`, { method: "POST" }),
+};
+
+// ── Portal (Co-Creator) ────────────────────────
+export const portal = {
+  events: () => request<PortalEvent[]>("/portal/events"),
+  event: (eventId: string) => request<PortalEventDetail>("/portal/events/" + eventId),
+};
+
 // ── Public Registration ─────────────────────────
 export const register = {
   eventInfo: async (slug: string) => {
@@ -529,4 +556,54 @@ export interface EventDashboard {
   total_revenue_cents: number;
   average_payment_cents: number;
   spots_remaining?: number;
+}
+
+export interface CoCreatorEventBrief {
+  event_id: string;
+  event_name: string;
+  can_see_amounts: boolean;
+}
+
+export interface CoCreatorDetail {
+  id: string;
+  name: string;
+  email: string;
+  created_at: string;
+  events: CoCreatorEventBrief[];
+}
+
+export interface PortalEvent {
+  id: string;
+  name: string;
+  event_date: string;
+  event_end_date?: string;
+  event_type: string;
+  status: string;
+  total_registrations: number;
+  complete_registrations: number;
+  capacity?: number;
+}
+
+export interface PortalAttendee {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  status: string;
+  accommodation_type?: string;
+  dietary_restrictions?: string;
+  payment_amount_cents?: number;
+}
+
+export interface PortalEventDetail {
+  id: string;
+  name: string;
+  event_date: string;
+  event_end_date?: string;
+  event_type: string;
+  status: string;
+  capacity?: number;
+  meeting_point_a?: string;
+  meeting_point_b?: string;
+  attendees: PortalAttendee[];
 }
