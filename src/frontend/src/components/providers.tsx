@@ -49,7 +49,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await authApi.login(email, password);
-    localStorage.setItem("jlf_token", res.access_token);
+    // Token is already stored by auth.login() in api.ts
     setToken(res.access_token);
     setUser({ id: res.user_id, email, name: res.name, role: res.role });
   }, []);

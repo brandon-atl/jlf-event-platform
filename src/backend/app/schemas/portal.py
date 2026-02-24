@@ -1,12 +1,13 @@
 """Co-creator portal schemas."""
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel
 
 
 class PortalEventSummary(BaseModel):
-    id: str
+    id: UUID
     name: str
     event_date: datetime
     event_end_date: datetime | None = None
@@ -33,7 +34,7 @@ class PortalAttendee(BaseModel):
 
 
 class PortalEventDetail(BaseModel):
-    id: str
+    id: UUID
     name: str
     event_date: datetime
     event_end_date: datetime | None = None

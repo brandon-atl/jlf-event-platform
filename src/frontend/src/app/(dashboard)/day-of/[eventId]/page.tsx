@@ -42,7 +42,7 @@ export default function DayOfPage({
 
   const handleSendSms = async () => {
     try {
-      await notifications.sendSms(eventId);
+      await notifications.sendSms(eventId, `Reminder: ${event?.name} is today! See you at the forest 🌲`);
       toast.success(`Day-of SMS sent to ${sb.complete} attendees`);
     } catch {
       toast.error("Failed to send SMS");

@@ -29,25 +29,25 @@ async def overview(
     # Count active events
     active_count = (
         await db.execute(
-            select(func.count()).where(Event.status == EventStatus.ACTIVE)
+            select(func.count()).where(Event.status == EventStatus.active)
         )
     ).scalar() or 0
 
     # Registration counts across active events
-    active_event_ids = select(Event.id).where(Event.status == EventStatus.ACTIVE)
+    active_event_ids = select(Event.id).where(Event.status == EventStatus.active)
 
     reg_stats = await db.execute(
         select(
             func.count(Registration.id).label("total"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.COMPLETE)
+            .filter(Registration.status == RegistrationStatus.complete)
             .label("complete"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.PENDING_PAYMENT)
+            .filter(Registration.status == RegistrationStatus.pending_payment)
             .label("pending"),
             func.coalesce(
                 func.sum(Registration.payment_amount_cents).filter(
-                    Registration.status == RegistrationStatus.COMPLETE
+                    Registration.status == RegistrationStatus.complete
                 ),
                 0,
             ).label("revenue"),
@@ -58,7 +58,7 @@ async def overview(
     # Upcoming events (active, ordered by date)
     upcoming_result = await db.execute(
         select(Event)
-        .where(Event.status == EventStatus.ACTIVE)
+        .where(Event.status == EventStatus.active)
         .order_by(Event.event_date.asc())
         .limit(10)
     )
@@ -68,7 +68,7 @@ async def overview(
             select(
                 func.count(Registration.id).label("total"),
                 func.count(Registration.id)
-                .filter(Registration.status == RegistrationStatus.COMPLETE)
+                .filter(Registration.status == RegistrationStatus.complete)
                 .label("complete"),
             ).where(Registration.event_id == event.id)
         )
@@ -113,19 +113,19 @@ async def event_dashboard(
         select(
             func.count(Registration.id).label("total"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.COMPLETE)
+            .filter(Registration.status == RegistrationStatus.complete)
             .label("complete"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.PENDING_PAYMENT)
+            .filter(Registration.status == RegistrationStatus.pending_payment)
             .label("pending_payment"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.CANCELLED)
+            .filter(Registration.status == RegistrationStatus.cancelled)
             .label("cancelled"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.REFUNDED)
+            .filter(Registration.status == RegistrationStatus.refunded)
             .label("refunded"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.EXPIRED)
+            .filter(Registration.status == RegistrationStatus.expired)
             .label("expired"),
         ).where(Registration.event_id == event_id)
     )
@@ -144,7 +144,7 @@ async def event_dashboard(
         select(Registration.accommodation_type, func.count(Registration.id))
         .where(
             Registration.event_id == event_id,
-            Registration.status == RegistrationStatus.COMPLETE,
+            Registration.status == RegistrationStatus.complete,
             Registration.accommodation_type.is_not(None),
         )
         .group_by(Registration.accommodation_type)
@@ -163,7 +163,7 @@ async def event_dashboard(
         select(Registration.dietary_restrictions)
         .where(
             Registration.event_id == event_id,
-            Registration.status == RegistrationStatus.COMPLETE,
+            Registration.status == RegistrationStatus.complete,
             Registration.dietary_restrictions.is_not(None),
             Registration.dietary_restrictions != "",
         )
@@ -187,7 +187,7 @@ async def event_dashboard(
             func.count(Registration.payment_amount_cents).label("count"),
         ).where(
             Registration.event_id == event_id,
-            Registration.status == RegistrationStatus.COMPLETE,
+            Registration.status == RegistrationStatus.complete,
             Registration.payment_amount_cents.is_not(None),
         )
     )

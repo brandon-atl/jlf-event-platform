@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -63,7 +64,7 @@ class EventStats(BaseModel):
 
 
 class EventResponse(BaseModel):
-    id: str
+    id: UUID
     name: str
     slug: str
     description: str | None = None

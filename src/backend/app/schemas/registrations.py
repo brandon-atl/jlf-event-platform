@@ -2,12 +2,13 @@
 
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 
 class AttendeeInfo(BaseModel):
-    id: str
+    id: UUID
     email: str
     first_name: str
     last_name: str
@@ -17,9 +18,9 @@ class AttendeeInfo(BaseModel):
 
 
 class RegistrationResponse(BaseModel):
-    id: str
-    attendee_id: str
-    event_id: str
+    id: UUID
+    attendee_id: UUID
+    event_id: UUID
     status: str
     payment_amount_cents: int | None = None
     stripe_checkout_session_id: str | None = None

@@ -27,23 +27,23 @@ async def _compute_event_stats(db: AsyncSession, event: Event) -> EventStats:
         select(
             func.count(Registration.id).label("total"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.COMPLETE)
+            .filter(Registration.status == RegistrationStatus.complete)
             .label("complete"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.PENDING_PAYMENT)
+            .filter(Registration.status == RegistrationStatus.pending_payment)
             .label("pending_payment"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.CANCELLED)
+            .filter(Registration.status == RegistrationStatus.cancelled)
             .label("cancelled"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.REFUNDED)
+            .filter(Registration.status == RegistrationStatus.refunded)
             .label("refunded"),
             func.count(Registration.id)
-            .filter(Registration.status == RegistrationStatus.EXPIRED)
+            .filter(Registration.status == RegistrationStatus.expired)
             .label("expired"),
             func.coalesce(
                 func.sum(Registration.payment_amount_cents).filter(
-                    Registration.status == RegistrationStatus.COMPLETE
+                    Registration.status == RegistrationStatus.complete
                 ),
                 0,
             ).label("revenue"),
@@ -56,7 +56,7 @@ async def _compute_event_stats(db: AsyncSession, event: Event) -> EventStats:
         select(Registration.accommodation_type, func.count(Registration.id))
         .where(
             Registration.event_id == event.id,
-            Registration.status == RegistrationStatus.COMPLETE,
+            Registration.status == RegistrationStatus.complete,
             Registration.accommodation_type.is_not(None),
         )
         .group_by(Registration.accommodation_type)
@@ -164,7 +164,11 @@ async def list_events(
     result = await db.execute(query)
     events = result.scalars().all()
 
-    data = [_event_to_response(e) for e in events]
+    # Compute basic stats for each event in the list
+    data = []
+    for e in events:
+        stats = await _compute_event_stats(db, e)
+        data.append(_event_to_response(e, stats=stats))
     return PaginatedResponse(
         data=data,
         meta=PaginationMeta(total=total, page=page, per_page=per_page),
@@ -288,7 +292,7 @@ async def delete_event(
         raise HTTPException(status_code=404, detail="Event not found")
 
     old_status = event.status.value if hasattr(event.status, "value") else event.status
-    event.status = EventStatus.CANCELLED
+    event.status = EventStatus.cancelled
 
     await _audit_log(
         db,
@@ -297,7 +301,7 @@ async def delete_event(
         action="soft_deleted",
         actor=current_user.email,
         old_value={"status": old_status},
-        new_value={"status": EventStatus.CANCELLED.value},
+        new_value={"status": EventStatus.cancelled.value},
     )
 
     await db.commit()

@@ -271,17 +271,17 @@ async def manual_registration(
 
     # Map source string to enum
     source_map = {
-        "manual": RegistrationSource.MANUAL,
-        "walk_in": RegistrationSource.WALK_IN,
+        "manual": RegistrationSource.manual,
+        "walk_in": RegistrationSource.walk_in,
     }
-    source = source_map.get(body.source, RegistrationSource.MANUAL)
+    source = source_map.get(body.source, RegistrationSource.manual)
 
     # Map status string to enum
     status_map = {
-        "complete": RegistrationStatus.COMPLETE,
-        "pending_payment": RegistrationStatus.PENDING_PAYMENT,
+        "complete": RegistrationStatus.complete,
+        "pending_payment": RegistrationStatus.pending_payment,
     }
-    reg_status = status_map.get(body.status, RegistrationStatus.COMPLETE)
+    reg_status = status_map.get(body.status, RegistrationStatus.complete)
 
     reg = Registration(
         attendee_id=attendee.id,
@@ -293,7 +293,7 @@ async def manual_registration(
         intake_data=body.intake_data,
         source=source,
         notes=body.notes,
-        waiver_accepted_at=datetime.now(timezone.utc) if reg_status == RegistrationStatus.COMPLETE else None,
+        waiver_accepted_at=datetime.now(timezone.utc) if reg_status == RegistrationStatus.complete else None,
     )
     db.add(reg)
 

@@ -4,7 +4,7 @@ from app.config import settings
 from app.models.event import Event
 from app.models.registration import Registration
 
-stripe.api_key = settings.stripe_api_key
+stripe.api_key = settings.stripe_secret_key
 
 
 async def create_checkout_session(

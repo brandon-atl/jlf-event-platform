@@ -6,7 +6,6 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./jlf_erp.db"
 
     # Stripe
-    stripe_api_key: str = ""
     stripe_secret_key: str = ""
     stripe_publishable_key: str = ""
     stripe_webhook_secret: str = ""

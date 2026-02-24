@@ -49,7 +49,7 @@ async def list_portal_events(
             select(
                 func.count(Registration.id).label("total"),
                 func.count(Registration.id)
-                .filter(Registration.status == RegistrationStatus.COMPLETE)
+                .filter(Registration.status == RegistrationStatus.complete)
                 .label("complete"),
             ).where(Registration.event_id == event.id)
         )
@@ -100,7 +100,7 @@ async def get_portal_event(
         .options(selectinload(Registration.attendee))
         .where(
             Registration.event_id == event_id,
-            Registration.status == RegistrationStatus.COMPLETE,
+            Registration.status == RegistrationStatus.complete,
         )
         .order_by(Registration.created_at.asc())
     )

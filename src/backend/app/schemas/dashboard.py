@@ -1,6 +1,7 @@
 """Dashboard response schemas."""
 
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -34,7 +35,7 @@ class RevenueStats(BaseModel):
 
 
 class UpcomingEvent(BaseModel):
-    id: str
+    id: UUID
     name: str
     event_date: datetime
     event_type: str
@@ -56,7 +57,7 @@ class OverviewDashboard(BaseModel):
 
 
 class EventDashboard(BaseModel):
-    event_id: str
+    event_id: UUID
     event_name: str
     headcount: HeadcountByStatus
     accommodation: AccommodationBreakdown
