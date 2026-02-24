@@ -169,6 +169,7 @@ export default function EventsPage() {
                   <Input
                     name="capacity"
                     type="number"
+                    min={1}
                     placeholder="30"
                     className="mt-1 rounded-xl"
                   />

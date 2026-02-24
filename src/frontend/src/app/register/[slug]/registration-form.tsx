@@ -90,9 +90,18 @@ export function RegistrationForm({
   const onSubmit = async (data: RegistrationFormData) => {
     setSubmitError(null);
     try {
-      const donationCents = data.donation_amount
-        ? Math.round(parseFloat(data.donation_amount) * 100)
+      const rawDonation = data.donation_amount?.trim();
+      const donationCents = rawDonation
+        ? Math.round(parseFloat(rawDonation) * 100)
         : undefined;
+      // Validate donation minimum client-side
+      if (event.pricing_model === "donation" && donationCents !== undefined) {
+        const minCents = event.min_donation_cents || 100;
+        if (isNaN(donationCents) || donationCents < minCents) {
+          setSubmitError(`Minimum contribution is ${formatCents(minCents)}`);
+          return;
+        }
+      }
       const result = await register.submit(slug, {
         first_name: data.first_name,
         last_name: data.last_name,
@@ -320,8 +329,7 @@ export function RegistrationForm({
                 {event.pricing_model === "donation" && (
                   <div className="space-y-2">
                     <Label htmlFor="donation_amount">
-                      Your contribution (USD){" "}
-                      <span className="text-red-400">*</span>
+                      Your contribution (USD)
                     </Label>
                     <div className="relative">
                       <DollarSign

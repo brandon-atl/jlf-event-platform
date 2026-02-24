@@ -84,13 +84,13 @@ export default function SettingsPage({
       status: data.status,
       meeting_point_a: data.meeting_point_a || undefined,
       meeting_point_b: data.meeting_point_b || undefined,
-      reminder_delay_minutes: data.reminder_delay_minutes
-        ? parseInt(data.reminder_delay_minutes, 10)
+      reminder_delay_minutes: data.reminder_delay_minutes?.trim()
+        ? parseInt(data.reminder_delay_minutes.trim(), 10)
         : undefined,
-      auto_expire_hours: data.auto_expire_hours
-        ? parseInt(data.auto_expire_hours, 10)
+      auto_expire_hours: data.auto_expire_hours?.trim()
+        ? parseInt(data.auto_expire_hours.trim(), 10)
         : undefined,
-    } as Partial<EventCreate> & { reminder_delay_minutes?: number; auto_expire_hours?: number });
+    });
   };
 
   if (isLoading || !event) {

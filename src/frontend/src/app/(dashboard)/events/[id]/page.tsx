@@ -160,6 +160,10 @@ export default function AttendeesPage({
   const totalCount = data?.meta?.total ?? 0;
 
   const handleExport = async () => {
+    if (isDemoMode()) {
+      toast.info("CSV export is not available in demo mode");
+      return;
+    }
     const url = registrations.exportCsv(eventId);
     const token = localStorage.getItem("jlf_token");
     try {
@@ -175,7 +179,8 @@ export default function AttendeesPage({
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(blobUrl);
+      // Delay revocation so the browser finishes reading
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
       toast.success("CSV exported");
     } catch {
       toast.error("Failed to export CSV");

@@ -39,7 +39,12 @@ async def create_checkout_session(
         ]
     elif event.pricing_model == "donation":
         # Use custom amount from attendee, falling back to event minimum
-        amount = custom_amount_cents or event.min_donation_cents or 100
+        if custom_amount_cents is not None and custom_amount_cents > 0:
+            amount = custom_amount_cents
+        elif event.min_donation_cents is not None and event.min_donation_cents > 0:
+            amount = event.min_donation_cents
+        else:
+            amount = 100  # $1.00 absolute floor
         # Enforce minimum if set
         if event.min_donation_cents and amount < event.min_donation_cents:
             amount = event.min_donation_cents

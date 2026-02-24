@@ -352,6 +352,18 @@ async def send_registration_reminder(
             detail="Can only remind registrations with pending_payment status",
         )
 
+    # Rate-limit: don't send if reminded within the last 30 minutes
+    if reg.reminder_sent_at:
+        sent_at = reg.reminder_sent_at
+        if sent_at.tzinfo is None:
+            sent_at = sent_at.replace(tzinfo=timezone.utc)
+        minutes_since = (datetime.now(timezone.utc) - sent_at).total_seconds() / 60
+        if minutes_since < 30:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Reminder already sent {int(minutes_since)} minutes ago. Please wait.",
+            )
+
     success = await send_reminder_email(reg, reg.event)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to send reminder email")
@@ -365,6 +377,7 @@ async def send_registration_reminder(
         action="manual_reminder",
         actor=current_user.email,
     )
+    await db.flush()
 
     return {"detail": "Reminder sent", "attendee_email": reg.attendee.email}
 

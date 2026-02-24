@@ -36,7 +36,10 @@ function CountPill({
 }
 
 export function EventCard({ event, onClick, index = 0 }: EventCardProps) {
-  const isPast = new Date(event.event_end_date || event.event_date) < new Date();
+  // Compare date-only (end of event day) so events aren't dimmed on their actual day
+  const eventEnd = new Date(event.event_end_date || event.event_date);
+  eventEnd.setHours(23, 59, 59, 999);
+  const isPast = eventEnd < new Date();
   const displayStatus = isPast && event.status === "active" ? "past" : event.status;
   const statusColor = isPast && event.status === "active" ? "#9ca3af" : eventStatusColor(event.status);
 

@@ -21,10 +21,16 @@ async def lifespan(app: FastAPI):
     logger.info("Starting JLF ERP backend...")
     await init_db()
     logger.info("Database initialized.")
-    start_scheduler()
-    logger.info("Background scheduler started.")
+    try:
+        start_scheduler()
+        logger.info("Background scheduler started.")
+    except Exception:
+        logger.exception("Failed to start background scheduler — app will run without scheduled tasks")
     yield
-    stop_scheduler()
+    try:
+        stop_scheduler()
+    except Exception:
+        logger.exception("Error stopping scheduler")
     logger.info("Shutting down JLF ERP backend.")
 
 
