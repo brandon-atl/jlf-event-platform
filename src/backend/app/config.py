@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_url: str = "http://localhost:8000"
     api_url: str = "http://localhost:8000"
-    cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    cors_origins: str = "http://localhost:5173,http://localhost:3000,https://justloveforest-events.vercel.app"
 
     @property
     def cors_origin_list(self) -> list[str]:
