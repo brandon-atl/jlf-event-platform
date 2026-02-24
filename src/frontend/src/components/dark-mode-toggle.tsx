@@ -8,6 +8,7 @@ export function DarkModeToggle({ collapsed = false }: { collapsed?: boolean }) {
 
   return (
     <button
+      type="button"
       onClick={toggle}
       className={`
         relative ${collapsed ? "w-8 h-8" : "w-9 h-9"} rounded-xl

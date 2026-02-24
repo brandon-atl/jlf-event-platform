@@ -41,6 +41,7 @@ export const darkColors = {
 } as const;
 
 export const PIE_COLORS = [colors.canopy, colors.sun, colors.sky, colors.ember];
+export const DARK_PIE_COLORS = [darkColors.canopy, darkColors.sun, darkColors.sky, darkColors.ember];
 
 export const fonts = {
   sans: "'DM Sans', sans-serif",

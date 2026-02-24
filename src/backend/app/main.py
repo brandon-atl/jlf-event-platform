@@ -93,23 +93,27 @@ def create_app() -> FastAPI:
     # Request logging middleware
     @app.middleware("http")
     async def log_requests(request: Request, call_next):
-        import time
+        from time import perf_counter
 
-        start = time.time()
-        response = await call_next(request)
-        duration_ms = (time.time() - start) * 1000
-
-        # Log slow requests (>2s) and errors
-        if duration_ms > 2000 or response.status_code >= 500:
-            logger.warning(
-                "%s %s → %d (%.0fms)",
-                request.method,
-                request.url.path,
-                response.status_code,
-                duration_ms,
-            )
-
-        return response
+        start = perf_counter()
+        status_code = 500
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+            return response
+        except Exception:
+            raise
+        finally:
+            duration_ms = (perf_counter() - start) * 1000
+            # Log slow requests (>2s) and errors
+            if duration_ms > 2000 or status_code >= 500:
+                logger.warning(
+                    "%s %s → %d (%.0fms)",
+                    request.method,
+                    request.url.path,
+                    status_code,
+                    duration_ms,
+                )
 
     # Global exception handlers
     @app.exception_handler(ValueError)
