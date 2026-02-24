@@ -34,6 +34,23 @@ export function Providers({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("jlf_token");
     if (stored) {
       setToken(stored);
+      // Decode JWT payload to check role
+      try {
+        const payload = JSON.parse(atob(stored.split(".")[1]));
+        if (payload.role === "co_creator") {
+          // Co-creator tokens can't call /auth/me — use JWT payload directly
+          setUser({
+            id: payload.sub,
+            email: payload.email,
+            name: payload.email.split("@")[0],
+            role: "co_creator",
+          });
+          setIsLoading(false);
+          return;
+        }
+      } catch {
+        // Invalid token format — fall through to /auth/me
+      }
       authApi
         .me()
         .then((u) => setUser(u))
