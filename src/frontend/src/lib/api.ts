@@ -5,7 +5,14 @@
  * components expect — keeping pages agnostic of backend schema evolution.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+// Ensure the API URL has a protocol prefix. Vercel env vars sometimes omit it.
+function resolveApiBase(): string {
+  const raw = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  return `https://${raw}`;
+}
+
+const API_BASE = resolveApiBase();
 
 class ApiError extends Error {
   status: number;

@@ -41,11 +41,10 @@ export default async function RegisterPage({ params }: Props) {
 
   try {
     event = await register.eventInfo(slug);
-  } catch (e) {
+  } catch {
+    // Don't leak internal API URLs or error details to public users
     error =
-      e instanceof Error
-        ? e.message
-        : "This event could not be found. It may have ended or the link may be incorrect.";
+      "This event could not be found. It may have ended or the link may be incorrect.";
   }
 
   if (error || !event) {
