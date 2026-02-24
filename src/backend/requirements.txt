@@ -25,6 +25,9 @@ twilio>=9.0.0
 # Settings
 pydantic-settings>=2.4.0
 
+# Validation
+email-validator>=2.1.0
+
 # Scheduling
 apscheduler>=3.10.4
 
