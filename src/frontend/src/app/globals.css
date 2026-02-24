@@ -83,46 +83,46 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-/* ─── JLF Dark Mode — Midnight Forest ─── */
+/* ─── JLF Dark Mode — Midnight Forest (Vibrant) ─── */
 .dark {
-  --background: oklch(0.145 0.015 250);
-  --foreground: oklch(0.92 0 0);
-  --card: oklch(0.185 0.015 250);
-  --card-foreground: oklch(0.92 0 0);
-  --popover: oklch(0.185 0.015 250);
-  --popover-foreground: oklch(0.92 0 0);
-  --primary: oklch(0.92 0 0);
-  --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.22 0.015 250);
-  --secondary-foreground: oklch(0.88 0 0);
-  --muted: oklch(0.22 0.015 250);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.22 0.015 250);
-  --accent-foreground: oklch(0.88 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.28 0.015 250);
-  --input: oklch(0.28 0.015 250);
-  --ring: oklch(0.45 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.165 0.015 250);
-  --sidebar-foreground: oklch(0.88 0 0);
-  --sidebar-primary: oklch(0.88 0 0);
-  --sidebar-primary-foreground: oklch(0.165 0 0);
-  --sidebar-accent: oklch(0.22 0.015 250);
-  --sidebar-accent-foreground: oklch(0.88 0 0);
-  --sidebar-border: oklch(0.26 0.015 250);
-  --sidebar-ring: oklch(0.45 0 0);
+  --background: #0c1117;
+  --foreground: #f0f4f8;
+  --card: #151b23;
+  --card-foreground: #f0f4f8;
+  --popover: #151b23;
+  --popover-foreground: #f0f4f8;
+  --primary: #34d399;
+  --primary-foreground: #0c1117;
+  --secondary: #1c2432;
+  --secondary-foreground: #e2e8f0;
+  --muted: #1c2432;
+  --muted-foreground: #94a3b8;
+  --accent: #1c2432;
+  --accent-foreground: #e2e8f0;
+  --destructive: #f87171;
+  --border: #2a3546;
+  --input: #2a3546;
+  --ring: #34d399;
+  --chart-1: #34d399;
+  --chart-2: #fbbf24;
+  --chart-3: #60a5fa;
+  --chart-4: #f87171;
+  --chart-5: #c084fc;
+  --sidebar: #0f1319;
+  --sidebar-foreground: #e2e8f0;
+  --sidebar-primary: #34d399;
+  --sidebar-primary-foreground: #0c1117;
+  --sidebar-accent: #1c2432;
+  --sidebar-accent-foreground: #e2e8f0;
+  --sidebar-border: #2a3546;
+  --sidebar-ring: #34d399;
 
   color-scheme: dark;
 }
 
 /* JLF dark mode overrides for inline-styled elements */
 .dark body {
-  background: #0f1720 !important;
+  background: #0c1117 !important;
 }
 
 @layer base {
@@ -139,58 +139,114 @@
   }
 }
 
-/* ─── JLF Dark Mode — Card & surface overrides ───
- * Pragmatic approach: override Tailwind utility classes under .dark
- * to avoid touching every component file. Will migrate to semantic
- * CSS variables (dark: variants) in a future cleanup pass.
+/* ─── JLF Dark Mode — Surface & text overrides ───
+ * Vibrant dark palette with proper contrast hierarchy.
+ * 3 surface levels: page (#0c1117) → card (#151b23) → elevated (#1c2432)
+ * 3 text levels: primary (#f0f4f8) → secondary (#94a3b8) → muted (#64748b)
  */
 .dark .bg-white {
-  background-color: #161f2a !important;
+  background-color: #151b23 !important;
 }
 
 .dark .border-gray-100,
 .dark .border-gray-50 {
-  border-color: #243044 !important;
+  border-color: #2a3546 !important;
 }
 
 .dark .bg-gray-50 {
-  background-color: #1c2736 !important;
-}
-
-.dark .text-gray-400 {
-  color: #667788 !important;
-}
-
-.dark .text-gray-500 {
-  color: #778899 !important;
-}
-
-.dark .text-gray-600 {
-  color: #8899aa !important;
-}
-
-.dark .text-gray-700 {
-  color: #99aabb !important;
-}
-
-.dark .text-gray-800 {
-  color: #c8d4e0 !important;
-}
-
-.dark .text-gray-900 {
-  color: #e0e8f0 !important;
+  background-color: #1c2432 !important;
 }
 
 .dark .bg-gray-100 {
-  background-color: #1c2736 !important;
+  background-color: #1c2432 !important;
+}
+
+.dark .text-gray-300 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-gray-400 {
+  color: #94a3b8 !important;
+}
+
+.dark .text-gray-500 {
+  color: #a1b0c2 !important;
+}
+
+.dark .text-gray-600 {
+  color: #b4c1d0 !important;
+}
+
+.dark .text-gray-700 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-gray-800 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-gray-900 {
+  color: #f0f4f8 !important;
 }
 
 .dark .hover\:bg-gray-50:hover {
-  background-color: #1c2736 !important;
+  background-color: #222d3d !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #222d3d !important;
 }
 
 .dark .shadow-sm {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(42, 53, 70, 0.5) !important;
+}
+
+/* Dark mode input styling */
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: #1c2432 !important;
+  border-color: #2a3546 !important;
+  color: #f0f4f8 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: #34d399 !important;
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.15) !important;
+}
+
+/* Dark mode dialog/modal — scoped to Radix dialog content only */
+.dark [role="dialog"] {
+  background-color: #151b23 !important;
+  border-color: #2a3546 !important;
+}
+
+/* Dark mode table rows — scoped to our attendee/data tables */
+.dark .hover\:bg-gray-50\/30:hover,
+.dark table.jlf-table tr:hover,
+.dark [data-jlf-table] tr:hover {
+  background-color: rgba(34, 45, 61, 0.5) !important;
+}
+
+/* Scrollbar dark mode */
+.dark ::-webkit-scrollbar-track {
+  background: #0c1117;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #2a3546;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #3a4b60;
 }
 
 /* JLF Custom Animations */

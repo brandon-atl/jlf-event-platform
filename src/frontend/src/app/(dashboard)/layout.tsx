@@ -49,6 +49,7 @@ export default function DashboardLayout({
   const textMain = isDark ? darkColors.textPrimary : colors.forest;
   const textSub = isDark ? darkColors.textSecondary : "#6b7280";
   const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
+  const hoverBg = isDark ? darkColors.surfaceHover : "#f9fafb";
 
   // Redirect to login if not authenticated, or portal if co-creator
   React.useEffect(() => {
@@ -127,7 +128,7 @@ export default function DashboardLayout({
                 Just Love Forest
               </p>
               <p style={{ color: textMuted }} className="text-[10px] uppercase tracking-widest">
-                ERP System
+                Event Studio
               </p>
             </Link>
           )}
@@ -170,9 +171,7 @@ export default function DashboardLayout({
                 }
                 onMouseEnter={(e) => {
                   if (!active) {
-                    e.currentTarget.style.background = isDark
-                      ? darkColors.surfaceHover
-                      : "#f9fafb";
+                    e.currentTarget.style.background = hoverBg;
                     e.currentTarget.style.color = textMain;
                   }
                 }}
@@ -202,7 +201,7 @@ export default function DashboardLayout({
             color: textMuted,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = isDark ? darkColors.surfaceHover : "#f9fafb";
+            e.currentTarget.style.background = hoverBg;
             e.currentTarget.style.color = textSub;
           }}
           onMouseLeave={(e) => {
@@ -251,7 +250,7 @@ export default function DashboardLayout({
             } px-3 py-2.5 rounded-xl text-sm transition`}
             style={{ color: textMuted }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = isDark ? darkColors.surfaceHover : "#f9fafb";
+              e.currentTarget.style.background = hoverBg;
               e.currentTarget.style.color = textSub;
             }}
             onMouseLeave={(e) => {
