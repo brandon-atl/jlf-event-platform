@@ -49,7 +49,7 @@ export default function DashboardLayout({
   const textMain = isDark ? darkColors.textPrimary : colors.forest;
   const textSub = isDark ? darkColors.textSecondary : "#6b7280";
   const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
-  const hoverBg = hoverBg;
+  const hoverBg = isDark ? darkColors.surfaceHover : "#f9fafb";
 
   // Redirect to login if not authenticated, or portal if co-creator
   React.useEffect(() => {
