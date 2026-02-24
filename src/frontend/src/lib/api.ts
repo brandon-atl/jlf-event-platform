@@ -7,8 +7,9 @@
 
 // Ensure the API URL has a protocol prefix. Vercel env vars sometimes omit it.
 function resolveApiBase(): string {
-  const raw = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+  const raw = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").trim();
   if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  if (raw.startsWith("/")) return raw; // relative path, use as-is
   return `https://${raw}`;
 }
 

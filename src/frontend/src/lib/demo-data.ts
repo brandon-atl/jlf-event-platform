@@ -83,10 +83,13 @@ export const DEMO_EVENTS = [
   },
 ];
 
+// Single source of truth for demo attendee cap — keep in sync with NAMES array
+const DEMO_MAX_ATTENDEES = 15;
+
 export const DEMO_DASHBOARD = (eventId: string) => {
   const ev = DEMO_EVENTS.find(e => e.id === eventId) || DEMO_EVENTS[1];
-  // Cap to match the demo registrations table (max NAMES.length entries)
-  const cappedTotal = Math.min(ev.total_registrations, 15);
+  // Cap to match the demo registrations table
+  const cappedTotal = Math.min(ev.total_registrations, DEMO_MAX_ATTENDEES);
   const cappedComplete = Math.min(ev.complete_count, cappedTotal);
   const cappedPending = Math.min(ev.pending_count, cappedTotal - cappedComplete);
   return {
@@ -113,8 +116,13 @@ export const DEMO_DASHBOARD = (eventId: string) => {
       "gluten-free": Math.floor(cappedComplete * 0.1),
       none: cappedComplete - Math.floor(cappedComplete * 0.3) - Math.floor(cappedComplete * 0.2) - Math.floor(cappedComplete * 0.1),
     },
-    total_revenue_cents: ev.total_revenue_cents,
-    average_payment_cents: cappedComplete > 0 ? Math.round(ev.total_revenue_cents / cappedComplete) : 0,
+    // Scale revenue proportionally to capped attendees to keep averages consistent
+    total_revenue_cents: ev.complete_count > 0
+      ? Math.round(ev.total_revenue_cents * (cappedComplete / ev.complete_count))
+      : 0,
+    average_payment_cents: cappedComplete > 0 && ev.complete_count > 0
+      ? Math.round(ev.total_revenue_cents / ev.complete_count)
+      : 0,
     spots_remaining: 30 - cappedTotal,
   };
 };
@@ -130,9 +138,7 @@ const STATUSES = ["complete", "complete", "complete", "complete", "pending_payme
 
 export const DEMO_REGISTRATIONS = (eventId: string) => {
   const ev = DEMO_EVENTS.find(e => e.id === eventId) || DEMO_EVENTS[1];
-  // Cap demo attendees to the NAMES array size; dashboard stats may show higher
-  // totals, which is acceptable for demo mode (real mode uses backend data).
-  const count = Math.min(ev.total_registrations, NAMES.length);
+  const count = Math.min(ev.total_registrations, DEMO_MAX_ATTENDEES);
   return {
     data: Array.from({ length: count }, (_, i) => ({
       id: `r${eventId}-${i}`,
