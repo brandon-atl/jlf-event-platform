@@ -102,11 +102,20 @@ async def send_escalation_reminders() -> int:
                 )
                 continue
 
-            # Escalation delay = half the auto-expire window
-            escalation_delay = timedelta(hours=reg.event.auto_expire_hours / 2)
+            # Escalation delay = half the auto-expire window, but never after expiry
+            expire_hours = reg.event.auto_expire_hours
+            escalation_delay = timedelta(hours=expire_hours / 2)
             reminder_at = reg.reminder_sent_at
             if reminder_at.tzinfo is None:
                 reminder_at = reminder_at.replace(tzinfo=timezone.utc)
+
+            # Don't escalate after the registration would have expired
+            created = reg.created_at
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=timezone.utc)
+            expiry_time = created + timedelta(hours=expire_hours)
+            if now >= expiry_time:
+                continue
 
             if now < reminder_at + escalation_delay:
                 continue
