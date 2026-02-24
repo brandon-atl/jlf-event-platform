@@ -273,7 +273,7 @@ export default function CoCreatorsPage() {
               </div>
 
               {/* Assigned events */}
-              <div className="flex items-center gap-2 flex-wrap mt-3 pl-15">
+              <div className="flex items-center gap-2 flex-wrap mt-3 pl-16">
                 {c.events.length > 0 ? (
                   c.events.map((evt) => (
                     <span

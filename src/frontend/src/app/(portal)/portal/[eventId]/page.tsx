@@ -38,6 +38,11 @@ export default function PortalEventDetailPage({
 
   // Compute summary stats
   const attendees = event.attendees ?? [];
+  // Show the payment column when any attendee has a non-null payment_amount_cents.
+  // This is effectively permission-based: the backend only populates
+  // payment_amount_cents when the co-creator's `can_see_amounts` flag is true,
+  // so the field is null for all attendees when the co-creator lacks permission.
+  const showPayment = attendees.some((a) => a.payment_amount_cents != null);
   const accommodationCounts: Record<string, number> = {};
   const dietaryCounts: Record<string, number> = {};
 
@@ -191,7 +196,7 @@ export default function PortalEventDetailPage({
                 <th className="px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
                   Dietary
                 </th>
-                {attendees.some((a) => a.payment_amount_cents != null) && (
+                {showPayment && (
                   <th className="px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
                     Payment
                   </th>
@@ -199,8 +204,8 @@ export default function PortalEventDetailPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {attendees.map((att, i) => (
-                <tr key={i} className="hover:bg-gray-50/30 transition">
+              {attendees.map((att) => (
+                <tr key={att.email} className="hover:bg-gray-50/30 transition">
                   <td className="px-5 py-3 font-medium text-gray-800">
                     {att.first_name} {att.last_name}
                   </td>
@@ -214,7 +219,7 @@ export default function PortalEventDetailPage({
                   <td className="px-5 py-3 text-gray-500">
                     {att.dietary_restrictions || "-"}
                   </td>
-                  {attendees.some((a) => a.payment_amount_cents != null) && (
+                  {showPayment && (
                     <td className="px-5 py-3 text-gray-500">
                       {att.payment_amount_cents != null ? (
                         <span className="flex items-center gap-1">
@@ -231,7 +236,7 @@ export default function PortalEventDetailPage({
               {attendees.length === 0 && (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={showPayment ? 6 : 5}
                     className="px-5 py-8 text-center text-gray-400"
                   >
                     No confirmed attendees yet

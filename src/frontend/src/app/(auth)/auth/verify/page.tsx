@@ -20,6 +20,8 @@ function VerifyContent() {
       return;
     }
 
+    let redirectTimer: ReturnType<typeof setTimeout>;
+
     auth
       .verifyMagicLink(token)
       .then((res) => {
@@ -27,7 +29,7 @@ function VerifyContent() {
         localStorage.setItem("jlf_token", res.access_token);
         setStatus("success");
         // Redirect to portal after brief success message
-        setTimeout(() => {
+        redirectTimer = setTimeout(() => {
           // Force full page reload so Providers picks up new token
           window.location.href = "/portal";
         }, 1000);
@@ -38,6 +40,8 @@ function VerifyContent() {
           err instanceof Error ? err.message : "Invalid or expired link"
         );
       });
+
+    return () => clearTimeout(redirectTimer);
   }, [token, router]);
 
   return (

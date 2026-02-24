@@ -91,6 +91,17 @@ async def send_escalation_reminders() -> int:
             if not reg.event or not reg.attendee:
                 continue
 
+            # Guard: skip if auto_expire_hours is missing or too small
+            if not reg.event.auto_expire_hours or reg.event.auto_expire_hours < 1:
+                logger.warning(
+                    "Skipping escalation for registration %s: "
+                    "event %s has auto_expire_hours=%s",
+                    reg.id,
+                    reg.event.name,
+                    reg.event.auto_expire_hours,
+                )
+                continue
+
             # Escalation delay = half the auto-expire window
             escalation_delay = timedelta(hours=reg.event.auto_expire_hours / 2)
             reminder_at = reg.reminder_sent_at
@@ -113,8 +124,8 @@ async def send_escalation_reminders() -> int:
                         entity_id=reg.id,
                         action="escalation_sent",
                         actor="system",
-                        old_value={"reminder_sent_at": str(reg.reminder_sent_at)},
-                        new_value={"escalation_sent_at": str(now)},
+                        old_value={"reminder_sent_at": reg.reminder_sent_at.isoformat()},
+                        new_value={"escalation_sent_at": now.isoformat()},
                     )
                 )
 

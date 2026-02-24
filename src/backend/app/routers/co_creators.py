@@ -1,6 +1,7 @@
 """Admin co-creator CRUD router — create, list, delete, assign events, invite."""
 
 import logging
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -9,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..database import get_db
-from ..models import CoCreator, Event, EventCoCreator
+from ..models import AuditLog, CoCreator, Event, EventCoCreator
 from ..schemas.co_creator import (
     CoCreatorCreate,
     CoCreatorEventAssignment,
@@ -39,7 +40,7 @@ def _build_response(co_creator: CoCreator, event_briefs: list[EventBrief]) -> Co
     )
 
 
-async def _get_event_briefs(co_creator_id, db: AsyncSession) -> list[EventBrief]:
+async def _get_event_briefs(co_creator_id: uuid.UUID, db: AsyncSession) -> list[EventBrief]:
     result = await db.execute(
         select(EventCoCreator, Event.name)
         .join(Event, Event.id == EventCoCreator.event_id)
@@ -76,6 +77,15 @@ async def create_co_creator(
     db.add(co_creator)
     await db.flush()
     await db.refresh(co_creator)
+
+    db.add(AuditLog(
+        entity_type="co_creator",
+        entity_id=str(co_creator.id),
+        action="created",
+        actor=_operator.email,
+        new_value={"name": data.name, "email": data.email},
+    ))
+
     return _build_response(co_creator, [])
 
 
@@ -90,11 +100,26 @@ async def list_co_creators(
     )
     co_creators = result.scalars().all()
 
-    responses = []
-    for cc in co_creators:
-        briefs = await _get_event_briefs(cc.id, db)
-        responses.append(_build_response(cc, briefs))
-    return responses
+    # Fetch all event assignments in a single query to avoid N+1
+    all_links = await db.execute(
+        select(EventCoCreator, Event.name)
+        .join(Event, Event.id == EventCoCreator.event_id)
+    )
+    briefs_by_cc: dict[str, list[EventBrief]] = {}
+    for row in all_links.all():
+        cc_id = str(row.EventCoCreator.co_creator_id)
+        briefs_by_cc.setdefault(cc_id, []).append(
+            EventBrief(
+                event_id=row.EventCoCreator.event_id,
+                event_name=row.name,
+                can_see_amounts=row.EventCoCreator.can_see_amounts,
+            )
+        )
+
+    return [
+        _build_response(cc, briefs_by_cc.get(str(cc.id), []))
+        for cc in co_creators
+    ]
 
 
 @router.get("/{co_creator_id}", response_model=CoCreatorResponse)
@@ -129,15 +154,21 @@ async def delete_co_creator(
         raise HTTPException(status_code=404, detail="Co-creator not found")
 
     # Delete event assignments first
-    await db.execute(
-        select(EventCoCreator).where(EventCoCreator.co_creator_id == co_creator_id)
-    )
     from sqlalchemy import delete as sa_delete
 
     await db.execute(
         sa_delete(EventCoCreator).where(EventCoCreator.co_creator_id == co_creator_id)
     )
     await db.delete(cc)
+
+    db.add(AuditLog(
+        entity_type="co_creator",
+        entity_id=str(co_creator_id),
+        action="deleted",
+        actor=_operator.email,
+        old_value={"name": cc.name, "email": cc.email},
+    ))
+
     await db.flush()
 
 
