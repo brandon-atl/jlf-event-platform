@@ -128,7 +128,7 @@ export default function DashboardLayout({
                 Just Love Forest
               </p>
               <p style={{ color: textMuted }} className="text-[10px] uppercase tracking-widest">
-                Event Studio
+                Event Management
               </p>
             </Link>
           )}

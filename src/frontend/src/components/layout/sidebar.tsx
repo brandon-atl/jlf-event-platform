@@ -101,7 +101,7 @@ export function Sidebar({
                 Just Love Forest
               </p>
               <p className="text-[10px] text-gray-400 uppercase tracking-widest">
-                Event Studio
+                Event Management
               </p>
             </button>
           )}

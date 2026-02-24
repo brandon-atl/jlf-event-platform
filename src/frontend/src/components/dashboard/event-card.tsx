@@ -1,7 +1,8 @@
 "use client";
 
 import { Calendar, Users, CreditCard, Mountain, ChevronRight } from "lucide-react";
-import { colors } from "@/lib/theme";
+import { colors, darkColors } from "@/lib/theme";
+import { useDarkMode } from "@/hooks/use-dark-mode";
 import { formatDateShort, formatCents, eventStatusColor } from "@/lib/format";
 import type { EventResponse } from "@/lib/api";
 
@@ -36,44 +37,47 @@ function CountPill({
 }
 
 export function EventCard({ event, onClick, index = 0 }: EventCardProps) {
+  const { isDark } = useDarkMode();
+  const c = isDark ? darkColors : colors;
+
   // Compare date-only (end of event day) so events aren't dimmed on their actual day
   const eventEnd = new Date(event.event_end_date || event.event_date);
   eventEnd.setHours(23, 59, 59, 999);
   const isPast = eventEnd < new Date();
   const displayStatus = isPast && event.status === "active" ? "past" : event.status;
-  const statusColor = isPast && event.status === "active" ? "#9ca3af" : eventStatusColor(event.status);
+  const statusColor = isPast ? (isDark ? "#475569" : "#9ca3af") : event.status === "active" ? c.canopy : eventStatusColor(event.status);
 
   return (
     <div
       onClick={onClick}
-      className={`bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-5 cursor-pointer hover:translate-y-[-2px] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,.08)] active:translate-y-0 transition-all duration-250 group shadow-sm animate-in slide-in-from-bottom-2 fade-in ${isPast ? "opacity-70" : ""}`}
+      className={`bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-5 cursor-pointer hover:translate-y-[-2px] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,.08)] active:translate-y-0 transition-all duration-250 group shadow-sm animate-in slide-in-from-bottom-2 fade-in ${isPast ? "opacity-60" : ""}`}
       style={{ animationDelay: `${index * 60}ms`, animationFillMode: "both" }}
     >
       <div
         className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-        style={{ background: `${colors.canopy}10` }}
+        style={{ background: isDark ? `${c.canopy}15` : `${colors.canopy}10` }}
       >
-        <Mountain size={24} style={{ color: isPast ? "#9ca3af" : colors.canopy }} />
+        <Mountain size={24} style={{ color: isPast ? (isDark ? "#475569" : "#9ca3af") : c.canopy }} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2.5 mb-1 flex-wrap">
           <h3
             className="text-base font-bold truncate group-hover:opacity-80 transition"
-            style={{ color: isPast ? "#6b7280" : colors.forest }}
+            style={{ color: isPast ? (isDark ? "#64748b" : "#6b7280") : c.forest }}
           >
             {event.name}
           </h3>
           <span
-            className="w-2 h-2 rounded-full shrink-0"
-            style={{ background: statusColor }}
+            className="w-2.5 h-2.5 rounded-full shrink-0"
+            style={{ background: statusColor, boxShadow: !isPast && event.status === "active" ? `0 0 6px ${statusColor}80` : undefined }}
           />
-          <span className="text-xs text-gray-400 capitalize">
+          <span className="text-xs text-gray-400 capitalize font-medium">
             {displayStatus}
           </span>
           {event.event_type && (
             <span
               className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-              style={{ background: `${colors.canopy}12`, color: colors.canopy }}
+              style={{ background: `${c.canopy}18`, color: c.canopy }}
             >
               {event.event_type}
             </span>

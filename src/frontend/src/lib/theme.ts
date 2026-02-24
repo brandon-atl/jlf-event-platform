@@ -19,24 +19,24 @@ export const colors = {
 
 /** Dark mode palette — Midnight Forest (vibrant, high-contrast) */
 export const darkColors = {
-  forest: "#e4f0e8",       // Near-white with green tint — primary headings
+  forest: "#e8f5ee",       // Near-white with green tint — primary headings
   canopy: "#34d399",       // Vibrant emerald — accent color, buttons, active states
   moss: "#6ee7b7",         // Bright mint — links, interactive elements
   sage: "#a7f3d0",         // Light green — hover accents
-  meadow: "#1a3a2a",       // Deep forest — subtle backgrounds
-  cream: "#0c1117",        // Near-black — page background
+  meadow: "#0d2818",       // Deep forest — subtle backgrounds
+  cream: "#080c10",        // True near-black — page background
   bark: "#d4a574",         // Warm amber — avatar, warm accents
   earth: "#e8c99a",        // Bright sand
   sun: "#fbbf24",          // Vivid gold — warnings, pending badges
   ember: "#f87171",        // Bright coral — errors, alerts
   sky: "#60a5fa",          // Bright blue — info
   berry: "#c084fc",        // Vivid purple — special tags
-  // Dark-specific surfaces
-  surface: "#151b23",      // Card background — distinct from page bg
-  surfaceElevated: "#1c2432", // Elevated cards, modals
-  surfaceHover: "#222d3d", // Hover states
-  surfaceBorder: "#2a3546", // Visible borders
-  textPrimary: "#f0f4f8",  // Bright white — primary text (95% white)
+  // Dark-specific surfaces — wider contrast gap between levels
+  surface: "#111820",      // Card background — noticeably distinct from page bg
+  surfaceElevated: "#182230", // Elevated cards, modals — clearly raised
+  surfaceHover: "#1e2a3a", // Hover states
+  surfaceBorder: "#263348", // Visible borders with slight blue tint
+  textPrimary: "#f1f5f9",  // Bright white — primary text (96% white)
   textSecondary: "#94a3b8", // Clear gray — secondary text (slate-400)
   textMuted: "#64748b",    // Mid gray — tertiary text (slate-500)
 } as const;
