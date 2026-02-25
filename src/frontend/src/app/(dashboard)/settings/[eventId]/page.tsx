@@ -373,7 +373,14 @@ export default function SettingsPage({
 
     {/* C6: Registration Form Preview Modal */}
     {previewOpen && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setPreviewOpen(false)}>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Registration Form Preview"
+        onClick={() => setPreviewOpen(false)}
+        onKeyDown={(e) => { if (e.key === "Escape") setPreviewOpen(false); }}
+      >
         <div className={`absolute inset-0 ${isDark ? "bg-black/60" : "bg-black/30"}`} />
         <div
           className="relative rounded-2xl border shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-8"
@@ -384,6 +391,7 @@ export default function SettingsPage({
             onClick={() => setPreviewOpen(false)}
             className="absolute top-4 right-4 p-2 rounded-lg transition"
             style={{ color: textMuted }}
+            aria-label="Close preview"
           >
             <X size={18} />
           </button>

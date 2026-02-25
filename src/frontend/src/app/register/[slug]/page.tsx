@@ -83,9 +83,11 @@ export default async function RegisterPage({ params }: Props) {
     );
   }
 
-  // Check if event is in the past
+  // Check if event is in the past (use end-of-day to avoid premature closure on event day)
   const endDate = event.event_end_date || event.event_date;
-  const eventOver = new Date(endDate) < new Date();
+  const endOfDay = new Date(endDate);
+  endOfDay.setHours(23, 59, 59, 999);
+  const eventOver = endOfDay < new Date();
   if (eventOver) {
     return <RegistrationClosed eventName={event.name} />;
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Bell, Mail, Clock, AlertTriangle, Save, Eye } from "lucide-react";
 import { toast } from "sonner";
@@ -131,14 +131,26 @@ export default function NotificationsPage() {
     enabled: !!selectedEventId,
   });
 
-  // Load templates when event changes
+  // Load templates from event data when it changes
+  React.useEffect(() => {
+    if (selectedEvent) {
+      const stored = (selectedEvent as unknown as Record<string, unknown>).notification_templates as Partial<Templates> | null;
+      if (stored && typeof stored === "object") {
+        setTemplates({
+          confirmation: stored.confirmation ?? DEFAULT_TEMPLATES.confirmation,
+          reminder: stored.reminder ?? DEFAULT_TEMPLATES.reminder,
+          expiry: stored.expiry ?? DEFAULT_TEMPLATES.expiry,
+        });
+      } else {
+        setTemplates(DEFAULT_TEMPLATES);
+      }
+      setHasChanges(false);
+    }
+  }, [selectedEvent]);
+
   const loadTemplatesForEvent = (eventId: string) => {
     setSelectedEventId(eventId);
     setHasChanges(false);
-    if (isDemoMode()) {
-      // Demo mode: use defaults (no stored templates in demo data)
-      setTemplates(DEFAULT_TEMPLATES);
-    }
   };
 
   // Save mutation
@@ -173,7 +185,8 @@ export default function NotificationsPage() {
   const renderPreview = (text: string) => {
     let rendered = text;
     for (const [tag, value] of Object.entries(SAMPLE_DATA)) {
-      rendered = rendered.replaceAll(tag, value);
+      // Split/join avoids regex and is safe for all placeholder strings
+      rendered = rendered.split(tag).join(value);
     }
     return rendered;
   };

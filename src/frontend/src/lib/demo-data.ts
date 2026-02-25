@@ -145,7 +145,7 @@ export const DEMO_REGISTRATIONS = (eventId: string) => {
       dietary_restrictions: DIET[i % DIET.length] || undefined,
       source: i < count - 2 ? "registration_form" : "manual",
       notes: i === 5 ? "Amount exceeds event average — possible group payment" : undefined,
-      created_at: "2026-02-15T10:00:00Z",
+      created_at: new Date(Date.now() - (count - i) * 2 * 86400000).toISOString(),
       updated_at: "2026-02-23T10:00:00Z",
       attendee_name: NAMES[i],
       attendee_email: NAMES[i].toLowerCase().replace(" ", ".") + "@email.com",

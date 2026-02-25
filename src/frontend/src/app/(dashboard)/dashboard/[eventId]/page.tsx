@@ -397,15 +397,18 @@ export default function EventDashboardPage({
           </h3>
           {timelineData.length > 0 ? (
             <div className="space-y-3">
-              {timelineData.map((t) => (
-                <div key={t.week}>
-                  <div className="flex items-center justify-between text-sm mb-1">
-                    <span style={{ color: textSub }}>Week of {t.week}</span>
-                    <span className="font-bold" style={{ color: textMain }}>{t.count}</span>
+              {(() => {
+                const maxCount = Math.max(...timelineData.map(d => d.count));
+                return timelineData.map((t) => (
+                  <div key={t.week}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span style={{ color: textSub }}>Week of {t.week}</span>
+                      <span className="font-bold" style={{ color: textMain }}>{t.count}</span>
+                    </div>
+                    <ProgressBar value={t.count} max={maxCount} color={isDark ? darkColors.canopy : colors.canopy} isDark={isDark} />
                   </div>
-                  <ProgressBar value={t.count} max={Math.max(...timelineData.map(d => d.count))} color={isDark ? darkColors.canopy : colors.canopy} isDark={isDark} />
-                </div>
-              ))}
+                ));
+              })()}
             </div>
           ) : (
             <div className="flex items-center justify-center py-8" style={{ color: textMuted }}>

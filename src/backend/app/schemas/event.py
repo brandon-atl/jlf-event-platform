@@ -38,7 +38,10 @@ class EventResponse(BaseModel):
     pricing_model: str
     fixed_price_cents: int | None = None
     capacity: int | None = None
+    meeting_point_a: str | None = None
+    meeting_point_b: str | None = None
     virtual_meeting_url: str | None = None
+    notification_templates: dict | None = None
     status: str
     created_at: datetime
 

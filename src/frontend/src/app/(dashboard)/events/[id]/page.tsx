@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useCallback } from "react";
+import { use, useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
@@ -252,27 +252,29 @@ export default function AttendeesPage({
   const isAllSelected = attendees.length > 0 && selected.size === attendees.length;
   const hasSelection = selected.size > 0;
 
+  // Precompute lookup map for O(1) attendee access in bulk ops
+  const attendeeById = useMemo(() => new Map(attendees.map(a => [a.id, a])), [attendees]);
+
   // Bulk actions
   const handleBulkMarkComplete = useCallback(async () => {
+    if (isDemoMode()) {
+      toast.info("Bulk actions are not available in demo mode");
+      return;
+    }
     const ids = Array.from(selected);
     const eligible = ids.filter((id) => {
-      const a = attendees.find((att) => att.id === id);
+      const a = attendeeById.get(id);
       return a && a.status !== "complete";
     });
     if (eligible.length === 0) {
       toast.info("All selected attendees are already complete");
       return;
     }
-    let successCount = 0;
-    let failCount = 0;
-    for (const id of eligible) {
-      try {
-        await registrations.update(id, { status: "complete" });
-        successCount++;
-      } catch {
-        failCount++;
-      }
-    }
+    const results = await Promise.allSettled(
+      eligible.map((id) => registrations.update(id, { status: "complete" }))
+    );
+    const successCount = results.filter(r => r.status === "fulfilled").length;
+    const failCount = results.filter(r => r.status === "rejected").length;
     queryClient.invalidateQueries({ queryKey: ["registrations", eventId] });
     setSelected(new Set());
     if (failCount > 0) {
@@ -280,35 +282,34 @@ export default function AttendeesPage({
     } else {
       toast.success(`${successCount} registration${successCount !== 1 ? "s" : ""} marked complete`);
     }
-  }, [selected, attendees, queryClient, eventId]);
+  }, [selected, attendeeById, queryClient, eventId]);
 
   const handleBulkRemind = useCallback(async () => {
+    if (isDemoMode()) {
+      toast.info("Reminders are not available in demo mode");
+      return;
+    }
     const ids = Array.from(selected);
     const eligible = ids.filter((id) => {
-      const a = attendees.find((att) => att.id === id);
+      const a = attendeeById.get(id);
       return a && a.status === "pending_payment";
     });
     if (eligible.length === 0) {
       toast.info("No selected attendees are pending payment");
       return;
     }
-    let successCount = 0;
-    let failCount = 0;
-    for (const id of eligible) {
-      try {
-        await registrations.remind(id);
-        successCount++;
-      } catch {
-        failCount++;
-      }
-    }
+    const results = await Promise.allSettled(
+      eligible.map((id) => registrations.remind(id))
+    );
+    const successCount = results.filter(r => r.status === "fulfilled").length;
+    const failCount = results.filter(r => r.status === "rejected").length;
     setSelected(new Set());
     if (failCount > 0) {
       toast.warning(`${successCount} reminder${successCount !== 1 ? "s" : ""} sent, ${failCount} failed`);
     } else {
       toast.success(`${successCount} reminder${successCount !== 1 ? "s" : ""} sent`);
     }
-  }, [selected, attendees]);
+  }, [selected, attendeeById]);
 
   const handleExport = async () => {
     if (isDemoMode()) {

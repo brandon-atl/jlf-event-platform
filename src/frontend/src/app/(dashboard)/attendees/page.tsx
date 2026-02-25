@@ -58,7 +58,7 @@ export default function AttendeesDirectoryPage() {
 
   const allEvents = eventsList?.data ?? [];
 
-  // Aggregate attendees across all events
+  // Aggregate attendees across all events (keyed by email for uniqueness)
   const attendees = useMemo<AttendeeRow[]>(() => {
     if (!isDemoMode() || allEvents.length === 0) return [];
 
@@ -68,7 +68,9 @@ export default function AttendeesDirectoryPage() {
       const regs = DEMO_REGISTRATIONS(ev.id);
       for (const r of regs.data) {
         const name = r.attendee_name || "Unknown";
-        const existing = map.get(name);
+        // Use email as unique key (fallback to name|phone composite)
+        const key = (r.attendee_email || "").trim().toLowerCase() || `${name}|${r.attendee_phone || ""}`;
+        const existing = map.get(key);
         if (existing) {
           existing.eventCount++;
           existing.events.push({ name: ev.name, status: r.status });
@@ -77,7 +79,7 @@ export default function AttendeesDirectoryPage() {
             existing.lastRegistration = r.created_at;
           }
         } else {
-          map.set(name, {
+          map.set(key, {
             name,
             email: r.attendee_email || "",
             phone: r.attendee_phone || "",
@@ -93,21 +95,19 @@ export default function AttendeesDirectoryPage() {
     return Array.from(map.values());
   }, [allEvents]);
 
-  // Filter and sort
+  // Filter and sort (spread to avoid mutating memoized attendees)
   const filtered = useMemo(() => {
-    let list = attendees;
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter(a => a.name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q));
-    }
-    list.sort((a, b) => {
+    const q = search.trim().toLowerCase();
+    const base = q
+      ? attendees.filter(a => a.name.toLowerCase().includes(q) || a.email.toLowerCase().includes(q))
+      : attendees;
+    return [...base].sort((a, b) => {
       let cmp = 0;
       if (sortKey === "name") cmp = a.name.localeCompare(b.name);
       else if (sortKey === "eventCount") cmp = a.eventCount - b.eventCount;
       else if (sortKey === "totalPaid") cmp = a.totalPaid - b.totalPaid;
       return sortAsc ? cmp : -cmp;
     });
-    return list;
   }, [attendees, search, sortKey, sortAsc]);
 
   const handleSort = (key: SortKey) => {
@@ -178,7 +178,7 @@ export default function AttendeesDirectoryPage() {
               ) : (
                 filtered.map((a) => (
                   <tr
-                    key={a.name}
+                    key={a.email || `${a.name}-${a.phone}`}
                     className="border-b transition"
                     style={{ borderColor }}
                   >
