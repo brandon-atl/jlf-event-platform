@@ -65,15 +65,47 @@ export default function DayOfPage({
     },
   });
 
+  // Roster cache key — shared so mutations can update it directly in demo mode
+  const rosterCacheKey = ["registrations", eventId, "complete"];
+
   const checkInMutation = useMutation({
-    mutationFn: ({ regId }: { regId: string }) => registrationsApi.checkIn(eventId, regId),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["registrations", eventId] }); toast.success("Checked in ✓"); },
+    mutationFn: ({ regId }: { regId: string; }): Promise<RegistrationDetail> => {
+      if (isDemoMode()) {
+        // Optimistically update the cached roster without hitting the real API
+        const current = queryClient.getQueryData<RegistrationDetail[]>(rosterCacheKey) ?? [];
+        const updated = current.map((r) =>
+          r.id === regId
+            ? { ...r, checked_in_at: new Date().toISOString(), checked_in_by: "demo@justloveforest.com" }
+            : r
+        );
+        queryClient.setQueryData(rosterCacheKey, updated);
+        return Promise.resolve(updated.find((r) => r.id === regId)!);
+      }
+      return registrationsApi.checkIn(eventId, regId);
+    },
+    onSuccess: () => {
+      if (!isDemoMode()) queryClient.invalidateQueries({ queryKey: ["registrations", eventId] });
+      toast.success("Checked in ✓");
+    },
     onError: () => toast.error("Check-in failed"),
   });
 
   const undoCheckInMutation = useMutation({
-    mutationFn: ({ regId }: { regId: string }) => registrationsApi.undoCheckIn(eventId, regId),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["registrations", eventId] }); toast.success("Check-in undone"); },
+    mutationFn: ({ regId }: { regId: string; }): Promise<RegistrationDetail> => {
+      if (isDemoMode()) {
+        const current = queryClient.getQueryData<RegistrationDetail[]>(rosterCacheKey) ?? [];
+        const updated = current.map((r) =>
+          r.id === regId ? { ...r, checked_in_at: null, checked_in_by: null } : r
+        );
+        queryClient.setQueryData(rosterCacheKey, updated);
+        return Promise.resolve(updated.find((r) => r.id === regId)!);
+      }
+      return registrationsApi.undoCheckIn(eventId, regId);
+    },
+    onSuccess: () => {
+      if (!isDemoMode()) queryClient.invalidateQueries({ queryKey: ["registrations", eventId] });
+      toast.success("Check-in undone");
+    },
     onError: () => toast.error("Failed to undo check-in"),
   });
 
@@ -85,13 +117,21 @@ export default function DayOfPage({
         let filtered = all;
         if (activeFilter?.status) filtered = filtered.filter((r) => r.status === activeFilter.status);
         if (activeFilter?.accom) filtered = filtered.filter((r) => r.accommodation_type?.replace(/ /g, "_") === activeFilter.accom);
-        if (activeFilter?.dietary) filtered = filtered.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+        if (activeFilter?.dietary === "none") {
+          filtered = filtered.filter((r) => !r.dietary_restrictions || r.dietary_restrictions === "" || r.dietary_restrictions === "None");
+        } else if (activeFilter?.dietary) {
+          filtered = filtered.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+        }
         return filtered;
       }
       const res = await registrationsApi.list(eventId, { status: activeFilter?.status, per_page: 500 });
       let data = res.data;
       if (activeFilter?.accom) data = data.filter((r) => r.accommodation_type?.replace(/ /g, "_") === activeFilter.accom);
-      if (activeFilter?.dietary) data = data.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+      if (activeFilter?.dietary === "none") {
+        data = data.filter((r) => !r.dietary_restrictions || r.dietary_restrictions === "" || r.dietary_restrictions === "None");
+      } else if (activeFilter?.dietary) {
+        data = data.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+      }
       return data;
     },
     enabled: !!activeFilter,
@@ -192,7 +232,7 @@ export default function DayOfPage({
               type="button"
               className="p-4 rounded-xl hover:opacity-80 transition active:scale-95"
               style={{ background: subtleBg }}
-              onClick={() => setActiveFilter({ label: t.l, subtitle: `${t.v} attendees`, accom: t.a })}
+              onClick={() => setActiveFilter({ label: t.l, subtitle: `${t.v} confirmed`, accom: t.a, status: "complete" })}
             >
               <div className="text-3xl mb-1">{t.e}</div>
               <p
@@ -221,6 +261,7 @@ export default function DayOfPage({
             { l: "Vegetarian", v: dietary["Vegetarian"] || 0, e: "🥬", d: "vegetarian" },
             { l: "Vegan", v: dietary["Vegan"] || 0, e: "🌱", d: "vegan" },
             { l: "Gluten-Free", v: dietary["Gluten-Free"] || dietary["Gluten-free"] || 0, e: "🚫", d: "gluten" },
+            { l: "None / Not Specified", v: dietary["None"] || 0, e: "🍽️", d: "none" },
           ].map((d) => (
             <button
               key={d.l}
@@ -339,14 +380,35 @@ export default function DayOfPage({
                 const isCheckedIn = !!reg.checked_in_at;
                 const isPending = checkInMutation.isPending && checkInMutation.variables?.regId === reg.id;
                 const isUndoPending = undoCheckInMutation.isPending && undoCheckInMutation.variables?.regId === reg.id;
+                const isBusy = isPending || isUndoPending;
                 return (
-                  <div key={reg.id} className="flex items-center gap-3 px-5 py-3">
-                    <div className="flex-shrink-0">
-                      {isCheckedIn
-                        ? <CheckCircle2 size={20} style={{ color: isDark ? "#34d399" : "#059669" }} />
-                        : <Circle size={20} style={{ color: textMuted }} />
+                  <div
+                    key={reg.id}
+                    className="flex items-center gap-3 px-5 py-3 transition-colors"
+                    style={{ background: isCheckedIn ? (isDark ? "rgba(52,211,153,0.05)" : "rgba(209,250,229,0.3)") : "transparent" }}
+                  >
+                    {/* Checkbox toggle — click to check in / undo */}
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      title={isCheckedIn ? "Undo check-in" : "Mark as checked in"}
+                      className="flex-shrink-0 transition-transform active:scale-90 disabled:opacity-50"
+                      onClick={() => isCheckedIn
+                        ? undoCheckInMutation.mutate({ regId: reg.id })
+                        : checkInMutation.mutate({ regId: reg.id })
                       }
-                    </div>
+                    >
+                      {isBusy ? (
+                        <div
+                          className="w-[22px] h-[22px] rounded-full border-2 animate-spin"
+                          style={{ borderColor: isDark ? "#34d399" : "#059669", borderTopColor: "transparent" }}
+                        />
+                      ) : isCheckedIn ? (
+                        <CheckCircle2 size={22} style={{ color: isDark ? "#34d399" : "#059669" }} />
+                      ) : (
+                        <Circle size={22} style={{ color: textMuted }} />
+                      )}
+                    </button>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate" style={{ color: textMain }}>{reg.attendee_name ?? "—"}</p>
                       <p className="text-xs truncate" style={{ color: textMuted }}>
@@ -358,21 +420,6 @@ export default function DayOfPage({
                         </p>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      disabled={isPending || isUndoPending}
-                      className="text-xs px-3 py-1.5 rounded-lg font-semibold transition flex-shrink-0 disabled:opacity-60"
-                      style={{
-                        background: isCheckedIn ? (isDark ? "rgba(239,68,68,0.12)" : "#fee2e2") : (isDark ? "rgba(52,211,153,0.15)" : "#d1fae5"),
-                        color: isCheckedIn ? (isDark ? "#f87171" : "#991b1b") : (isDark ? "#34d399" : "#065f46"),
-                      }}
-                      onClick={() => isCheckedIn
-                        ? undoCheckInMutation.mutate({ regId: reg.id })
-                        : checkInMutation.mutate({ regId: reg.id })
-                      }
-                    >
-                      {isPending || isUndoPending ? "…" : isCheckedIn ? "Undo" : "Check In"}
-                    </button>
                   </div>
                 );
               })}

@@ -232,10 +232,11 @@ async def seed():
         from sqlalchemy import select
 
         for admin_data in ADMINS:
-            existing_user = await db.execute(
+            result = await db.execute(
                 select(User).where(User.email == admin_data["email"])
             )
-            if not existing_user.scalar_one_or_none():
+            existing = result.scalar_one_or_none()
+            if not existing:
                 user = User(
                     email=admin_data["email"],
                     name=admin_data["name"],
@@ -245,7 +246,10 @@ async def seed():
                 db.add(user)
                 print(f"✅ Created admin user: {admin_data['email']}")
             else:
-                print(f"⏭️  Admin user already exists: {admin_data['email']}")
+                # Always sync name and role so re-runs fix stale data
+                existing.name = admin_data["name"]
+                existing.role = admin_data["role"]
+                print(f"🔄 Updated admin user: {admin_data['email']} → name='{admin_data['name']}'")
 
         # --- Events ---
         event_map = {}  # slug → Event object
