@@ -6,15 +6,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
 from app.database import init_db
-
-# Rate limiter instance (shared across routers via app.state)
-limiter = Limiter(key_func=get_remote_address)
+from app.limiter import limiter  # shared limiter instance
 
 logger = logging.getLogger(__name__)
 

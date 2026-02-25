@@ -4,14 +4,11 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-
-limiter = Limiter(key_func=get_remote_address)
+from app.limiter import limiter  # shared app-level limiter
 
 
 def sanitize_intake_data(data: dict | None, max_size_kb: int = 10) -> dict:
@@ -29,7 +26,7 @@ def sanitize_intake_data(data: dict | None, max_size_kb: int = 10) -> dict:
     
     def _sanitize(obj: object, depth: int = 0) -> object:
         if depth > 2:
-            return None  # Too deep
+            return "[truncated]"  # Too deep — explicit sentinel instead of null
         
         if isinstance(obj, dict):
             return {
@@ -48,8 +45,8 @@ def sanitize_intake_data(data: dict | None, max_size_kb: int = 10) -> dict:
     
     sanitized = _sanitize(data)
     
-    # Check size
-    serialized = json.dumps(sanitized)
+    # Check size using compact JSON (no extra whitespace) for accurate byte count
+    serialized = json.dumps(sanitized, separators=(",", ":"))
     if len(serialized) > max_size_kb * 1024:
         raise ValueError(f"intake_data exceeds {max_size_kb}KB limit")
     

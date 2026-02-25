@@ -3,15 +3,12 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-
-limiter = Limiter(key_func=get_remote_address)
+from app.limiter import limiter  # shared app-level limiter
 from app.models.co_creator import CoCreator
 from app.models.user import User
 from app.schemas.auth import (
