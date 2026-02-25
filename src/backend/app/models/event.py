@@ -52,6 +52,7 @@ class Event(TimestampMixin, Base):
     notification_templates: Mapped[dict | None] = mapped_column(
         JSONB, nullable=True, default=dict
     )
+    virtual_meeting_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[EventStatus] = mapped_column(
         Enum(EventStatus, native_enum=False), default=EventStatus.draft
     )

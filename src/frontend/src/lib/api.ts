@@ -82,6 +82,8 @@ function transformEvent(raw: BackendEventResponse): EventResponse {
     reminder_delay_minutes: raw.reminder_delay_minutes,
     auto_expire_hours: raw.auto_expire_hours,
     registration_fields: raw.registration_fields,
+    notification_templates: raw.notification_templates,
+    virtual_meeting_url: raw.virtual_meeting_url,
     status: raw.status as EventResponse["status"],
     created_at: raw.created_at,
     updated_at: raw.updated_at,
@@ -314,6 +316,17 @@ export const coCreators = {
     request<void>(`/co-creators/${id}/invite`, { method: "POST" }),
 };
 
+// ── Attendees (cross-event) ─────────────────────
+export const attendees = {
+  list: (params?: { search?: string; page?: number; per_page?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.search) qs.set("search", params.search);
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.per_page) qs.set("per_page", String(params.per_page));
+    return request<{ data: AttendeeDirectory[]; meta: PaginationMeta }>(`/attendees?${qs}`);
+  },
+};
+
 // ── Portal (Co-Creator) ────────────────────────
 export const portal = {
   events: () => request<PortalEvent[]>("/portal/events"),
@@ -352,6 +365,8 @@ interface BackendEventResponse {
   reminder_delay_minutes: number;
   auto_expire_hours: number;
   registration_fields?: Record<string, unknown>;
+  notification_templates?: Record<string, unknown>;
+  virtual_meeting_url?: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -445,6 +460,8 @@ export interface EventResponse {
   reminder_delay_minutes: number;
   auto_expire_hours: number;
   registration_fields?: Record<string, unknown>;
+  notification_templates?: Record<string, unknown>;
+  virtual_meeting_url?: string;
   status: "draft" | "active" | "completed" | "cancelled";
   created_at: string;
   updated_at: string;
@@ -468,6 +485,8 @@ export interface EventCreate {
   capacity?: number;
   meeting_point_a?: string;
   meeting_point_b?: string;
+  virtual_meeting_url?: string;
+  notification_templates?: Record<string, unknown>;
   reminder_delay_minutes?: number;
   auto_expire_hours?: number;
   status?: "draft" | "active" | "completed" | "cancelled";
@@ -622,4 +641,14 @@ export interface PortalEventDetail {
   meeting_point_a?: string;
   meeting_point_b?: string;
   attendees: PortalAttendee[];
+}
+
+export interface AttendeeDirectory {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  event_count: number;
+  total_paid_cents: number;
+  last_registration: string;
 }
