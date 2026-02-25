@@ -7,6 +7,7 @@ import {
   Calendar,
   BarChart3,
   Sun,
+  Users,
   UserPlus,
   Settings,
   TreePine,
@@ -15,6 +16,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  Bell,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useDarkMode } from "@/hooks/use-dark-mode";
@@ -23,9 +25,11 @@ import { colors, darkColors } from "@/lib/theme";
 
 const nav = [
   { icon: Calendar, label: "Events", href: "/events" },
+  { icon: Users, label: "Attendees", href: "/attendees" },
   { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
   { icon: Sun, label: "Day-of View", href: "/day-of" },
   { icon: UserPlus, label: "Co-Creators", href: "/co-creators" },
+  { icon: Bell, label: "Notifications", href: "/notifications" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
