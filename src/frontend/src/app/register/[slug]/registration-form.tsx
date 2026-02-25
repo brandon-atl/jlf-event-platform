@@ -188,8 +188,8 @@ export function RegistrationForm({
     );
   }
 
-  // Sold out state
-  if (event.spots_remaining <= 0) {
+  // Sold out state — guard against undefined (spots_remaining is optional on the type)
+  if ((event.spots_remaining ?? Infinity) <= 0) {
     return (
       <div className="mx-auto max-w-2xl text-center">
         <Card className="rounded-2xl border-gray-100 shadow-sm">

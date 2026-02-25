@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -64,6 +64,7 @@ async def get_event_info(event_slug: str, db: AsyncSession = Depends(get_db)):
 async def create_registration(
     event_slug: str,
     data: RegistrationCreate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
     # Look up event
@@ -158,12 +159,9 @@ async def create_registration(
         registration.attendee = attendee
         registration.event = event
 
-        # Persist before sending (email failures should not block registration)
+        # Persist first, then fire email in background so failures never block the response
         await db.commit()
-        try:
-            await send_confirmation_email(registration, event)
-        except Exception as e:
-            print(f"Error sending confirmation email: {e}")
+        background_tasks.add_task(send_confirmation_email, registration, event)
 
     return RegistrationResponse(
         registration_id=registration.id,

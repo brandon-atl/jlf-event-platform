@@ -171,7 +171,8 @@ export default function NotificationsPage() {
       if (isDemoMode()) {
         return Promise.resolve({} as EventResponse);
       }
-      return eventsApi.update(selectedEventId!, {
+      if (!selectedEventId) return Promise.resolve({} as EventResponse);
+      return eventsApi.update(selectedEventId, {
         notification_templates: data.notification_templates,
       });
     },
