@@ -66,6 +66,16 @@ export const statusConfig: Record<
   },
 };
 
+/** Check if an event is past (date-aware, end-of-day comparison in local time) */
+export function isEventPast(e: { event_end_date?: string | null; event_date: string; status: string }): boolean {
+  if (e.status === "completed" || e.status === "cancelled") return true;
+  const raw = e.event_end_date || e.event_date;
+  // For date-only strings (YYYY-MM-DD), parse as local to avoid UTC midnight shift
+  const end = raw.includes("T") ? new Date(raw) : new Date(raw + "T23:59:59");
+  end.setHours(23, 59, 59, 999);
+  return end < new Date();
+}
+
 /** Event status color */
 export function eventStatusColor(status: string): string {
   const map: Record<string, string> = {

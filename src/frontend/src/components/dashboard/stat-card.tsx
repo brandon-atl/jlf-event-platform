@@ -1,7 +1,8 @@
 "use client";
 
 import { type LucideIcon } from "lucide-react";
-import { colors } from "@/lib/theme";
+import { useDarkMode } from "@/hooks/use-dark-mode";
+import { colors, darkColors } from "@/lib/theme";
 
 interface StatCardProps {
   icon: LucideIcon;
@@ -20,8 +21,18 @@ export function StatCard({
   color = colors.canopy,
   accent,
 }: StatCardProps) {
+  const { isDark } = useDarkMode();
+  const cardBg = isDark ? darkColors.surface : "#ffffff";
+  const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
+  const textMain = isDark ? darkColors.textPrimary : colors.forest;
+  const textSub = isDark ? darkColors.textSecondary : "#6b7280";
+  const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
+
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-md transition-all duration-300 shadow-sm">
+    <div
+      className="rounded-2xl border p-5 hover:shadow-md transition-all duration-300 shadow-sm"
+      style={{ background: cardBg, borderColor }}
+    >
       <div className="flex items-center justify-between">
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -33,8 +44,8 @@ export function StatCard({
           <span
             className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
               accent >= 0
-                ? "text-emerald-600 bg-emerald-50"
-                : "text-rose-500 bg-rose-50"
+                ? isDark ? "text-emerald-400 bg-emerald-400/10" : "text-emerald-600 bg-emerald-50"
+                : isDark ? "text-rose-400 bg-rose-400/10" : "text-rose-500 bg-rose-50"
             }`}
           >
             {accent >= 0 ? "↗" : "↘"} {Math.abs(accent)}%
@@ -43,12 +54,12 @@ export function StatCard({
       </div>
       <p
         className="text-2xl font-bold mt-3 tracking-tight"
-        style={{ color: colors.forest }}
+        style={{ color: textMain }}
       >
         {value}
       </p>
-      <p className="text-sm text-gray-500">{label}</p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      <p className="text-sm" style={{ color: textSub }}>{label}</p>
+      {sub && <p className="text-xs mt-0.5" style={{ color: textMuted }}>{sub}</p>}
     </div>
   );
 }

@@ -187,6 +187,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  autoComplete="current-password"
                   className="w-full pl-10 pr-12 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all"
                   style={{ background: inputBg, borderColor: inputBorder, color: textMain, border: `1px solid ${inputBorder}` }}
                 />
@@ -195,6 +196,7 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors"
                   style={{ color: textSub }}
+                  aria-label="Toggle password visibility"
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
