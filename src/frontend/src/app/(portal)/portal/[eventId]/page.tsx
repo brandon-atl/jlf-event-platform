@@ -216,7 +216,13 @@ export default function PortalEventDetailPage({
             </thead>
             <tbody>
               {attendees.map((att) => (
-                <tr key={att.email} className="border-t transition" style={{ borderColor }}>
+                <tr
+                  key={att.email}
+                  className="border-t transition"
+                  style={{ borderColor }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.02)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                >
                   <td className="px-5 py-3 font-medium border-r" style={{ color: textMain, borderColor }}>
                     {att.first_name} {att.last_name}
                   </td>
