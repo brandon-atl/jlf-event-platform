@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Calendar, Users, MapPin, DollarSign } from "lucide-react";
 import { portal } from "@/lib/api";
-import { colors } from "@/lib/theme";
+import { colors, darkColors } from "@/lib/theme";
+import { useDarkMode } from "@/hooks/use-dark-mode";
 import { formatDate, formatCents } from "@/lib/format";
 
 export default function PortalEventDetailPage({
@@ -14,6 +15,14 @@ export default function PortalEventDetailPage({
   params: Promise<{ eventId: string }>;
 }) {
   const { eventId } = use(params);
+  const { isDark } = useDarkMode();
+
+  const c = isDark ? darkColors : colors;
+  const cardBg = isDark ? darkColors.surface : "#ffffff";
+  const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
+  const textMain = isDark ? darkColors.textPrimary : colors.forest;
+  const textSub = isDark ? darkColors.textSecondary : "#6b7280";
+  const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
 
   const { data: event, isLoading } = useQuery({
     queryKey: ["portal-event", eventId],
@@ -22,7 +31,7 @@ export default function PortalEventDetailPage({
 
   if (isLoading) {
     return (
-      <div className="text-center py-16 text-gray-400">
+      <div className="text-center py-16" style={{ color: textMuted }}>
         <p className="text-sm">Loading event...</p>
       </div>
     );
@@ -30,7 +39,7 @@ export default function PortalEventDetailPage({
 
   if (!event) {
     return (
-      <div className="text-center py-16 text-gray-400">
+      <div className="text-center py-16" style={{ color: textMuted }}>
         <p className="text-sm">Event not found</p>
       </div>
     );
@@ -60,7 +69,8 @@ export default function PortalEventDetailPage({
       {/* Back link */}
       <Link
         href="/portal"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition"
+        className="inline-flex items-center gap-1.5 text-sm transition hover:opacity-70"
+        style={{ color: textMuted }}
       >
         <ArrowLeft size={14} />
         Back to events
@@ -73,13 +83,13 @@ export default function PortalEventDetailPage({
             <h2
               className="text-2xl font-bold"
               style={{
-                color: colors.forest,
+                color: textMain,
                 fontFamily: "var(--font-dm-serif), serif",
               }}
             >
               {event.name}
             </h2>
-            <p className="text-sm text-gray-400 mt-0.5 capitalize">
+            <p className="text-sm mt-0.5 capitalize" style={{ color: textMuted }}>
               {event.event_type}
             </p>
           </div>
@@ -88,9 +98,9 @@ export default function PortalEventDetailPage({
             style={{
               background:
                 event.status === "active"
-                  ? `${colors.canopy}15`
-                  : `${colors.bark}15`,
-              color: event.status === "active" ? colors.canopy : colors.bark,
+                  ? `${c.canopy}15`
+                  : `${c.bark}15`,
+              color: event.status === "active" ? c.canopy : c.bark,
             }}
           >
             {event.status}
@@ -98,7 +108,7 @@ export default function PortalEventDetailPage({
         </div>
 
         {/* Quick stats */}
-        <div className="flex flex-wrap items-center gap-4 mt-3 text-sm text-gray-500">
+        <div className="flex flex-wrap items-center gap-4 mt-3 text-sm" style={{ color: textSub }}>
           <span className="flex items-center gap-1.5">
             <Calendar size={14} />
             {formatDate(event.event_date)}
@@ -120,23 +130,24 @@ export default function PortalEventDetailPage({
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl border border-gray-100 p-4">
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
+        <div className="rounded-xl border p-4" style={{ background: cardBg, borderColor }}>
+          <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: textMuted }}>
             Headcount
           </p>
-          <p className="text-2xl font-bold mt-1" style={{ color: colors.forest }}>
+          <p className="text-2xl font-bold mt-1" style={{ color: textMain }}>
             {attendees.length}
           </p>
         </div>
         {Object.entries(accommodationCounts).map(([type, count]) => (
           <div
             key={type}
-            className="bg-white rounded-xl border border-gray-100 p-4"
+            className="rounded-xl border p-4"
+            style={{ background: cardBg, borderColor }}
           >
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
+            <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: textMuted }}>
               {type.replace(/_/g, " ")}
             </p>
-            <p className="text-2xl font-bold mt-1" style={{ color: colors.canopy }}>
+            <p className="text-2xl font-bold mt-1" style={{ color: c.canopy }}>
               {count}
             </p>
           </div>
@@ -145,8 +156,8 @@ export default function PortalEventDetailPage({
 
       {/* Dietary summary */}
       {Object.keys(dietaryCounts).length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-100 p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+        <div className="rounded-xl border p-4" style={{ background: cardBg, borderColor }}>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: textMuted }}>
             Dietary Needs
           </p>
           <div className="flex flex-wrap gap-2">
@@ -155,9 +166,9 @@ export default function PortalEventDetailPage({
                 key={diet}
                 className="text-xs px-2.5 py-1 rounded-full border font-medium"
                 style={{
-                  background: `${colors.sun}15`,
-                  color: colors.bark,
-                  borderColor: `${colors.sun}30`,
+                  background: `${c.sun}15`,
+                  color: c.bark,
+                  borderColor: `${c.sun}30`,
                 }}
               >
                 {diet} ({count})
@@ -168,11 +179,11 @@ export default function PortalEventDetailPage({
       )}
 
       {/* Attendee table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-50">
+      <div className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: cardBg, borderColor }}>
+        <div className="px-5 py-3 border-b" style={{ borderColor }}>
           <p
             className="text-sm font-bold"
-            style={{ color: colors.forest }}
+            style={{ color: textMain }}
           >
             Attendees ({attendees.length})
           </p>
@@ -180,47 +191,47 @@ export default function PortalEventDetailPage({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50/50 text-left">
-                <th className="px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+              <tr className="text-left" style={{ background: isDark ? darkColors.surfaceHover : "rgba(249,250,251,0.5)" }}>
+                <th className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
                   Name
                 </th>
-                <th className="px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
                   Email
                 </th>
-                <th className="px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
                   Phone
                 </th>
-                <th className="px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
                   Accommodation
                 </th>
-                <th className="px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                <th className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
                   Dietary
                 </th>
                 {showPayment && (
-                  <th className="px-5 py-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                  <th className="px-5 py-2.5 text-[10px] font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
                     Payment
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody style={{ borderColor }}>
               {attendees.map((att) => (
-                <tr key={att.email} className="hover:bg-gray-50/30 transition">
-                  <td className="px-5 py-3 font-medium text-gray-800">
+                <tr key={att.email} className="border-t transition" style={{ borderColor }}>
+                  <td className="px-5 py-3 font-medium" style={{ color: textMain }}>
                     {att.first_name} {att.last_name}
                   </td>
-                  <td className="px-5 py-3 text-gray-500">{att.email}</td>
-                  <td className="px-5 py-3 text-gray-500">
+                  <td className="px-5 py-3" style={{ color: textSub }}>{att.email}</td>
+                  <td className="px-5 py-3" style={{ color: textSub }}>
                     {att.phone || "-"}
                   </td>
-                  <td className="px-5 py-3 text-gray-500 capitalize">
+                  <td className="px-5 py-3 capitalize" style={{ color: textSub }}>
                     {att.accommodation_type?.replace(/_/g, " ") || "-"}
                   </td>
-                  <td className="px-5 py-3 text-gray-500">
+                  <td className="px-5 py-3" style={{ color: textSub }}>
                     {att.dietary_restrictions || "-"}
                   </td>
                   {showPayment && (
-                    <td className="px-5 py-3 text-gray-500">
+                    <td className="px-5 py-3" style={{ color: textSub }}>
                       {att.payment_amount_cents != null ? (
                         <span className="flex items-center gap-1">
                           <DollarSign size={12} />
@@ -237,7 +248,8 @@ export default function PortalEventDetailPage({
                 <tr>
                   <td
                     colSpan={showPayment ? 6 : 5}
-                    className="px-5 py-8 text-center text-gray-400"
+                    className="px-5 py-8 text-center"
+                    style={{ color: textMuted }}
                   >
                     No confirmed attendees yet
                   </td>
