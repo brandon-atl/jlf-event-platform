@@ -216,7 +216,7 @@ export default function DayOfPage({
       </div>
 
       {/* Virtual Meeting Link */}
-      {event.virtual_meeting_url && (
+      {event.virtual_meeting_url && /^https?:\/\//i.test(event.virtual_meeting_url) && (
         <div className="rounded-2xl border p-5 shadow-sm" style={{ background: cardBg, borderColor }}>
           <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: textMuted }}>
             Virtual Meeting Link

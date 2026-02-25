@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -131,8 +131,8 @@ export default function EventDashboardPage({
     /zoom|virtual/i.test(event.event_type) ||
     (event.pricing_model === "free" && /zoom/i.test(event.meeting_point_a || ""));
 
-  // C4: Registration timeline — group registrations by week
-  const timelineData = (() => {
+  // C4: Registration timeline — group registrations by week (memoized)
+  const timelineData = useMemo(() => {
     if (!isDemoMode()) return [];
     const regs = DEMO_REGISTRATIONS(eventId).data;
     const weeks: Record<string, number> = {};
@@ -144,10 +144,10 @@ export default function EventDashboardPage({
       weeks[key] = (weeks[key] || 0) + 1;
     }
     return Object.entries(weeks).map(([week, count]) => ({ week, count }));
-  })();
+  }, [eventId]);
 
-  // C4: Revenue by accommodation type
-  const revenueByAccom = (() => {
+  // C4: Revenue by accommodation type (memoized, complete registrations only)
+  const revenueByAccom = useMemo(() => {
     if (!isDemoMode()) return [];
     const regs = DEMO_REGISTRATIONS(eventId).data;
     const map: Record<string, number> = {};
@@ -158,7 +158,7 @@ export default function EventDashboardPage({
       }
     }
     return Object.entries(map).map(([type, cents]) => ({ type, cents }));
-  })();
+  }, [eventId]);
 
   return (
     <div className="space-y-6">

@@ -378,6 +378,8 @@ export default function SettingsPage({
         role="dialog"
         aria-modal="true"
         aria-label="Registration Form Preview"
+        tabIndex={-1}
+        ref={(el) => el?.focus()}
         onClick={() => setPreviewOpen(false)}
         onKeyDown={(e) => { if (e.key === "Escape") setPreviewOpen(false); }}
       >

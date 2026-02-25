@@ -323,7 +323,8 @@ export const attendees = {
     if (params?.search) qs.set("search", params.search);
     if (params?.page) qs.set("page", String(params.page));
     if (params?.per_page) qs.set("per_page", String(params.per_page));
-    return request<{ data: AttendeeDirectory[]; meta: PaginationMeta }>(`/attendees?${qs}`);
+    const qsStr = qs.toString();
+    return request<{ data: AttendeeDirectory[]; meta: PaginationMeta }>(`/attendees${qsStr ? `?${qsStr}` : ""}`);
   },
 };
 

@@ -102,7 +102,7 @@ export const DEMO_DASHBOARD = (eventId: string) => {
     status_breakdown: statusCounts,
     accommodation_breakdown: (() => {
       const acc = { bell_tent: 0, nylon_tent: 0, self_camping: 0, yurt_shared: 0, none: 0 };
-      for (const r of regs) if (r.accommodation_type in acc) acc[r.accommodation_type as keyof typeof acc]++;
+      for (const r of regs) if (r.status === "complete" && r.accommodation_type in acc) acc[r.accommodation_type as keyof typeof acc]++;
       return acc;
     })(),
     dietary_summary: (() => {
