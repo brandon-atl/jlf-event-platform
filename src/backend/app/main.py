@@ -61,6 +61,7 @@ def create_app() -> FastAPI:
         portal,
         registration,
         registrations,
+        users,
         webhooks,
     )
 
@@ -73,6 +74,7 @@ def create_app() -> FastAPI:
     app.include_router(portal.router, prefix="/api/v1")
     app.include_router(notifications.router, prefix="/api/v1")
     app.include_router(co_creators.router, prefix="/api/v1")
+    app.include_router(users.router, prefix="/api/v1")
 
     # Health check
     @app.get("/health")

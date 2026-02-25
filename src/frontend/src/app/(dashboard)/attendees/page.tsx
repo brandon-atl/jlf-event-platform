@@ -155,6 +155,23 @@ export default function AttendeesDirectoryPage() {
         />
       </div>
 
+      {/* Status Legend — explicit ordered list so additions to STATUS_BADGE don't silently appear */}
+      <div className="flex flex-wrap items-center gap-4 text-xs" style={{ color: textMuted }}>
+        <span className="font-semibold">Status key:</span>
+        {(["complete", "pending_payment", "expired", "cancelled"] as const).map((key) => {
+          const badge = STATUS_BADGE[key];
+          return (
+            <span key={key} className="flex items-center gap-1.5">
+              <span
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ background: isDark ? badge.darkTx : badge.tx }}
+              />
+              <span className="capitalize">{key.replace(/_/g, " ")}</span>
+            </span>
+          );
+        })}
+      </div>
+
       {/* Table */}
       <div className="rounded-2xl border shadow-sm overflow-hidden" style={{ background: cardBg, borderColor }}>
         <div className="overflow-x-auto">

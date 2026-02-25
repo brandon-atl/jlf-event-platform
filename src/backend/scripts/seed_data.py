@@ -25,12 +25,20 @@ from app.services.auth_service import hash_password
 # ---------------------------------------------------------------------------
 # Admin user
 # ---------------------------------------------------------------------------
-ADMIN = {
-    "email": "brandon.abbott96@gmail.com",
-    "name": "Brandon Abbott",
-    "role": UserRole.admin,
-    "password": "jlf-admin-2026",  # Change in production
-}
+ADMINS = [
+    {
+        "email": "brandon.abbott96@gmail.com",
+        "name": "Brandon Abbott",
+        "role": UserRole.admin,
+        "password": "jlf-admin-2026",  # Change in production
+    },
+    {
+        "email": "brian@justloveforest.com",
+        "name": "Brian Y.",
+        "role": UserRole.admin,
+        "password": "jlf-admin-2026",  # Change in production
+    },
+]
 
 # ---------------------------------------------------------------------------
 # Real JLF events (mirrors frontend demo data)
@@ -220,23 +228,24 @@ DIETS = [
 
 async def seed():
     async with async_session() as db:
-        # --- Admin user ---
+        # --- Admin users ---
         from sqlalchemy import select
 
-        existing_user = await db.execute(
-            select(User).where(User.email == ADMIN["email"])
-        )
-        if not existing_user.scalar_one_or_none():
-            user = User(
-                email=ADMIN["email"],
-                name=ADMIN["name"],
-                role=ADMIN["role"],
-                password_hash=hash_password(ADMIN["password"]),
+        for admin_data in ADMINS:
+            existing_user = await db.execute(
+                select(User).where(User.email == admin_data["email"])
             )
-            db.add(user)
-            print(f"✅ Created admin user: {ADMIN['email']}")
-        else:
-            print(f"⏭️  Admin user already exists: {ADMIN['email']}")
+            if not existing_user.scalar_one_or_none():
+                user = User(
+                    email=admin_data["email"],
+                    name=admin_data["name"],
+                    role=admin_data["role"],
+                    password_hash=hash_password(admin_data["password"]),
+                )
+                db.add(user)
+                print(f"✅ Created admin user: {admin_data['email']}")
+            else:
+                print(f"⏭️  Admin user already exists: {admin_data['email']}")
 
         # --- Events ---
         event_map = {}  # slug → Event object
