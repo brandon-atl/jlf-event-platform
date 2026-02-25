@@ -16,6 +16,7 @@ import {
   UtensilsCrossed,
   TrendingUp,
   BarChart2,
+  Activity,
 } from "lucide-react";
 import {
   PieChart,
@@ -512,6 +513,15 @@ export default function EventDashboardPage({
         >
           <Users size={14} />
           All Attendees
+        </Button>
+        <Button
+          variant="outline"
+          className="rounded-xl font-semibold"
+          style={isDark ? { borderColor, color: textSub } : {}}
+          onClick={() => router.push(`/audit/${eventId}`)}
+        >
+          <Activity size={14} />
+          Audit Log
         </Button>
         <Button
           variant="outline"

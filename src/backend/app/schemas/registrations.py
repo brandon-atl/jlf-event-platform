@@ -30,6 +30,8 @@ class RegistrationResponse(BaseModel):
     waiver_accepted_at: datetime | None = None
     source: str
     notes: str | None = None
+    checked_in_at: datetime | None = None
+    checked_in_by: str | None = None
     created_at: datetime
     updated_at: datetime
     attendee: AttendeeInfo | None = None

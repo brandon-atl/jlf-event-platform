@@ -158,6 +158,8 @@ function transformRegistration(raw: BackendRegistrationDetail): RegistrationDeta
       : undefined,
     attendee_email: att?.email,
     attendee_phone: att?.phone,
+    checked_in_at: raw.checked_in_at ?? null,
+    checked_in_by: raw.checked_in_by ?? null,
   };
 }
 
@@ -276,6 +278,22 @@ export const registrations = {
     }),
   exportCsv: (eventId: string) =>
     `${API_BASE}/events/${eventId}/registrations/export`,
+  checkIn: async (eventId: string, registrationId: string) => {
+    const raw = await request<BackendRegistrationDetail>(
+      `/events/${eventId}/registrations/${registrationId}/checkin`,
+      { method: "POST" }
+    );
+    return transformRegistration(raw);
+  },
+  undoCheckIn: async (eventId: string, registrationId: string) => {
+    const raw = await request<BackendRegistrationDetail>(
+      `/events/${eventId}/registrations/${registrationId}/checkin`,
+      { method: "DELETE" }
+    );
+    return transformRegistration(raw);
+  },
+  auditLog: (eventId: string): Promise<AuditLogEntry[]> =>
+    request<AuditLogEntry[]>(`/events/${eventId}/audit`),
 };
 
 // ── Dashboard ───────────────────────────────────
@@ -530,11 +548,24 @@ export interface RegistrationDetail {
   waiver_accepted_at?: string;
   source: "registration_form" | "manual" | "walk_in";
   notes?: string;
+  checked_in_at?: string | null;
+  checked_in_by?: string | null;
   created_at: string;
   updated_at: string;
   attendee_name?: string;
   attendee_email?: string;
   attendee_phone?: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  actor: string;
+  old_value?: Record<string, unknown> | null;
+  new_value?: Record<string, unknown> | null;
+  timestamp: string;
 }
 
 export interface RegistrationUpdate {

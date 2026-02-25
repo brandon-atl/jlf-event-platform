@@ -1,9 +1,9 @@
 "use client";
 
 import { use, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AttendeeSheet } from "@/components/dashboard/attendee-sheet";
-import { MapPin, Send, Video } from "lucide-react";
+import { CheckCircle2, Circle, MapPin, Send, Video, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { dashboard, events as eventsApi, notifications, registrations as registrationsApi, type EventResponse, type EventDashboard, type RegistrationDetail } from "@/lib/api";
@@ -48,6 +48,33 @@ export default function DayOfPage({
       if (isDemoMode()) return Promise.resolve(DEMO_DASHBOARD(eventId) as unknown as EventDashboard);
       return dashboard.event(eventId);
     },
+  });
+
+  const queryClient = useQueryClient();
+  const [rosterTab, setRosterTab] = useState<"all" | "checked_in" | "pending">("all");
+
+  // Full confirmed attendee list for the check-in roster
+  const { data: rosterData, isLoading: rosterLoading } = useQuery({
+    queryKey: ["registrations", eventId, "complete"],
+    queryFn: async () => {
+      if (isDemoMode()) {
+        return DEMO_REGISTRATIONS(eventId).data.filter((r) => r.status === "complete") as RegistrationDetail[];
+      }
+      const res = await registrationsApi.list(eventId, { status: "complete", per_page: 500 });
+      return res.data;
+    },
+  });
+
+  const checkInMutation = useMutation({
+    mutationFn: ({ regId }: { regId: string }) => registrationsApi.checkIn(eventId, regId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["registrations", eventId] }); toast.success("Checked in ✓"); },
+    onError: () => toast.error("Check-in failed"),
+  });
+
+  const undoCheckInMutation = useMutation({
+    mutationFn: ({ regId }: { regId: string }) => registrationsApi.undoCheckIn(eventId, regId),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["registrations", eventId] }); toast.success("Check-in undone"); },
+    onError: () => toast.error("Failed to undo check-in"),
   });
 
   const { data: sheetRegs, isLoading: sheetLoading } = useQuery({
@@ -258,6 +285,101 @@ export default function DayOfPage({
           )}
         </div>
       </div>
+
+      {/* Attendee Roster + Check-in */}
+      {(() => {
+        const roster = rosterData ?? [];
+        const checkedIn = roster.filter((r) => r.checked_in_at);
+        const notCheckedIn = roster.filter((r) => !r.checked_in_at);
+        const displayed = rosterTab === "all" ? roster : rosterTab === "checked_in" ? checkedIn : notCheckedIn;
+        return (
+          <div className="rounded-2xl border shadow-sm" style={{ background: cardBg, borderColor }}>
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
+              <div className="flex items-center gap-2">
+                <Users size={16} style={{ color: isDark ? darkColors.canopy : colors.canopy }} />
+                <h3 className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
+                  Attendee Roster
+                </h3>
+              </div>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: isDark ? "rgba(52,211,153,0.15)" : "#d1fae5", color: isDark ? "#34d399" : "#065f46" }}>
+                {checkedIn.length} / {roster.length} checked in
+              </span>
+            </div>
+
+            {/* Tab bar */}
+            <div className="flex gap-1 px-5 pb-3">
+              {(["all", "checked_in", "pending"] as const).map((tab) => {
+                const counts = { all: roster.length, checked_in: checkedIn.length, pending: notCheckedIn.length };
+                const labels = { all: "All", checked_in: "✓ Checked In", pending: "Pending" };
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    className="text-xs px-3 py-1 rounded-full transition font-medium"
+                    style={{
+                      background: rosterTab === tab ? (isDark ? darkColors.canopy : colors.canopy) : (isDark ? darkColors.surfaceHover : "#f3f4f6"),
+                      color: rosterTab === tab ? "#fff" : textSub,
+                    }}
+                    onClick={() => setRosterTab(tab)}
+                  >
+                    {labels[tab]} ({counts[tab]})
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="divide-y" style={{ borderColor }}>
+              {rosterLoading && (
+                <div className="p-5 text-center text-sm" style={{ color: textMuted }}>Loading roster…</div>
+              )}
+              {!rosterLoading && displayed.length === 0 && (
+                <div className="p-5 text-center text-sm" style={{ color: textMuted }}>No attendees in this group</div>
+              )}
+              {!rosterLoading && displayed.map((reg) => {
+                const isCheckedIn = !!reg.checked_in_at;
+                const isPending = checkInMutation.isPending && checkInMutation.variables?.regId === reg.id;
+                const isUndoPending = undoCheckInMutation.isPending && undoCheckInMutation.variables?.regId === reg.id;
+                return (
+                  <div key={reg.id} className="flex items-center gap-3 px-5 py-3">
+                    <div className="flex-shrink-0">
+                      {isCheckedIn
+                        ? <CheckCircle2 size={20} style={{ color: isDark ? "#34d399" : "#059669" }} />
+                        : <Circle size={20} style={{ color: textMuted }} />
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: textMain }}>{reg.attendee_name ?? "—"}</p>
+                      <p className="text-xs truncate" style={{ color: textMuted }}>
+                        {[reg.accommodation_type?.replace(/_/g, " "), reg.dietary_restrictions].filter(Boolean).join(" · ")}
+                      </p>
+                      {isCheckedIn && reg.checked_in_at && (
+                        <p className="text-[10px] mt-0.5" style={{ color: isDark ? "#34d399" : "#059669" }}>
+                          Checked in {new Date(reg.checked_in_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isPending || isUndoPending}
+                      className="text-xs px-3 py-1.5 rounded-lg font-semibold transition flex-shrink-0 disabled:opacity-60"
+                      style={{
+                        background: isCheckedIn ? (isDark ? "rgba(239,68,68,0.12)" : "#fee2e2") : (isDark ? "rgba(52,211,153,0.15)" : "#d1fae5"),
+                        color: isCheckedIn ? (isDark ? "#f87171" : "#991b1b") : (isDark ? "#34d399" : "#065f46"),
+                      }}
+                      onClick={() => isCheckedIn
+                        ? undoCheckInMutation.mutate({ regId: reg.id })
+                        : checkInMutation.mutate({ regId: reg.id })
+                      }
+                    >
+                      {isPending || isUndoPending ? "…" : isCheckedIn ? "Undo" : "Check In"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Virtual Meeting Link */}
       {event.virtual_meeting_url && /^https?:\/\//i.test(event.virtual_meeting_url) && (

@@ -450,3 +450,133 @@ async def export_registrations(
         media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ---------------------------------------------------------------------------
+# Check-in endpoints
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/events/{event_id}/registrations/{registration_id}/checkin",
+    response_model=RegistrationResponse,
+    summary="Mark a registration as checked in",
+)
+async def check_in_registration(
+    event_id: str,
+    registration_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Registration)
+        .where(Registration.id == registration_id, Registration.event_id == event_id)
+        .options(selectinload(Registration.attendee))
+    )
+    reg = result.scalar_one_or_none()
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registration not found")
+    if reg.status != RegistrationStatus.complete:
+        raise HTTPException(status_code=400, detail="Only confirmed registrations can be checked in")
+
+    now = datetime.now(timezone.utc)
+    actor = current_user.email if current_user else "unknown"
+    reg.checked_in_at = now
+    reg.checked_in_by = actor
+
+    await _audit_log(
+        db,
+        entity_type="registration",
+        entity_id=str(registration_id),
+        action="check_in",
+        actor=actor,
+        old_value={"checked_in_at": None},
+        new_value={"checked_in_at": now.isoformat(), "checked_in_by": actor},
+    )
+    await db.commit()
+    await db.refresh(reg)
+    return RegistrationResponse.model_validate(reg)
+
+
+@router.delete(
+    "/events/{event_id}/registrations/{registration_id}/checkin",
+    response_model=RegistrationResponse,
+    summary="Undo check-in for a registration",
+)
+async def undo_check_in(
+    event_id: str,
+    registration_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Registration)
+        .where(Registration.id == registration_id, Registration.event_id == event_id)
+        .options(selectinload(Registration.attendee))
+    )
+    reg = result.scalar_one_or_none()
+    if not reg:
+        raise HTTPException(status_code=404, detail="Registration not found")
+
+    old_at = reg.checked_in_at.isoformat() if reg.checked_in_at else None
+    reg.checked_in_at = None
+    reg.checked_in_by = None
+    actor = current_user.email if current_user else "unknown"
+
+    await _audit_log(
+        db,
+        entity_type="registration",
+        entity_id=str(registration_id),
+        action="undo_check_in",
+        actor=actor,
+        old_value={"checked_in_at": old_at},
+        new_value={"checked_in_at": None},
+    )
+    await db.commit()
+    await db.refresh(reg)
+    return RegistrationResponse.model_validate(reg)
+
+
+# ---------------------------------------------------------------------------
+# Audit log endpoint
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/events/{event_id}/audit",
+    summary="Audit log for an event (registrations + event changes)",
+)
+async def get_event_audit(
+    event_id: str,
+    limit: int = Query(100, le=500),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    # Get all registration IDs for this event
+    reg_result = await db.execute(
+        select(Registration.id).where(Registration.event_id == event_id)
+    )
+    reg_ids = {str(r) for r in reg_result.scalars().all()}
+
+    # Fetch audit logs for the event itself + all its registrations
+    from sqlalchemy import cast, String as SAString
+    result = await db.execute(
+        select(AuditLog)
+        .where(
+            (cast(AuditLog.entity_id, SAString).in_([event_id] + list(reg_ids)))
+        )
+        .order_by(AuditLog.timestamp.desc())
+        .limit(limit)
+    )
+    logs = result.scalars().all()
+    return [
+        {
+            "id": str(log.id),
+            "entity_type": log.entity_type,
+            "entity_id": str(log.entity_id),
+            "action": log.action,
+            "actor": log.actor,
+            "old_value": log.old_value,
+            "new_value": log.new_value,
+            "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+        }
+        for log in logs
+    ]
