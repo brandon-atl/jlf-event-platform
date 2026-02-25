@@ -83,9 +83,9 @@ export default async function RegisterPage({ params }: Props) {
     );
   }
 
-  // Check if event is in the past (use end-of-day to avoid premature closure on event day)
+  // Check if event is in the past (use end-of-day; parse date-only strings as local to avoid UTC shift)
   const endDate = event.event_end_date || event.event_date;
-  const endOfDay = new Date(endDate);
+  const endOfDay = endDate.includes("T") ? new Date(endDate) : new Date(endDate + "T23:59:59");
   endOfDay.setHours(23, 59, 59, 999);
   const eventOver = endOfDay < new Date();
   if (eventOver) {

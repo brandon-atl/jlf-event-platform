@@ -26,6 +26,7 @@ class EventCreate(BaseModel):
     day_of_sms_time: str | None = None
     registration_fields: dict[str, Any] | None = None
     notification_templates: dict[str, Any] | None = None
+    virtual_meeting_url: str | None = None
     status: str = "draft"
 
 
@@ -48,6 +49,7 @@ class EventUpdate(BaseModel):
     day_of_sms_time: str | None = None
     registration_fields: dict[str, Any] | None = None
     notification_templates: dict[str, Any] | None = None
+    virtual_meeting_url: str | None = None
     status: str | None = None
 
 
@@ -83,6 +85,7 @@ class EventResponse(BaseModel):
     day_of_sms_time: str | None = None
     registration_fields: dict[str, Any] | None = None
     notification_templates: dict[str, Any] | None = None
+    virtual_meeting_url: str | None = None
     status: str
     created_at: datetime
     updated_at: datetime
