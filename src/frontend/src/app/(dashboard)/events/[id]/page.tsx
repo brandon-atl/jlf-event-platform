@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Search,
@@ -16,6 +16,7 @@ import {
   XCircle,
   RotateCcw,
   Clock,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,11 +26,12 @@ import {
   type RegistrationDetail,
   type EventResponse,
 } from "@/lib/api";
-import { colors } from "@/lib/theme";
+import { colors, darkColors } from "@/lib/theme";
 import { DEMO_EVENTS, DEMO_REGISTRATIONS, isDemoMode } from "@/lib/demo-data";
 import { formatCents, initials } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useDarkMode } from "@/hooks/use-dark-mode";
 
 const STATUS_CONFIG: Record<
   string,
@@ -38,6 +40,9 @@ const STATUS_CONFIG: Record<
     bg: string;
     tx: string;
     bdr: string;
+    darkBg?: string;
+    darkTx?: string;
+    darkBdr?: string;
     Icon: React.ElementType;
   }
 > = {
@@ -46,6 +51,9 @@ const STATUS_CONFIG: Record<
     bg: `${colors.canopy}18`,
     tx: colors.canopy,
     bdr: `${colors.canopy}40`,
+    darkBg: `${darkColors.canopy}20`,
+    darkTx: darkColors.canopy,
+    darkBdr: `${darkColors.canopy}40`,
     Icon: CheckCircle,
   },
   pending_payment: {
@@ -53,6 +61,9 @@ const STATUS_CONFIG: Record<
     bg: `${colors.sun}20`,
     tx: "#92700c",
     bdr: `${colors.sun}50`,
+    darkBg: `${darkColors.sun}20`,
+    darkTx: darkColors.sun,
+    darkBdr: `${darkColors.sun}40`,
     Icon: Clock,
   },
   expired: {
@@ -60,6 +71,9 @@ const STATUS_CONFIG: Record<
     bg: "#f4f4f5",
     tx: "#71717a",
     bdr: "#d4d4d8",
+    darkBg: `${darkColors.textMuted}18`,
+    darkTx: darkColors.textMuted,
+    darkBdr: `${darkColors.textMuted}40`,
     Icon: XCircle,
   },
   cancelled: {
@@ -67,6 +81,9 @@ const STATUS_CONFIG: Record<
     bg: "#f4f4f5",
     tx: "#71717a",
     bdr: "#d4d4d8",
+    darkBg: `${darkColors.textMuted}18`,
+    darkTx: darkColors.textMuted,
+    darkBdr: `${darkColors.textMuted}40`,
     Icon: XCircle,
   },
   refunded: {
@@ -74,19 +91,59 @@ const STATUS_CONFIG: Record<
     bg: `${colors.berry}15`,
     tx: colors.berry,
     bdr: `${colors.berry}40`,
+    darkBg: `${darkColors.berry}18`,
+    darkTx: darkColors.berry,
+    darkBdr: `${darkColors.berry}40`,
     Icon: RotateCcw,
   },
 };
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status, isDark }: { status: string; isDark: boolean }) {
   const c = STATUS_CONFIG[status] || STATUS_CONFIG.complete;
   return (
     <span
       className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border"
-      style={{ background: c.bg, color: c.tx, borderColor: c.bdr }}
+      style={{
+        background: isDark ? c.darkBg || c.bg : c.bg,
+        color: isDark ? c.darkTx || c.tx : c.tx,
+        borderColor: isDark ? c.darkBdr || c.bdr : c.bdr,
+      }}
     >
       <c.Icon size={11} />
       {c.label}
+    </span>
+  );
+}
+
+/** "Needs Action" badge for manual/walk-in registrations still pending */
+function NeedsActionBadge({ isDark }: { isDark: boolean }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border animate-pulse"
+      style={{
+        background: isDark ? `${darkColors.ember}20` : "#fef2f2",
+        color: isDark ? darkColors.ember : colors.ember,
+        borderColor: isDark ? `${darkColors.ember}40` : "#fecaca",
+      }}
+    >
+      <AlertTriangle size={10} />
+      Needs Action
+    </span>
+  );
+}
+
+/** Subtle "Auto" indicator for auto-confirmed form registrations */
+function AutoBadge({ isDark }: { isDark: boolean }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium"
+      style={{
+        background: isDark ? `${darkColors.canopy}12` : `${colors.canopy}0a`,
+        color: isDark ? darkColors.textMuted : "#9ca3af",
+      }}
+    >
+      <Zap size={8} />
+      Auto
     </span>
   );
 }
@@ -109,6 +166,18 @@ export default function AttendeesPage({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const { isDark } = useDarkMode();
+
+  // Dark mode color variables
+  const cardBg = isDark ? darkColors.surface : "#ffffff";
+  const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
+  const textMain = isDark ? darkColors.textPrimary : colors.forest;
+  const textSub = isDark ? darkColors.textSecondary : "#6b7280";
+  const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
+  const subtleBg = isDark ? darkColors.surfaceHover : "#f9fafb";
+  const hoverBg = isDark ? darkColors.surfaceHover : "#f9fafb";
 
   const { data: event } = useQuery({
     queryKey: ["event", eventId],
@@ -159,6 +228,88 @@ export default function AttendeesPage({
   const attendees = data?.data ?? [];
   const totalCount = data?.meta?.total ?? 0;
 
+  // Selection helpers
+  const toggleSelect = useCallback((id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (selected.size === attendees.length && attendees.length > 0) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(attendees.map((a) => a.id)));
+    }
+  }, [attendees, selected.size]);
+
+  const isAllSelected = attendees.length > 0 && selected.size === attendees.length;
+  const hasSelection = selected.size > 0;
+
+  // Bulk actions
+  const handleBulkMarkComplete = useCallback(async () => {
+    const ids = Array.from(selected);
+    const eligible = ids.filter((id) => {
+      const a = attendees.find((att) => att.id === id);
+      return a && a.status !== "complete";
+    });
+    if (eligible.length === 0) {
+      toast.info("All selected attendees are already complete");
+      return;
+    }
+    let successCount = 0;
+    let failCount = 0;
+    for (const id of eligible) {
+      try {
+        await registrations.update(id, { status: "complete" });
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["registrations", eventId] });
+    setSelected(new Set());
+    if (failCount > 0) {
+      toast.warning(`${successCount} marked complete, ${failCount} failed`);
+    } else {
+      toast.success(`${successCount} registration${successCount !== 1 ? "s" : ""} marked complete`);
+    }
+  }, [selected, attendees, queryClient, eventId]);
+
+  const handleBulkRemind = useCallback(async () => {
+    const ids = Array.from(selected);
+    const eligible = ids.filter((id) => {
+      const a = attendees.find((att) => att.id === id);
+      return a && a.status === "pending_payment";
+    });
+    if (eligible.length === 0) {
+      toast.info("No selected attendees are pending payment");
+      return;
+    }
+    let successCount = 0;
+    let failCount = 0;
+    for (const id of eligible) {
+      try {
+        await registrations.remind(id);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+    setSelected(new Set());
+    if (failCount > 0) {
+      toast.warning(`${successCount} reminder${successCount !== 1 ? "s" : ""} sent, ${failCount} failed`);
+    } else {
+      toast.success(`${successCount} reminder${successCount !== 1 ? "s" : ""} sent`);
+    }
+  }, [selected, attendees]);
+
   const handleExport = async () => {
     if (isDemoMode()) {
       toast.info("CSV export is not available in demo mode");
@@ -194,51 +345,127 @@ export default function AttendeesPage({
           <h2
             className="text-xl font-bold"
             style={{
-              color: colors.forest,
+              color: textMain,
               fontFamily: "var(--font-dm-serif), serif",
             }}
           >
             Attendees
           </h2>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm" style={{ color: textMuted }}>
             {event?.name} · {attendees.length} of {totalCount} shown
           </p>
         </div>
-        <Button variant="outline" className="rounded-xl" onClick={handleExport}>
+        <Button
+          variant="outline"
+          className="rounded-xl"
+          style={isDark ? { borderColor, color: textSub } : {}}
+          onClick={handleExport}
+        >
           <Download size={14} />
           Export
         </Button>
       </div>
+
+      {/* Bulk Actions Bar */}
+      {hasSelection && (
+        <div
+          className="flex items-center gap-3 px-4 py-2.5 rounded-xl border"
+          style={{
+            background: isDark ? `${darkColors.canopy}10` : `${colors.canopy}08`,
+            borderColor: isDark ? `${darkColors.canopy}30` : `${colors.canopy}25`,
+          }}
+        >
+          <span
+            className="text-xs font-semibold"
+            style={{ color: isDark ? darkColors.canopy : colors.canopy }}
+          >
+            {selected.size} selected
+          </span>
+          <div className="flex items-center gap-2 ml-auto">
+            <Button
+              size="sm"
+              className="text-white rounded-xl text-[11px] h-7"
+              style={{ background: isDark ? darkColors.canopy : colors.canopy }}
+              onClick={handleBulkMarkComplete}
+            >
+              <CheckCircle size={11} />
+              Mark Selected Complete
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl text-[11px] h-7"
+              style={isDark ? { borderColor, color: textSub } : {}}
+              onClick={handleBulkRemind}
+            >
+              <Send size={11} />
+              Send Reminder to Selected
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-xl text-[11px] h-7"
+              style={{ color: textMuted }}
+              onClick={() => setSelected(new Set())}
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Search + Filters */}
       <div className="flex flex-col lg:flex-row gap-3 items-start lg:items-center justify-between">
         <div className="relative flex-1 max-w-sm">
           <Search
             size={15}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2"
+            style={{ color: textMuted }}
           />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name or email..."
             className="pl-10 rounded-xl"
+            style={isDark ? {
+              background: darkColors.surface,
+              borderColor: darkColors.surfaceBorder,
+              color: darkColors.textPrimary,
+            } : {}}
           />
         </div>
-        <div className="flex items-center rounded-xl border border-gray-200 overflow-hidden bg-white">
+        <div
+          className="flex items-center rounded-xl border overflow-hidden"
+          style={{
+            background: cardBg,
+            borderColor,
+          }}
+        >
           {FILTER_TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setStatusFilter(tab.key)}
-              className={`px-3 py-2 text-xs font-medium transition ${
-                statusFilter === tab.key
-                  ? "text-white"
-                  : "text-gray-500 hover:bg-gray-50"
-              }`}
+              className="px-3 py-2 text-xs font-medium transition"
               style={
                 statusFilter === tab.key
-                  ? { background: colors.forest }
-                  : {}
+                  ? {
+                      background: isDark ? darkColors.canopy : colors.forest,
+                      color: isDark ? darkColors.cream : "#ffffff",
+                    }
+                  : {
+                      color: textMuted,
+                    }
               }
+              onMouseEnter={(e) => {
+                if (statusFilter !== tab.key) {
+                  (e.currentTarget as HTMLElement).style.background = hoverBg;
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (statusFilter !== tab.key) {
+                  (e.currentTarget as HTMLElement).style.background = "transparent";
+                }
+              }}
             >
               {tab.label}
             </button>
@@ -247,11 +474,27 @@ export default function AttendeesPage({
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div
+        className="rounded-2xl border shadow-sm overflow-hidden"
+        style={{ background: cardBg, borderColor }}
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-50 text-left text-xs text-gray-400 uppercase tracking-wider">
+              <tr
+                className="border-b text-left text-xs uppercase tracking-wider"
+                style={{ borderColor, color: textMuted }}
+              >
+                <th className="px-3 py-3 font-semibold w-10">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    onChange={toggleSelectAll}
+                    className="rounded border-gray-300 cursor-pointer accent-current"
+                    style={{ accentColor: isDark ? darkColors.canopy : colors.canopy }}
+                    aria-label="Select all attendees"
+                  />
+                </th>
                 {[
                   "Attendee",
                   "Status",
@@ -267,16 +510,19 @@ export default function AttendeesPage({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody
+              className="divide-y"
+              style={{ borderColor: isDark ? darkColors.surfaceBorder + "60" : "#f9fafb" }}
+            >
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-gray-400">
+                  <td colSpan={8} className="px-5 py-12 text-center" style={{ color: textMuted }}>
                     Loading attendees...
                   </td>
                 </tr>
               ) : attendees.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-gray-400">
+                  <td colSpan={8} className="px-5 py-12 text-center" style={{ color: textMuted }}>
                     No attendees match the current filter.
                   </td>
                 </tr>
@@ -286,7 +532,10 @@ export default function AttendeesPage({
             </tbody>
           </table>
         </div>
-        <div className="px-5 py-3 border-t border-gray-50 flex items-center justify-between text-xs text-gray-400">
+        <div
+          className="px-5 py-3 border-t flex items-center justify-between text-xs"
+          style={{ borderColor, color: textMuted }}
+        >
           <span>
             Showing {attendees.length} of {totalCount} attendees
           </span>
@@ -298,67 +547,127 @@ export default function AttendeesPage({
 
   function renderAttendeeRows(a: RegistrationDetail) {
     const isExpanded = expanded === a.id;
+    const isSelected = selected.has(a.id);
     const name = a.attendee_name || "Unknown";
     const email = a.attendee_email || "";
     const hasFlag = a.notes && a.notes.toLowerCase().includes("flag");
+
+    // C3: Determine if this row needs special indicators
+    const isManualPending =
+      (a.source === "manual" || a.source === "walk_in") &&
+      a.status === "pending_payment";
+    const isAutoConfirmed =
+      a.source === "registration_form" && a.status === "complete";
+
+    const rowBg = hasFlag
+      ? isDark
+        ? `${darkColors.ember}08`
+        : "rgba(244,63,94,0.03)"
+      : isSelected
+        ? isDark
+          ? `${darkColors.canopy}0c`
+          : `${colors.canopy}06`
+        : "transparent";
 
     const rows = [
       <tr
         key={a.id}
         onClick={() => setExpanded(isExpanded ? null : a.id)}
-        className={`hover:bg-gray-50/50 cursor-pointer transition ${
-          hasFlag ? "bg-rose-50/30" : ""
-        }`}
+        className="cursor-pointer transition-colors"
+        style={{ background: rowBg }}
+        onMouseEnter={(e) => {
+          if (!hasFlag && !isSelected) {
+            (e.currentTarget as HTMLElement).style.background = hoverBg;
+          }
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLElement).style.background = rowBg;
+        }}
       >
+        <td className="px-3 py-3.5">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => {
+              e.stopPropagation();
+              toggleSelect(a.id);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="rounded border-gray-300 cursor-pointer"
+            style={{ accentColor: isDark ? darkColors.canopy : colors.canopy }}
+            aria-label={`Select ${name}`}
+          />
+        </td>
         <td className="px-5 py-3.5">
           <div className="flex items-center gap-3">
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
               style={{
-                background: hasFlag ? colors.ember : colors.sage,
+                background: hasFlag
+                  ? isDark ? darkColors.ember : colors.ember
+                  : isDark ? darkColors.bark : colors.sage,
               }}
             >
               {initials(name)}
             </div>
             <div>
-              <p className="font-semibold text-gray-800 text-[13px]">{name}</p>
-              <p className="text-[11px] text-gray-400">{email}</p>
+              <p className="font-semibold text-[13px]" style={{ color: isDark ? darkColors.textPrimary : "#1f2937" }}>
+                {name}
+              </p>
+              <p className="text-[11px]" style={{ color: textMuted }}>{email}</p>
             </div>
           </div>
         </td>
         <td className="px-5 py-3.5">
-          <StatusBadge status={a.status} />
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <StatusBadge status={a.status} isDark={isDark} />
+            {isManualPending && <NeedsActionBadge isDark={isDark} />}
+            {isAutoConfirmed && <AutoBadge isDark={isDark} />}
+          </div>
         </td>
         <td
           className="px-5 py-3.5 font-semibold"
-          style={{ color: colors.forest }}
+          style={{ color: isDark ? darkColors.canopy : colors.forest }}
         >
-          {a.payment_amount_cents ? formatCents(a.payment_amount_cents) : "—"}
+          {a.payment_amount_cents ? formatCents(a.payment_amount_cents) : "\u2014"}
         </td>
-        <td className="px-5 py-3.5 text-gray-600 capitalize text-xs">
-          {a.accommodation_type?.replace(/_/g, " ") || "—"}
+        <td className="px-5 py-3.5 capitalize text-xs" style={{ color: textSub }}>
+          {a.accommodation_type?.replace(/_/g, " ") || "\u2014"}
         </td>
-        <td className="px-5 py-3.5 text-gray-600 text-xs">
-          {a.dietary_restrictions || "—"}
+        <td className="px-5 py-3.5 text-xs" style={{ color: textSub }}>
+          {a.dietary_restrictions || "\u2014"}
         </td>
         <td className="px-5 py-3.5">
           <span
-            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+            className="text-xs font-medium px-2 py-0.5 rounded-full border"
+            style={
               a.source === "registration_form"
-                ? "bg-gray-100 text-gray-500"
+                ? {
+                    background: isDark ? `${darkColors.textMuted}15` : "#f3f4f6",
+                    color: isDark ? darkColors.textSecondary : "#6b7280",
+                    borderColor: isDark ? darkColors.surfaceBorder : "#f3f4f6",
+                  }
                 : a.source === "manual"
-                ? "bg-purple-50 text-purple-600 border border-purple-200"
-                : "bg-blue-50 text-blue-600 border border-blue-200"
-            }`}
+                  ? {
+                      background: isDark ? `${darkColors.berry}15` : "#faf5ff",
+                      color: isDark ? darkColors.berry : "#9333ea",
+                      borderColor: isDark ? `${darkColors.berry}30` : "#e9d5ff",
+                    }
+                  : {
+                      background: isDark ? `${darkColors.sky}15` : "#eff6ff",
+                      color: isDark ? darkColors.sky : "#2563eb",
+                      borderColor: isDark ? `${darkColors.sky}30` : "#bfdbfe",
+                    }
+            }
           >
             {a.source === "registration_form" ? "form" : a.source}
           </span>
         </td>
         <td className="px-5 py-3.5">
           {isExpanded ? (
-            <ChevronUp size={14} className="text-gray-300" />
+            <ChevronUp size={14} style={{ color: textMuted }} />
           ) : (
-            <ChevronDown size={14} className="text-gray-300" />
+            <ChevronDown size={14} style={{ color: textMuted }} />
           )}
         </td>
       </tr>,
@@ -367,29 +676,29 @@ export default function AttendeesPage({
     if (isExpanded) {
       rows.push(
         <tr key={a.id + "x"}>
-          <td colSpan={7} className="px-5 py-4 bg-gray-50/50">
+          <td colSpan={8} className="px-5 py-4" style={{ background: subtleBg }}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
               <div>
-                <span className="text-gray-400 block mb-0.5">Phone</span>
-                <span className="text-gray-700 font-medium">
+                <span className="block mb-0.5" style={{ color: textMuted }}>Phone</span>
+                <span className="font-medium" style={{ color: isDark ? darkColors.textPrimary : "#374151" }}>
                   {a.attendee_phone || "Not provided"}
                 </span>
               </div>
               <div>
-                <span className="text-gray-400 block mb-0.5">Source</span>
-                <span className="text-gray-700 font-medium capitalize">
+                <span className="block mb-0.5" style={{ color: textMuted }}>Source</span>
+                <span className="font-medium capitalize" style={{ color: isDark ? darkColors.textPrimary : "#374151" }}>
                   {a.source}
                 </span>
               </div>
               <div>
-                <span className="text-gray-400 block mb-0.5">Waiver</span>
-                <span className="text-gray-700 font-medium">
+                <span className="block mb-0.5" style={{ color: textMuted }}>Waiver</span>
+                <span className="font-medium" style={{ color: isDark ? darkColors.textPrimary : "#374151" }}>
                   {a.waiver_accepted_at ? "Accepted" : "Not accepted"}
                 </span>
               </div>
               <div>
-                <span className="text-gray-400 block mb-0.5">Registered</span>
-                <span className="text-gray-700 font-medium">
+                <span className="block mb-0.5" style={{ color: textMuted }}>Registered</span>
+                <span className="font-medium" style={{ color: isDark ? darkColors.textPrimary : "#374151" }}>
                   {new Date(a.created_at).toLocaleDateString()}
                 </span>
               </div>
@@ -397,10 +706,10 @@ export default function AttendeesPage({
                 const intake = a.intake_data as Record<string, string> | undefined;
                 return intake?.emergency_contact ? (
                   <div>
-                    <span className="text-gray-400 block mb-0.5">
+                    <span className="block mb-0.5" style={{ color: textMuted }}>
                       Emergency Contact
                     </span>
-                    <span className="text-gray-700 font-medium">
+                    <span className="font-medium" style={{ color: isDark ? darkColors.textPrimary : "#374151" }}>
                       {intake.emergency_contact}
                     </span>
                   </div>
@@ -410,18 +719,27 @@ export default function AttendeesPage({
                 const intake = a.intake_data as Record<string, string> | undefined;
                 return intake?.how_heard ? (
                   <div>
-                    <span className="text-gray-400 block mb-0.5">
+                    <span className="block mb-0.5" style={{ color: textMuted }}>
                       How They Heard
                     </span>
-                    <span className="text-gray-700 font-medium">
+                    <span className="font-medium" style={{ color: isDark ? darkColors.textPrimary : "#374151" }}>
                       {intake.how_heard}
                     </span>
                   </div>
                 ) : null;
               })()}
               {a.notes && (
-                <div className="col-span-full p-2.5 rounded-lg bg-rose-50 border border-rose-100">
-                  <span className="text-rose-600 font-semibold flex items-center gap-1.5 text-xs">
+                <div
+                  className="col-span-full p-2.5 rounded-lg border"
+                  style={{
+                    background: isDark ? `${darkColors.ember}10` : "#fef2f2",
+                    borderColor: isDark ? `${darkColors.ember}30` : "#fecaca",
+                  }}
+                >
+                  <span
+                    className="font-semibold flex items-center gap-1.5 text-xs"
+                    style={{ color: isDark ? darkColors.ember : "#dc2626" }}
+                  >
                     <AlertTriangle size={12} />
                     {a.notes}
                   </span>
@@ -433,7 +751,7 @@ export default function AttendeesPage({
                 <Button
                   size="sm"
                   className="text-white rounded-xl text-[11px] h-7"
-                  style={{ background: colors.canopy }}
+                  style={{ background: isDark ? darkColors.canopy : colors.canopy }}
                   onClick={(e) => {
                     e.stopPropagation();
                     updateMutation.mutate({ id: a.id, status: "complete" });
@@ -446,6 +764,7 @@ export default function AttendeesPage({
                 variant="outline"
                 size="sm"
                 className="rounded-xl text-[11px] h-7"
+                style={isDark ? { borderColor, color: textSub } : {}}
                 disabled={a.status !== "pending_payment"}
                 onClick={async (e) => {
                   e.stopPropagation();
