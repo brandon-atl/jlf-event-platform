@@ -5,12 +5,19 @@ import { useQuery } from "@tanstack/react-query";
 import { Calendar, Users, BarChart3, ChevronRight } from "lucide-react";
 
 import { events as eventsApi, type EventResponse } from "@/lib/api";
-import { colors } from "@/lib/theme";
+import { colors, darkColors } from "@/lib/theme";
 import { formatDateShort } from "@/lib/format";
 import { isDemoMode, DEMO_EVENTS } from "@/lib/demo-data";
+import { useDarkMode } from "@/hooks/use-dark-mode";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { isDark } = useDarkMode();
+  const cardBg = isDark ? darkColors.surface : "#ffffff";
+  const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
+  const textMain = isDark ? darkColors.textPrimary : colors.forest;
+  const textSub = isDark ? darkColors.textSecondary : "#6b7280";
+  const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
 
   const { data, isLoading } = useQuery({
     queryKey: ["events"],
@@ -30,19 +37,19 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">
+        <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: textMuted }}>
           Analytics
         </p>
         <h2
           className="text-2xl font-bold tracking-tight"
           style={{
-            color: colors.forest,
+            color: textMain,
             fontFamily: "var(--font-dm-serif), serif",
           }}
         >
           Dashboard
         </h2>
-        <p className="text-sm text-gray-400 mt-0.5">
+        <p className="text-sm mt-0.5" style={{ color: textMuted }}>
           Select an event to view its dashboard
         </p>
       </div>
@@ -52,13 +59,14 @@ export default function DashboardPage() {
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className="bg-white rounded-2xl border border-gray-100 p-5 h-24 animate-pulse"
+              className="rounded-2xl border p-5 h-24 animate-pulse"
+              style={{ background: cardBg, borderColor }}
             />
           ))}
         </div>
       ) : allEvents.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
-          <p className="text-gray-400 text-sm">
+        <div className="rounded-2xl border p-12 text-center shadow-sm" style={{ background: cardBg, borderColor }}>
+          <p className="text-sm" style={{ color: textMuted }}>
             No events yet. Create an event to get started.
           </p>
         </div>
@@ -68,26 +76,28 @@ export default function DashboardPage() {
             <div
               key={event.id}
               onClick={() => router.push(`/dashboard/${event.id}`)}
-              className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-5 cursor-pointer hover:translate-y-[-2px] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,.08)] active:translate-y-0 transition-all duration-250 group shadow-sm animate-in slide-in-from-bottom-2 fade-in"
+              className="rounded-2xl border p-5 flex items-center gap-5 cursor-pointer hover:translate-y-[-2px] active:translate-y-0 transition-all duration-250 group shadow-sm animate-in slide-in-from-bottom-2 fade-in"
               style={{
+                background: cardBg,
+                borderColor,
                 animationDelay: `${i * 60}ms`,
                 animationFillMode: "both",
               }}
             >
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ background: `${colors.canopy}10` }}
+                style={{ background: `${isDark ? darkColors.canopy : colors.canopy}10` }}
               >
-                <BarChart3 size={24} style={{ color: colors.canopy }} />
+                <BarChart3 size={24} style={{ color: isDark ? darkColors.canopy : colors.canopy }} />
               </div>
               <div className="flex-1 min-w-0">
                 <h3
                   className="text-base font-bold truncate group-hover:opacity-80 transition mb-1"
-                  style={{ color: colors.forest }}
+                  style={{ color: textMain }}
                 >
                   {event.name}
                 </h3>
-                <div className="flex items-center gap-4 text-sm text-gray-400 flex-wrap">
+                <div className="flex items-center gap-4 text-sm flex-wrap" style={{ color: textMuted }}>
                   <span className="flex items-center gap-1">
                     <Calendar size={13} />
                     {formatDateShort(event.event_date)}
@@ -100,9 +110,9 @@ export default function DashboardPage() {
                     <span
                       className="text-xs font-semibold px-2.5 py-1 rounded-full border"
                       style={{
-                        color: "#92700c",
-                        borderColor: "#92700c50",
-                        background: "#92700c12",
+                        color: isDark ? darkColors.sun : "#92700c",
+                        borderColor: isDark ? `${darkColors.sun}50` : "#92700c50",
+                        background: isDark ? `${darkColors.sun}12` : "#92700c12",
                       }}
                     >
                       {event.pending_count} pending
@@ -111,11 +121,11 @@ export default function DashboardPage() {
                   <span
                     className="text-xs font-semibold px-2.5 py-1 rounded-full"
                     style={{
-                      color: event.status === "active" ? colors.canopy : "#666",
+                      color: event.status === "active" ? (isDark ? darkColors.canopy : colors.canopy) : textMuted,
                       background:
                         event.status === "active"
-                          ? `${colors.canopy}12`
-                          : "#66666612",
+                          ? `${isDark ? darkColors.canopy : colors.canopy}12`
+                          : `${textMuted}12`,
                     }}
                   >
                     {event.status}
@@ -124,7 +134,8 @@ export default function DashboardPage() {
               </div>
               <ChevronRight
                 size={16}
-                className="text-gray-300 group-hover:text-gray-500 transition shrink-0"
+                className="transition shrink-0"
+                style={{ color: textMuted }}
               />
             </div>
           ))}

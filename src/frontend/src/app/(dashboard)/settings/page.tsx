@@ -5,12 +5,18 @@ import { useQuery } from "@tanstack/react-query";
 import { Calendar, Settings2, ChevronRight } from "lucide-react";
 
 import { events as eventsApi, type EventResponse } from "@/lib/api";
-import { colors } from "@/lib/theme";
+import { colors, darkColors } from "@/lib/theme";
 import { formatDateShort, eventStatusColor } from "@/lib/format";
 import { isDemoMode, DEMO_EVENTS } from "@/lib/demo-data";
+import { useDarkMode } from "@/hooks/use-dark-mode";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { isDark } = useDarkMode();
+  const cardBg = isDark ? darkColors.surface : "#ffffff";
+  const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
+  const textMain = isDark ? darkColors.textPrimary : colors.forest;
+  const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
 
   const { data, isLoading } = useQuery({
     queryKey: ["events"],
@@ -30,19 +36,19 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold">
+        <p className="text-xs uppercase tracking-widest font-semibold" style={{ color: textMuted }}>
           Configuration
         </p>
         <h2
           className="text-2xl font-bold tracking-tight"
           style={{
-            color: colors.forest,
+            color: textMain,
             fontFamily: "var(--font-dm-serif), serif",
           }}
         >
           Settings
         </h2>
-        <p className="text-sm text-gray-400 mt-0.5">
+        <p className="text-sm mt-0.5" style={{ color: textMuted }}>
           Select an event to configure
         </p>
       </div>
@@ -52,13 +58,14 @@ export default function SettingsPage() {
           {[...Array(3)].map((_, i) => (
             <div
               key={i}
-              className="bg-white rounded-2xl border border-gray-100 p-5 h-24 animate-pulse"
+              className="rounded-2xl border p-5 h-24 animate-pulse"
+              style={{ background: cardBg, borderColor }}
             />
           ))}
         </div>
       ) : eventList.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-sm">
-          <p className="text-gray-400 text-sm">
+        <div className="rounded-2xl border p-12 text-center shadow-sm" style={{ background: cardBg, borderColor }}>
+          <p className="text-sm" style={{ color: textMuted }}>
             No events yet. Create an event to configure settings.
           </p>
         </div>
@@ -70,23 +77,25 @@ export default function SettingsPage() {
               <div
                 key={event.id}
                 onClick={() => router.push(`/settings/${event.id}`)}
-                className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center gap-5 cursor-pointer hover:translate-y-[-2px] hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,.08)] active:translate-y-0 transition-all duration-250 group shadow-sm animate-in slide-in-from-bottom-2 fade-in"
+                className="rounded-2xl border p-5 flex items-center gap-5 cursor-pointer hover:translate-y-[-2px] active:translate-y-0 transition-all duration-250 group shadow-sm animate-in slide-in-from-bottom-2 fade-in"
                 style={{
+                  background: cardBg,
+                  borderColor,
                   animationDelay: `${i * 60}ms`,
                   animationFillMode: "both",
                 }}
               >
                 <div
                   className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                  style={{ background: `${colors.canopy}10` }}
+                  style={{ background: `${isDark ? darkColors.canopy : colors.canopy}10` }}
                 >
-                  <Settings2 size={24} style={{ color: colors.canopy }} />
+                  <Settings2 size={24} style={{ color: isDark ? darkColors.canopy : colors.canopy }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2.5 mb-1 flex-wrap">
                     <h3
                       className="text-base font-bold truncate group-hover:opacity-80 transition"
-                      style={{ color: colors.forest }}
+                      style={{ color: textMain }}
                     >
                       {event.name}
                     </h3>
@@ -94,11 +103,11 @@ export default function SettingsPage() {
                       className="w-2 h-2 rounded-full shrink-0"
                       style={{ background: statusColor }}
                     />
-                    <span className="text-xs text-gray-400 capitalize">
+                    <span className="text-xs capitalize" style={{ color: textMuted }}>
                       {event.status}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-400 flex-wrap">
+                  <div className="flex items-center gap-4 text-sm flex-wrap" style={{ color: textMuted }}>
                     <span className="flex items-center gap-1">
                       <Calendar size={13} />
                       {formatDateShort(event.event_date)}
@@ -117,7 +126,8 @@ export default function SettingsPage() {
                 </div>
                 <ChevronRight
                   size={16}
-                  className="text-gray-300 group-hover:text-gray-500 transition shrink-0"
+                  className="transition shrink-0"
+                  style={{ color: textMuted }}
                 />
               </div>
             );

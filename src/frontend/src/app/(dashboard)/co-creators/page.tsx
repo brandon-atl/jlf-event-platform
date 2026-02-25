@@ -6,7 +6,9 @@ import { UserPlus, Eye, Send, Trash2, X, Mail, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { coCreators as coCreatorsApi, events as eventsApi, CoCreatorDetail } from "@/lib/api";
-import { colors } from "@/lib/theme";
+import { isDemoMode, DEMO_COCREATORS, DEMO_EVENTS } from "@/lib/demo-data";
+import { useDarkMode } from "@/hooks/use-dark-mode";
+import { colors, darkColors } from "@/lib/theme";
 import { initials, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,15 +27,45 @@ export default function CoCreatorsPage() {
   const [assignOpen, setAssignOpen] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [inviting, setInviting] = useState(false);
+  const { isDark } = useDarkMode();
+
+  const c = isDark ? darkColors : colors;
+  const cardBg = isDark ? darkColors.surface : "#ffffff";
+  const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
+  const textMain = isDark ? darkColors.textPrimary : colors.forest;
+  const textSub = isDark ? darkColors.textSecondary : "#6b7280";
+  const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
+  const hoverBg = isDark ? darkColors.surfaceHover : "#f9fafb";
 
   const { data: coCreatorsList = [], isLoading } = useQuery({
     queryKey: ["co-creators"],
-    queryFn: coCreatorsApi.list,
+    queryFn: () => {
+      if (isDemoMode()) {
+        return Promise.resolve(DEMO_COCREATORS.map(cc => ({
+          ...cc,
+          created_at: cc.last_active,
+          events: cc.events.map((name, i) => ({
+            event_id: `e${i + 1}`,
+            event_name: name,
+            can_see_amounts: false,
+          })),
+        })) as unknown as CoCreatorDetail[]);
+      }
+      return coCreatorsApi.list();
+    },
   });
 
   const { data: eventsList } = useQuery({
     queryKey: ["events-brief"],
-    queryFn: () => eventsApi.list({ per_page: 100 }),
+    queryFn: () => {
+      if (isDemoMode()) {
+        return Promise.resolve({
+          data: DEMO_EVENTS as unknown as import("@/lib/api").EventResponse[],
+          meta: { total: DEMO_EVENTS.length, page: 1, per_page: 100 },
+        });
+      }
+      return eventsApi.list({ per_page: 100 });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -117,13 +149,13 @@ export default function CoCreatorsPage() {
           <h2
             className="text-xl font-bold"
             style={{
-              color: colors.forest,
+              color: textMain,
               fontFamily: "var(--font-dm-serif), serif",
             }}
           >
             Co-Creators
           </h2>
-          <p className="text-sm text-gray-400 mt-0.5">
+          <p className="text-sm mt-0.5" style={{ color: textMuted }}>
             Manage co-host access to event data
           </p>
         </div>
@@ -131,17 +163,17 @@ export default function CoCreatorsPage() {
           <DialogTrigger asChild>
             <Button
               className="text-white font-semibold rounded-xl"
-              style={{ background: colors.canopy }}
+              style={{ background: c.canopy }}
             >
               <UserPlus size={15} />
               Invite Co-Creator
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-2xl rounded-2xl">
+          <DialogContent className="sm:max-w-2xl rounded-2xl" style={isDark ? { background: darkColors.surfaceElevated, borderColor } : {}}>
             <DialogHeader>
               <DialogTitle
                 style={{
-                  color: colors.forest,
+                  color: textMain,
                   fontFamily: "var(--font-dm-serif), serif",
                 }}
               >
@@ -151,7 +183,7 @@ export default function CoCreatorsPage() {
             <form onSubmit={handleInvite} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
                     Name
                   </Label>
                   <Input
@@ -159,10 +191,11 @@ export default function CoCreatorsPage() {
                     required
                     className="mt-1 rounded-xl"
                     placeholder="Co-creator name"
+                    style={isDark ? { background: darkColors.surface, borderColor, color: textMain } : {}}
                   />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
                     Email
                   </Label>
                   <Input
@@ -171,6 +204,7 @@ export default function CoCreatorsPage() {
                     required
                     className="mt-1 rounded-xl"
                     placeholder="email@example.com"
+                    style={isDark ? { background: darkColors.surface, borderColor, color: textMain } : {}}
                   />
                 </div>
               </div>
@@ -179,6 +213,7 @@ export default function CoCreatorsPage() {
                   type="button"
                   variant="outline"
                   className="rounded-xl"
+                  style={isDark ? { borderColor, color: textSub } : {}}
                   onClick={() => setInviteOpen(false)}
                 >
                   Cancel
@@ -187,7 +222,7 @@ export default function CoCreatorsPage() {
                   type="submit"
                   disabled={inviting}
                   className="text-white rounded-xl"
-                  style={{ background: colors.canopy }}
+                  style={{ background: c.canopy }}
                 >
                   <Send size={14} />
                   {inviting ? "Sending..." : "Create & Send Magic Link"}
@@ -200,70 +235,75 @@ export default function CoCreatorsPage() {
 
       {/* Loading */}
       {isLoading && (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16" style={{ color: textMuted }}>
           <p className="text-sm">Loading co-creators...</p>
         </div>
       )}
 
       {/* Co-Creator Cards */}
       {!isLoading && coCreatorsList.length > 0
-        ? coCreatorsList.map((c) => (
+        ? coCreatorsList.map((cc) => (
             <div
-              key={c.id}
-              className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm"
+              key={cc.id}
+              className="rounded-2xl border p-5 shadow-sm"
+              style={{ background: cardBg, borderColor }}
             >
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-4">
                   <div
                     className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                    style={{ background: colors.bark }}
+                    style={{ background: c.bark }}
                   >
-                    {initials(c.name)}
+                    {initials(cc.name)}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-gray-800">{c.name}</p>
-                    <p className="text-xs text-gray-400">{c.email}</p>
-                    <p className="text-[10px] text-gray-300 mt-0.5">
-                      Added {formatDate(c.created_at)}
+                    <p className="text-sm font-bold" style={{ color: textMain }}>{cc.name}</p>
+                    <p className="text-xs" style={{ color: textMuted }}>{cc.email}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: isDark ? darkColors.textMuted : "#d1d5db" }}>
+                      Added {formatDate(cc.created_at)}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => handleResendInvite(c.id)}
-                    className="p-2 rounded-lg text-gray-300 hover:text-sky-500 hover:bg-sky-50 transition"
+                    onClick={() => handleResendInvite(cc.id)}
+                    className="p-2 rounded-lg transition"
+                    style={{ color: textMuted }}
                     title="Resend magic link"
                   >
                     <Mail size={15} />
                   </button>
                   <button
-                    onClick={() => setAssignOpen(c.id)}
-                    className="p-2 rounded-lg text-gray-300 hover:text-green-600 hover:bg-green-50 transition"
+                    onClick={() => setAssignOpen(cc.id)}
+                    className="p-2 rounded-lg transition"
+                    style={{ color: textMuted }}
                     title="Assign event"
                   >
                     <Plus size={15} />
                   </button>
-                  {deleteConfirm === c.id ? (
+                  {deleteConfirm === cc.id ? (
                     <div className="flex items-center gap-1">
                       <Button
                         size="sm"
                         variant="destructive"
                         className="rounded-lg text-xs h-8"
-                        onClick={() => deleteMutation.mutate(c.id)}
+                        onClick={() => deleteMutation.mutate(cc.id)}
                       >
                         Confirm
                       </Button>
                       <button
                         onClick={() => setDeleteConfirm(null)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition"
+                        className="p-1.5 rounded-lg transition"
+                        style={{ color: textMuted }}
                       >
                         <X size={14} />
                       </button>
                     </div>
                   ) : (
                     <button
-                      onClick={() => setDeleteConfirm(c.id)}
-                      className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition"
+                      onClick={() => setDeleteConfirm(cc.id)}
+                      className="p-2 rounded-lg transition"
+                      style={{ color: textMuted }}
                       title="Delete co-creator"
                     >
                       <Trash2 size={15} />
@@ -274,15 +314,15 @@ export default function CoCreatorsPage() {
 
               {/* Assigned events */}
               <div className="flex items-center gap-2 flex-wrap mt-3 pl-16">
-                {c.events.length > 0 ? (
-                  c.events.map((evt) => (
+                {cc.events.length > 0 ? (
+                  cc.events.map((evt) => (
                     <span
                       key={evt.event_id}
                       className="text-xs px-2.5 py-1 rounded-full border font-medium inline-flex items-center gap-1.5"
                       style={{
-                        background: `${colors.canopy}08`,
-                        color: colors.canopy,
-                        borderColor: `${colors.canopy}25`,
+                        background: `${c.canopy}08`,
+                        color: c.canopy,
+                        borderColor: `${c.canopy}25`,
                       }}
                     >
                       {evt.event_name}
@@ -291,7 +331,7 @@ export default function CoCreatorsPage() {
                       )}
                       <button
                         onClick={() =>
-                          removeMutation.mutate({ id: c.id, eventId: evt.event_id })
+                          removeMutation.mutate({ id: cc.id, eventId: evt.event_id })
                         }
                         className="ml-0.5 hover:text-red-500 transition"
                       >
@@ -300,11 +340,11 @@ export default function CoCreatorsPage() {
                     </span>
                   ))
                 ) : (
-                  <span className="text-xs text-gray-300 italic">
+                  <span className="text-xs italic" style={{ color: textMuted }}>
                     No events assigned
                   </span>
                 )}
-                <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 font-medium flex items-center gap-1">
+                <span className="text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1" style={{ background: hoverBg, color: textSub }}>
                   <Eye size={11} />
                   Read-only
                 </span>
@@ -312,7 +352,7 @@ export default function CoCreatorsPage() {
             </div>
           ))
         : !isLoading && (
-            <div className="text-center py-16 text-gray-400">
+            <div className="text-center py-16" style={{ color: textMuted }}>
               <UserPlus size={32} className="mx-auto mb-3 opacity-30" />
               <p className="text-sm">No co-creators added yet</p>
               <p className="text-xs mt-1">
@@ -323,11 +363,11 @@ export default function CoCreatorsPage() {
 
       {/* Assign Event Dialog */}
       <Dialog open={!!assignOpen} onOpenChange={(open) => !open && setAssignOpen(null)}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
+        <DialogContent className="sm:max-w-md rounded-2xl" style={isDark ? { background: darkColors.surfaceElevated, borderColor } : {}}>
           <DialogHeader>
             <DialogTitle
               style={{
-                color: colors.forest,
+                color: textMain,
                 fontFamily: "var(--font-dm-serif), serif",
               }}
             >
@@ -336,13 +376,14 @@ export default function CoCreatorsPage() {
           </DialogHeader>
           <form onSubmit={handleAssignEvent} className="space-y-4">
             <div>
-              <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted }}>
                 Event
               </Label>
               <select
                 name="event_id"
                 required
-                className="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200"
+                className="mt-1 w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-200"
+                style={isDark ? { background: darkColors.surface, borderColor, color: textMain } : {}}
               >
                 <option value="">Select an event...</option>
                 {allEvents.map((evt) => (
@@ -357,9 +398,10 @@ export default function CoCreatorsPage() {
                 type="checkbox"
                 name="can_see_amounts"
                 id="can_see_amounts"
-                className="rounded border-gray-300"
+                className="rounded"
+                style={isDark ? { borderColor } : {}}
               />
-              <Label htmlFor="can_see_amounts" className="text-sm text-gray-600">
+              <Label htmlFor="can_see_amounts" className="text-sm" style={{ color: textSub }}>
                 Can see payment amounts
               </Label>
             </div>
@@ -368,6 +410,7 @@ export default function CoCreatorsPage() {
                 type="button"
                 variant="outline"
                 className="rounded-xl"
+                style={isDark ? { borderColor, color: textSub } : {}}
                 onClick={() => setAssignOpen(null)}
               >
                 Cancel
@@ -375,7 +418,7 @@ export default function CoCreatorsPage() {
               <Button
                 type="submit"
                 className="text-white rounded-xl"
-                style={{ background: colors.canopy }}
+                style={{ background: c.canopy }}
               >
                 Assign
               </Button>
