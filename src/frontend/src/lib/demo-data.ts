@@ -88,41 +88,36 @@ const DEMO_MAX_ATTENDEES = 15;
 
 export const DEMO_DASHBOARD = (eventId: string) => {
   const ev = DEMO_EVENTS.find(e => e.id === eventId) || DEMO_EVENTS[1];
-  // Cap to match the demo registrations table
-  const cappedTotal = Math.min(ev.total_registrations, DEMO_MAX_ATTENDEES);
-  const cappedComplete = Math.min(ev.complete_count, cappedTotal);
-  const cappedPending = Math.min(ev.pending_count, cappedTotal - cappedComplete);
+  // Derive status_breakdown from actual DEMO_REGISTRATIONS so numbers match
+  const regs = DEMO_REGISTRATIONS(eventId).data;
+  const cappedTotal = regs.length;
+  const statusCounts = { complete: 0, pending_payment: 0, expired: 0, cancelled: 0, refunded: 0 };
+  for (const r of regs) {
+    if (r.status in statusCounts) statusCounts[r.status as keyof typeof statusCounts]++;
+  }
   return {
     event_id: ev.id,
     event_name: ev.name,
     total_registrations: cappedTotal,
-    status_breakdown: {
-      complete: cappedComplete,
-      pending_payment: cappedPending,
-      expired: Math.floor(cappedTotal * 0.05),
-      cancelled: Math.max(0, cappedTotal - cappedComplete - cappedPending - Math.floor(cappedTotal * 0.05)),
-      refunded: 0,
-    },
-    accommodation_breakdown: {
-      bell_tent: Math.floor(cappedComplete * 0.4),
-      nylon_tent: Math.floor(cappedComplete * 0.25),
-      self_camping: Math.floor(cappedComplete * 0.2),
-      yurt_shared: Math.floor(cappedComplete * 0.1),
-      none: cappedComplete - Math.floor(cappedComplete * 0.4) - Math.floor(cappedComplete * 0.25) - Math.floor(cappedComplete * 0.2) - Math.floor(cappedComplete * 0.1),
-    },
-    dietary_summary: {
-      vegetarian: Math.floor(cappedComplete * 0.3),
-      vegan: Math.floor(cappedComplete * 0.2),
-      "gluten-free": Math.floor(cappedComplete * 0.1),
-      none: cappedComplete - Math.floor(cappedComplete * 0.3) - Math.floor(cappedComplete * 0.2) - Math.floor(cappedComplete * 0.1),
-    },
-    // Scale revenue proportionally to capped attendees to keep averages consistent
-    total_revenue_cents: ev.complete_count > 0
-      ? Math.round(ev.total_revenue_cents * (cappedComplete / ev.complete_count))
-      : 0,
-    average_payment_cents: cappedComplete > 0 && ev.complete_count > 0
-      ? Math.round(ev.total_revenue_cents / ev.complete_count)
-      : 0,
+    status_breakdown: statusCounts,
+    accommodation_breakdown: (() => {
+      const acc = { bell_tent: 0, nylon_tent: 0, self_camping: 0, yurt_shared: 0, none: 0 };
+      for (const r of regs) if (r.accommodation_type in acc) acc[r.accommodation_type as keyof typeof acc]++;
+      return acc;
+    })(),
+    dietary_summary: (() => {
+      const diet: Record<string, number> = {};
+      for (const r of regs) {
+        const key = r.dietary_restrictions || "None";
+        diet[key] = (diet[key] || 0) + 1;
+      }
+      return diet;
+    })(),
+    total_revenue_cents: regs.reduce((sum, r) => sum + (r.status === "complete" ? (r.payment_amount_cents || 0) : 0), 0),
+    average_payment_cents: (() => {
+      const paid = regs.filter(r => r.status === "complete" && r.payment_amount_cents);
+      return paid.length > 0 ? Math.round(paid.reduce((s, r) => s + (r.payment_amount_cents || 0), 0) / paid.length) : 0;
+    })(),
     spots_remaining: 30 - cappedTotal,
   };
 };
@@ -145,7 +140,7 @@ export const DEMO_REGISTRATIONS = (eventId: string) => {
       attendee_id: `att-${i}`,
       event_id: ev.id,
       status: STATUSES[i % STATUSES.length],
-      payment_amount_cents: ev.fixed_price_cents || Math.floor(Math.random() * 10000) + 2000,
+      payment_amount_cents: ev.pricing_model === "free" ? 0 : (ev.fixed_price_cents || Math.floor(Math.random() * 10000) + 2000),
       accommodation_type: ACCOM[i % ACCOM.length],
       dietary_restrictions: DIET[i % DIET.length] || undefined,
       source: i < count - 2 ? "registration_form" : "manual",

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { register } from "@/lib/api";
 import { RegistrationForm } from "./registration-form";
+import { RegistrationClosed } from "./registration-closed";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -80,6 +81,13 @@ export default async function RegisterPage({ params }: Props) {
         </div>
       </div>
     );
+  }
+
+  // Check if event is in the past
+  const endDate = event.event_end_date || event.event_date;
+  const eventOver = new Date(endDate) < new Date();
+  if (eventOver) {
+    return <RegistrationClosed eventName={event.name} />;
   }
 
   return <RegistrationForm event={event} slug={slug} />;
