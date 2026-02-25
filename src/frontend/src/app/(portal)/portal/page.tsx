@@ -4,10 +4,19 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Calendar, Users, TreePine } from "lucide-react";
 import { portal, PortalEvent } from "@/lib/api";
-import { colors } from "@/lib/theme";
+import { colors, darkColors } from "@/lib/theme";
+import { useDarkMode } from "@/hooks/use-dark-mode";
 import { formatDate } from "@/lib/format";
 
 export default function PortalEventsPage() {
+  const { isDark } = useDarkMode();
+  const c = isDark ? darkColors : colors;
+  const cardBg = isDark ? darkColors.surface : "#ffffff";
+  const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
+  const textMain = isDark ? darkColors.textPrimary : colors.forest;
+  const textSub = isDark ? darkColors.textSecondary : "#6b7280";
+  const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
+
   const { data: eventsList = [], isLoading } = useQuery({
     queryKey: ["portal-events"],
     queryFn: portal.events,
@@ -19,25 +28,25 @@ export default function PortalEventsPage() {
         <h2
           className="text-xl font-bold"
           style={{
-            color: colors.forest,
+            color: textMain,
             fontFamily: "var(--font-dm-serif), serif",
           }}
         >
           Your Events
         </h2>
-        <p className="text-sm text-gray-400 mt-0.5">
+        <p className="text-sm mt-0.5" style={{ color: textMuted }}>
           Events you have been assigned to co-manage
         </p>
       </div>
 
       {isLoading && (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16" style={{ color: textMuted }}>
           <p className="text-sm">Loading events...</p>
         </div>
       )}
 
       {!isLoading && eventsList.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16" style={{ color: textMuted }}>
           <TreePine size={32} className="mx-auto mb-3 opacity-30" />
           <p className="text-sm">No events assigned yet</p>
           <p className="text-xs mt-1">
@@ -51,17 +60,18 @@ export default function PortalEventsPage() {
           <Link
             key={evt.id}
             href={`/portal/${evt.id}`}
-            className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md hover:border-gray-200 transition group"
+            className="rounded-2xl border p-5 shadow-sm hover:shadow-md transition group"
+            style={{ background: cardBg, borderColor }}
           >
             <div className="flex items-start justify-between mb-3">
               <div>
                 <p
-                  className="font-bold text-gray-800 group-hover:text-green-800 transition"
-                  style={{ fontFamily: "var(--font-dm-serif), serif" }}
+                  className="font-bold transition"
+                  style={{ color: textMain, fontFamily: "var(--font-dm-serif), serif" }}
                 >
                   {evt.name}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5 capitalize">
+                <p className="text-xs mt-0.5 capitalize" style={{ color: textMuted }}>
                   {evt.event_type}
                 </p>
               </div>
@@ -70,17 +80,17 @@ export default function PortalEventsPage() {
                 style={{
                   background:
                     evt.status === "active"
-                      ? `${colors.canopy}15`
-                      : `${colors.bark}15`,
+                      ? `${c.canopy}15`
+                      : `${c.bark}15`,
                   color:
-                    evt.status === "active" ? colors.canopy : colors.bark,
+                    evt.status === "active" ? c.canopy : c.bark,
                 }}
               >
                 {evt.status}
               </span>
             </div>
 
-            <div className="flex items-center gap-4 text-xs text-gray-500">
+            <div className="flex items-center gap-4 text-xs" style={{ color: textSub }}>
               <span className="flex items-center gap-1">
                 <Calendar size={12} />
                 {formatDate(evt.event_date)}
@@ -94,12 +104,15 @@ export default function PortalEventsPage() {
 
             {evt.capacity && (
               <div className="mt-3">
-                <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                <div
+                  className="h-1.5 rounded-full overflow-hidden"
+                  style={{ background: isDark ? darkColors.surfaceHover : "#f3f4f6" }}
+                >
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
                       width: `${Math.min(100, (evt.complete_registrations / evt.capacity) * 100)}%`,
-                      background: colors.canopy,
+                      background: c.canopy,
                     }}
                   />
                 </div>

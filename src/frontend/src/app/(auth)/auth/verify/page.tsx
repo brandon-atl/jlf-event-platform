@@ -4,7 +4,8 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TreePine, Loader2, CheckCircle, XCircle } from "lucide-react";
 import { auth } from "@/lib/api";
-import { colors } from "@/lib/theme";
+import { colors, darkColors } from "@/lib/theme";
+import { useDarkMode } from "@/hooks/use-dark-mode";
 
 function VerifyContent() {
   const router = useRouter();
@@ -12,6 +13,15 @@ function VerifyContent() {
   const token = searchParams.get("token");
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState("");
+  const { isDark } = useDarkMode();
+
+  const c = isDark ? darkColors : colors;
+  const pageBg = isDark ? darkColors.cream : colors.cream;
+  const cardBg = isDark ? darkColors.surface : "#ffffff";
+  const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
+  const textMain = isDark ? darkColors.textPrimary : colors.forest;
+  const textSub = isDark ? darkColors.textSecondary : "#6b7280";
+  const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
 
   useEffect(() => {
     if (!token) {
@@ -47,34 +57,37 @@ function VerifyContent() {
   return (
     <div
       className="min-h-screen flex items-center justify-center"
-      style={{ background: colors.cream }}
+      style={{ background: pageBg }}
     >
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 max-w-sm w-full mx-4 text-center">
+      <div
+        className="rounded-2xl border shadow-sm p-8 max-w-sm w-full mx-4 text-center"
+        style={{ background: cardBg, borderColor }}
+      >
         <div
           className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
-          style={{ background: colors.canopy }}
+          style={{ background: c.canopy }}
         >
-          <TreePine size={20} className="text-white" />
+          <TreePine size={20} className={isDark ? "text-black" : "text-white"} />
         </div>
         <h1
           className="text-lg font-bold mb-1"
           style={{
-            color: colors.forest,
+            color: textMain,
             fontFamily: "var(--font-dm-serif), serif",
           }}
         >
           Just Love Forest
         </h1>
-        <p className="text-xs text-gray-400 mb-6">Co-Creator Portal</p>
+        <p className="text-xs mb-6" style={{ color: textMuted }}>Co-Creator Portal</p>
 
         {status === "loading" && (
           <div className="space-y-3">
             <Loader2
               size={28}
               className="mx-auto animate-spin"
-              style={{ color: colors.canopy }}
+              style={{ color: c.canopy }}
             />
-            <p className="text-sm text-gray-500">Verifying your link...</p>
+            <p className="text-sm" style={{ color: textSub }}>Verifying your link...</p>
           </div>
         )}
 
@@ -83,9 +96,9 @@ function VerifyContent() {
             <CheckCircle
               size={28}
               className="mx-auto"
-              style={{ color: colors.canopy }}
+              style={{ color: c.canopy }}
             />
-            <p className="text-sm text-gray-700 font-medium">
+            <p className="text-sm font-medium" style={{ color: textMain }}>
               Verified! Redirecting to portal...
             </p>
           </div>
@@ -93,15 +106,15 @@ function VerifyContent() {
 
         {status === "error" && (
           <div className="space-y-3">
-            <XCircle size={28} className="mx-auto text-red-400" />
-            <p className="text-sm text-gray-700 font-medium">
+            <XCircle size={28} className="mx-auto" style={{ color: isDark ? darkColors.ember : "#f87171" }} />
+            <p className="text-sm font-medium" style={{ color: textMain }}>
               Verification failed
             </p>
-            <p className="text-xs text-gray-400">{errorMsg}</p>
+            <p className="text-xs" style={{ color: textMuted }}>{errorMsg}</p>
             <button
               onClick={() => router.push("/login")}
-              className="mt-2 text-sm font-medium px-4 py-2 rounded-xl transition"
-              style={{ color: colors.canopy }}
+              className="mt-2 text-sm font-medium px-4 py-2 rounded-xl transition hover:opacity-80"
+              style={{ color: c.canopy }}
             >
               Go to login
             </button>
@@ -112,22 +125,28 @@ function VerifyContent() {
   );
 }
 
+function VerifyFallback() {
+  const { isDark } = useDarkMode();
+  const pageBg = isDark ? darkColors.cream : colors.cream;
+  const c = isDark ? darkColors : colors;
+
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: pageBg }}
+    >
+      <Loader2
+        size={28}
+        className="animate-spin"
+        style={{ color: c.canopy }}
+      />
+    </div>
+  );
+}
+
 export default function VerifyPage() {
   return (
-    <Suspense
-      fallback={
-        <div
-          className="min-h-screen flex items-center justify-center"
-          style={{ background: colors.cream }}
-        >
-          <Loader2
-            size={28}
-            className="animate-spin"
-            style={{ color: colors.canopy }}
-          />
-        </div>
-      }
-    >
+    <Suspense fallback={<VerifyFallback />}>
       <VerifyContent />
     </Suspense>
   );

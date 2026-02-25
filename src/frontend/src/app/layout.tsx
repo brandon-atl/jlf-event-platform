@@ -20,7 +20,18 @@ export const metadata: Metadata = {
   title: "Just Love Forest — Event Management",
   description:
     "Event Management System for Just Love Forest — where community gathering meets operational clarity.",
-  icons: { icon: "/favicon.ico" },
+  icons: {
+    icon: [
+      { rel: 'icon', type: 'image/svg+xml', url: '/favicon.svg' },
+      { rel: 'icon', type: 'image/x-icon', url: '/favicon.ico' }
+    ],
+  },
+  openGraph: {
+    title: "Just Love Forest — Event Management",
+    description: "Register for retreats, community weekends, and forest gatherings at Just Love Forest.",
+    siteName: "Just Love Forest Events",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
