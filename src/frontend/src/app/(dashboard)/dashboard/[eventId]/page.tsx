@@ -113,7 +113,11 @@ export default function EventDashboardPage({
         let filtered = all;
         if (activeFilter?.status) filtered = filtered.filter((r) => r.status === activeFilter.status);
         if (activeFilter?.accom) filtered = filtered.filter((r) => r.accommodation_type?.replace(/ /g, "_") === activeFilter.accom);
-        if (activeFilter?.dietary) filtered = filtered.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+        if (activeFilter?.dietary === "none") {
+          filtered = filtered.filter((r) => !r.dietary_restrictions || r.dietary_restrictions === "" || r.dietary_restrictions === "None");
+        } else if (activeFilter?.dietary) {
+          filtered = filtered.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+        }
         return filtered;
       }
       // Fetch all (up to 500) and filter client-side for accom/dietary
@@ -123,11 +127,46 @@ export default function EventDashboardPage({
       });
       let data = res.data;
       if (activeFilter?.accom) data = data.filter((r) => r.accommodation_type?.replace(/ /g, "_") === activeFilter.accom);
-      if (activeFilter?.dietary) data = data.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+      if (activeFilter?.dietary === "none") {
+        data = data.filter((r) => !r.dietary_restrictions || r.dietary_restrictions === "" || r.dietary_restrictions === "None");
+      } else if (activeFilter?.dietary) {
+        data = data.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+      }
       return data;
     },
     enabled: !!activeFilter,
   });
+
+  // C4: Registration timeline — group registrations by week (memoized)
+  // MUST be before early return to satisfy Rules of Hooks
+  const timelineData = useMemo(() => {
+    if (!isDemoMode()) return [];
+    const regs = DEMO_REGISTRATIONS(eventId).data;
+    const weeks: Record<string, number> = {};
+    for (const r of regs) {
+      const d = new Date(r.created_at);
+      const weekStart = new Date(d);
+      weekStart.setDate(d.getDate() - d.getDay());
+      const key = weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      weeks[key] = (weeks[key] || 0) + 1;
+    }
+    return Object.entries(weeks).map(([week, count]) => ({ week, count }));
+  }, [eventId]);
+
+  // C4: Revenue by accommodation type (memoized, complete registrations only)
+  // MUST be before early return to satisfy Rules of Hooks
+  const revenueByAccom = useMemo(() => {
+    if (!isDemoMode()) return [];
+    const regs = DEMO_REGISTRATIONS(eventId).data;
+    const map: Record<string, number> = {};
+    for (const r of regs) {
+      if (r.status === "complete" && r.payment_amount_cents) {
+        const key = r.accommodation_type?.replace(/_/g, " ") || "none";
+        map[key] = (map[key] || 0) + r.payment_amount_cents;
+      }
+    }
+    return Object.entries(map).map(([type, cents]) => ({ type, cents }));
+  }, [eventId]);
 
   if (!event || !dash) {
     return (
@@ -165,35 +204,6 @@ export default function EventDashboardPage({
   const isVirtual =
     /zoom|virtual/i.test(event.event_type) ||
     (event.pricing_model === "free" && /zoom/i.test(event.meeting_point_a || ""));
-
-  // C4: Registration timeline — group registrations by week (memoized)
-  const timelineData = useMemo(() => {
-    if (!isDemoMode()) return [];
-    const regs = DEMO_REGISTRATIONS(eventId).data;
-    const weeks: Record<string, number> = {};
-    for (const r of regs) {
-      const d = new Date(r.created_at);
-      const weekStart = new Date(d);
-      weekStart.setDate(d.getDate() - d.getDay());
-      const key = weekStart.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      weeks[key] = (weeks[key] || 0) + 1;
-    }
-    return Object.entries(weeks).map(([week, count]) => ({ week, count }));
-  }, [eventId]);
-
-  // C4: Revenue by accommodation type (memoized, complete registrations only)
-  const revenueByAccom = useMemo(() => {
-    if (!isDemoMode()) return [];
-    const regs = DEMO_REGISTRATIONS(eventId).data;
-    const map: Record<string, number> = {};
-    for (const r of regs) {
-      if (r.status === "complete" && r.payment_amount_cents) {
-        const key = r.accommodation_type?.replace(/_/g, " ") || "none";
-        map[key] = (map[key] || 0) + r.payment_amount_cents;
-      }
-    }
-    return Object.entries(map).map(([type, cents]) => ({ type, cents }));
-  }, [eventId]);
 
   return (
     <div className="space-y-6">
@@ -383,7 +393,7 @@ export default function EventDashboardPage({
             { l: "Vegetarian", v: dietary["Vegetarian"] || 0, c: isDark ? darkColors.moss : colors.moss, e: "🥬", d: "vegetarian" },
             { l: "Vegan", v: dietary["Vegan"] || 0, c: isDark ? darkColors.canopy : colors.canopy, e: "🌱", d: "vegan" },
             { l: "Gluten-Free", v: dietary["Gluten-Free"] || dietary["Gluten-free"] || 0, c: isDark ? darkColors.earth : colors.earth, e: "🚫", d: "gluten" },
-            { l: "None / Not Specified", v: dietary["None"] || 0, c: isDark ? darkColors.sage : colors.sage, e: "", d: undefined },
+            { l: "None / Not Specified", v: dietary["None"] || 0, c: isDark ? darkColors.sage : colors.sage, e: "🍽️", d: "none" },
           ].map((d) => (
             <div
               key={d.l}
