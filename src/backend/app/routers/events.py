@@ -306,3 +306,65 @@ async def delete_event(
 
     await db.commit()
     return {"detail": "Event cancelled", "id": event_id}
+
+
+@router.post("/{event_id}/duplicate", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
+async def duplicate_event(
+    event_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Duplicate an event — copies all fields except id, slug, status, created_at, updated_at."""
+    result = await db.execute(select(Event).where(Event.id == event_id))
+    source_event = result.scalar_one_or_none()
+    if not source_event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Generate unique slug
+    date_suffix = datetime.now().strftime("%Y%m%d")
+    new_slug = f"{source_event.slug}-copy-{date_suffix}"
+
+    # Check slug uniqueness, add counter if needed
+    slug_check = await db.execute(select(Event.id).where(Event.slug.like(f"{new_slug}%")))
+    existing_count = len(slug_check.all())
+    if existing_count > 0:
+        new_slug = f"{new_slug}-{existing_count + 1}"
+
+    new_event = Event(
+        name=f"Copy of {source_event.name}",
+        slug=new_slug,
+        description=source_event.description,
+        event_date=source_event.event_date,
+        event_end_date=source_event.event_end_date,
+        event_type=source_event.event_type,
+        status=EventStatus.draft,  # Always start as draft
+        pricing_model=source_event.pricing_model,
+        fixed_price_cents=source_event.fixed_price_cents,
+        min_donation_cents=source_event.min_donation_cents,
+        capacity=source_event.capacity,
+        meeting_point_a=source_event.meeting_point_a,
+        meeting_point_b=source_event.meeting_point_b,
+        virtual_meeting_url=source_event.virtual_meeting_url,
+        notification_templates=source_event.notification_templates,
+        registration_fields=source_event.registration_fields,
+        reminder_delay_minutes=source_event.reminder_delay_minutes,
+        auto_expire_hours=source_event.auto_expire_hours,
+    )
+    db.add(new_event)
+    await db.flush()
+    await db.refresh(new_event)
+
+    await _audit_log(
+        db,
+        entity_type="event",
+        entity_id=new_event.id,
+        action="duplicated",
+        actor=current_user.email,
+        old_value={"source_event_id": str(event_id)},
+        new_value={"new_event_id": str(new_event.id)},
+    )
+
+    await db.commit()
+
+    stats = await _compute_event_stats(db, new_event)
+    return _event_to_response(new_event, stats=stats)

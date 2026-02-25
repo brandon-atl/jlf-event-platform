@@ -229,6 +229,12 @@ export const events = {
   },
   delete: (id: string) =>
     request(`/events/${id}`, { method: "DELETE" }),
+  duplicate: async (id: string) => {
+    const raw = await request<BackendEventResponse>(`/events/${id}/duplicate`, {
+      method: "POST",
+    });
+    return transformEvent(raw);
+  },
 };
 
 // ── Registrations ───────────────────────────────

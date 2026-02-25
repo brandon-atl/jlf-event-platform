@@ -2,12 +2,16 @@
 
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+
+limiter = Limiter(key_func=get_remote_address)
 from app.models.co_creator import CoCreator
 from app.models.user import User
 from app.schemas.auth import (
@@ -33,7 +37,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("10/minute")
+async def login(request: Request, data: LoginRequest, db: AsyncSession = Depends(get_db)):
     """Authenticate operator/admin with email and password, return JWT."""
     result = await db.execute(select(User).where(User.email == data.email))
     user = result.scalar_one_or_none()
@@ -51,7 +56,8 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/magic-link", status_code=202)
-async def send_magic_link(data: MagicLinkRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def send_magic_link(request: Request, data: MagicLinkRequest, db: AsyncSession = Depends(get_db)):
     """Send a magic link to a co-creator's email. Always returns 202 (no email enumeration)."""
     result = await db.execute(
         select(CoCreator).where(CoCreator.email == data.email)

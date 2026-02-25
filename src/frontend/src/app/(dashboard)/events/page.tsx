@@ -75,6 +75,17 @@ export default function EventsPage() {
     },
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: (id: string) => events.duplicate(id),
+    onSuccess: (newEvent) => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast.success(`Duplicated as "${newEvent.name}"`);
+    },
+    onError: () => {
+      toast.error("Failed to duplicate event");
+    },
+  });
+
   const openEdit = (ev: EventResponse) => {
     setEditingEvent(ev);
     setEditDialogOpen(true);
@@ -86,6 +97,10 @@ export default function EventsPage() {
     );
     if (!ok) return;
     deleteMutation.mutate(ev.id);
+  };
+
+  const handleDuplicate = (ev: EventResponse) => {
+    setPendingDuplicate(ev);
   };
 
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
@@ -566,6 +581,7 @@ export default function EventsPage() {
                 onClick={() => router.push(`/dashboard/${event.id}`)}
                 onEdit={() => openEdit(event)}
                 onDelete={() => handleDelete(event)}
+                onDuplicate={() => handleDuplicate(event)}
               />
             ))}
           </div>
@@ -595,6 +611,7 @@ export default function EventsPage() {
                       onClick={() => router.push(`/dashboard/${event.id}`)}
                       onEdit={() => openEdit(event)}
                       onDelete={() => handleDelete(event)}
+                      onDuplicate={() => handleDuplicate(event)}
                     />
                   ))}
                 </div>
