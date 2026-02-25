@@ -1,11 +1,12 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import {
+import { LucideIcon,
   Calendar,
   BarChart3,
   Sun,
   UserPlus,
+  Shield,
   Settings,
   TreePine,
   LogOut,
@@ -24,11 +25,12 @@ export interface SidebarProps {
   onCloseMobile: () => void;
 }
 
-const NAV_ITEMS = [
+const NAV_ITEMS: Array<{ icon: LucideIcon; label: string; href: string; adminOnly?: boolean }> = [
   { icon: Calendar, label: "Events", href: "/events" },
   { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
   { icon: Sun, label: "Day-of View", href: "/day-of" },
   { icon: UserPlus, label: "Co-Creators", href: "/co-creators" },
+  { icon: Shield, label: "Admin Users", href: "/admin", adminOnly: true },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
@@ -120,6 +122,7 @@ export function Sidebar({
           className={`flex-1 py-3 ${collapsed ? "px-1.5" : "px-2"} space-y-0.5 overflow-y-auto`}
         >
           {NAV_ITEMS.map((item) => {
+            if (item.adminOnly && user?.role !== "admin") return null;
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <button
