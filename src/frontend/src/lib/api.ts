@@ -468,6 +468,8 @@ interface BackendRegistrationDetail {
   waiver_accepted_at?: string;
   source: string;
   notes?: string;
+  checked_in_at?: string | null;
+  checked_in_by?: string | null;
   created_at: string;
   updated_at: string;
   attendee?: {
