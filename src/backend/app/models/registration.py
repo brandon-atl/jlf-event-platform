@@ -67,6 +67,10 @@ class Registration(TimestampMixin, Base):
     escalation_sent_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    checked_in_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    checked_in_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
     source: Mapped[RegistrationSource] = mapped_column(
         Enum(RegistrationSource, native_enum=False),
         default=RegistrationSource.registration_form,

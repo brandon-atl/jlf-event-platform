@@ -150,6 +150,8 @@ export const DEMO_REGISTRATIONS = (eventId: string) => {
       attendee_name: NAMES[i],
       attendee_email: NAMES[i].toLowerCase().replace(" ", ".") + "@email.com",
       attendee_phone: `+1-555-0${100 + i}`,
+      checked_in_at: STATUSES[i % STATUSES.length] === "complete" && i % 3 === 0 ? `2026-02-25T${10 + (i % 6)}:${String(i * 7 % 60).padStart(2, "0")}:00Z` : null,
+      checked_in_by: STATUSES[i % STATUSES.length] === "complete" && i % 3 === 0 ? "brian@justloveforest.com" : null,
       intake_data: {
         experience: ["Beginner", "Intermediate", "Advanced"][i % 3],
         emergency_contact: `${["Pat", "Dana", "Sam"][i % 3]} ${NAMES[i].split(" ")[1]}, 555-0${200 + i}`,
@@ -158,6 +160,28 @@ export const DEMO_REGISTRATIONS = (eventId: string) => {
     })),
     meta: { total: ev.total_registrations, page: 1, per_page: 25 },
   };
+};
+
+export const DEMO_AUDIT_LOG = (eventId: string) => {
+  const regs = DEMO_REGISTRATIONS(eventId).data.slice(0, 6);
+  const actions = [
+    { action: "create", label: "Registration created", entity: "registration" },
+    { action: "check_in", label: "Checked in", entity: "registration" },
+    { action: "update_status", label: "Status updated", entity: "registration" },
+    { action: "undo_check_in", label: "Check-in undone", entity: "registration" },
+    { action: "update", label: "Event updated", entity: "event" },
+    { action: "create", label: "Manual registration created", entity: "registration" },
+  ];
+  return regs.map((r, i) => ({
+    id: `audit-${i}`,
+    entity_type: actions[i].entity,
+    entity_id: actions[i].entity === "event" ? eventId : r.id,
+    action: actions[i].action,
+    actor: ["brian@justloveforest.com", "naveed@justloveforest.com", "system"][i % 3],
+    old_value: actions[i].action === "update_status" ? { status: "pending_payment" } : null,
+    new_value: actions[i].action === "update_status" ? { status: "complete" } : actions[i].action === "check_in" ? { checked_in_at: r.checked_in_at, checked_in_by: r.checked_in_by } : null,
+    timestamp: new Date(Date.now() - i * 3600000 * 2).toISOString(),
+  }));
 };
 
 export const DEMO_COCREATORS = [
