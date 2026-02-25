@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useMemo } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -27,11 +27,12 @@ import {
 import { toast } from "sonner";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { dashboard, events as eventsApi, type EventResponse, type EventDashboard } from "@/lib/api";
+import { dashboard, events as eventsApi, registrations as registrationsApi, type EventResponse, type EventDashboard, type RegistrationDetail } from "@/lib/api";
 import { colors, darkColors, PIE_COLORS, DARK_PIE_COLORS } from "@/lib/theme";
 import { DEMO_EVENTS, DEMO_DASHBOARD, DEMO_REGISTRATIONS, isDemoMode } from "@/lib/demo-data";
 import { formatCents, formatDateLong } from "@/lib/format";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { AttendeeSheet } from "@/components/dashboard/attendee-sheet";
 import { Button } from "@/components/ui/button";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 
@@ -67,6 +68,14 @@ export default function EventDashboardPage({
   const queryClient = useQueryClient();
   const { isDark } = useDarkMode();
 
+  // Recharts fix: prevent SSR/hydration mismatch (recharts uses DOM APIs on mount)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Interactive attendee sheet
+  type FilterConfig = { label: string; subtitle: string; status?: string; accom?: string; dietary?: string };
+  const [activeFilter, setActiveFilter] = useState<FilterConfig | null>(null);
+
   const cardBg = isDark ? darkColors.surface : "#ffffff";
   const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
   const textMain = isDark ? darkColors.textPrimary : colors.forest;
@@ -92,6 +101,31 @@ export default function EventDashboardPage({
       if (isDemoMode()) return Promise.resolve(DEMO_DASHBOARD(eventId) as unknown as EventDashboard);
       return dashboard.event(eventId);
     },
+  });
+
+  // Registrations for the interactive sheet — only fetches when a filter is active
+  const { data: sheetRegs, isLoading: sheetLoading } = useQuery({
+    queryKey: ["registrations", eventId, activeFilter?.status, activeFilter?.accom, activeFilter?.dietary],
+    queryFn: async () => {
+      if (isDemoMode()) {
+        const all = DEMO_REGISTRATIONS(eventId).data as unknown as RegistrationDetail[];
+        let filtered = all;
+        if (activeFilter?.status) filtered = filtered.filter((r) => r.status === activeFilter.status);
+        if (activeFilter?.accom) filtered = filtered.filter((r) => r.accommodation_type?.replace(/ /g, "_") === activeFilter.accom);
+        if (activeFilter?.dietary) filtered = filtered.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+        return filtered;
+      }
+      // Fetch all (up to 500) and filter client-side for accom/dietary
+      const res = await registrationsApi.list(eventId, {
+        status: activeFilter?.status,
+        per_page: 500,
+      });
+      let data = res.data;
+      if (activeFilter?.accom) data = data.filter((r) => r.accommodation_type?.replace(/ /g, "_") === activeFilter.accom);
+      if (activeFilter?.dietary) data = data.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+      return data;
+    },
+    enabled: !!activeFilter,
   });
 
   if (!event || !dash) {
@@ -185,15 +219,22 @@ export default function EventDashboardPage({
         </p>
       </div>
 
-      {/* Stat Cards */}
+      {/* Stat Cards — click to drill into filtered attendee list */}
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-        <StatCard icon={Users} label="Total Attendees" value={total} color={isDark ? darkColors.canopy : colors.forest} />
+        <StatCard
+          icon={Users}
+          label="Total Attendees"
+          value={total}
+          color={isDark ? darkColors.canopy : colors.forest}
+          onClick={() => setActiveFilter({ label: "All Attendees", subtitle: `${total} registrations total`, status: undefined })}
+        />
         <StatCard
           icon={CheckCircle}
           label="Complete"
           value={sb.complete}
           accent={total > 0 ? Math.round((sb.complete / total) * 100) : 0}
           color={isDark ? darkColors.canopy : colors.canopy}
+          onClick={() => setActiveFilter({ label: "Confirmed Attendees", subtitle: "Completed registrations", status: "complete" })}
         />
         <StatCard
           icon={Clock}
@@ -201,6 +242,7 @@ export default function EventDashboardPage({
           value={sb.pending_payment}
           sub="Awaiting payment"
           color={isDark ? darkColors.sun : "#92700c"}
+          onClick={() => setActiveFilter({ label: "Pending Payment", subtitle: "Awaiting Stripe checkout", status: "pending_payment" })}
         />
         <StatCard
           icon={AlertTriangle}
@@ -208,18 +250,21 @@ export default function EventDashboardPage({
           value={sb.expired}
           sub="Auto-expired"
           color={isDark ? darkColors.ember : colors.ember}
+          onClick={() => setActiveFilter({ label: "Expired", subtitle: "Checkout session timed out", status: "expired" })}
         />
         <StatCard
           icon={AlertTriangle}
           label="Cancelled"
           value={sb.cancelled}
           color={isDark ? darkColors.textMuted : "#71717a"}
+          onClick={() => setActiveFilter({ label: "Cancelled", subtitle: "Manually cancelled registrations", status: "cancelled" })}
         />
         <StatCard
           icon={DollarSign}
           label="Revenue"
           value={formatCents(dash.total_revenue_cents)}
           color={isDark ? darkColors.bark : colors.bark}
+          onClick={() => setActiveFilter({ label: "Paid Attendees", subtitle: "Completed with payment", status: "complete" })}
         />
       </div>
 
@@ -230,7 +275,7 @@ export default function EventDashboardPage({
           <h3 className="text-sm font-bold mb-2" style={{ color: textSub }}>
             Registration Status
           </h3>
-          {total > 0 ? (
+          {mounted && total > 0 ? (
             <ResponsiveContainer width="100%" height={170}>
               <PieChart>
                 <Pie
@@ -256,6 +301,8 @@ export default function EventDashboardPage({
                 />
               </PieChart>
             </ResponsiveContainer>
+          ) : !mounted ? (
+            <div className="h-[170px] rounded-xl animate-pulse" style={{ background: isDark ? darkColors.surfaceHover : "#f3f4f6" }} />
           ) : (
             <p className="text-sm py-16 text-center" style={{ color: textMuted }}>
               No attendees yet
@@ -263,22 +310,21 @@ export default function EventDashboardPage({
           )}
           <div className="flex flex-wrap gap-3 mt-2 justify-center">
             {[
-              { l: "Complete", c: pieColors[0], v: sb.complete },
-              { l: "Pending", c: pieColors[1], v: sb.pending_payment },
-              { l: "Expired", c: pieColors[2], v: sb.expired },
-              { l: "Cancelled", c: pieColors[3], v: sb.cancelled },
+              { l: "Complete", c: pieColors[0], v: sb.complete, s: "complete" },
+              { l: "Pending", c: pieColors[1], v: sb.pending_payment, s: "pending_payment" },
+              { l: "Expired", c: pieColors[2], v: sb.expired, s: "expired" },
+              { l: "Cancelled", c: pieColors[3], v: sb.cancelled, s: "cancelled" },
             ].map((d) => (
-              <span
+              <button
                 key={d.l}
-                className="flex items-center gap-1.5 text-[11px]"
+                type="button"
+                className="flex items-center gap-1.5 text-[11px] hover:opacity-75 transition"
                 style={{ color: textSub }}
+                onClick={() => setActiveFilter({ label: d.l, subtitle: `${d.v} registrations`, status: d.s })}
               >
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ background: d.c }}
-                />
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: d.c }} />
                 {d.l}: {d.v}
-              </span>
+              </button>
             ))}
           </div>
         </div>
@@ -307,15 +353,21 @@ export default function EventDashboardPage({
           ))}
           <div className="grid grid-cols-3 gap-2 mt-4 text-center">
             {[
-              { l: "Bell", v: acc.bell_tent, e: "⛺" },
-              { l: "Nylon", v: acc.nylon_tent, e: "🏕️" },
-              { l: "Self", v: acc.self_camping, e: "🌲" },
+              { l: "Bell", v: acc.bell_tent, e: "⛺", a: "bell_tent" },
+              { l: "Nylon", v: acc.nylon_tent, e: "🏕️", a: "nylon_tent" },
+              { l: "Self", v: acc.self_camping, e: "🌲", a: "self_camping" },
             ].map((t) => (
-              <div key={t.l} className="py-3 rounded-xl" style={{ background: subtleBg }}>
+              <button
+                key={t.l}
+                type="button"
+                className="py-3 rounded-xl text-center hover:opacity-80 transition active:scale-95"
+                style={{ background: subtleBg }}
+                onClick={() => setActiveFilter({ label: `${t.l} Tent`, subtitle: `${t.v} attendees`, accom: t.a })}
+              >
                 <span className="text-lg">{t.e}</span>
                 <p className="text-xl font-bold mt-0.5" style={{ color: textMain }}>{t.v}</p>
                 <p className="text-[10px]" style={{ color: textMuted }}>{t.l}</p>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -327,12 +379,16 @@ export default function EventDashboardPage({
             Dietary Restrictions
           </h3>
           {[
-            { l: "Vegetarian", v: dietary["Vegetarian"] || 0, c: isDark ? darkColors.moss : colors.moss, e: "🥬" },
-            { l: "Vegan", v: dietary["Vegan"] || 0, c: isDark ? darkColors.canopy : colors.canopy, e: "🌱" },
-            { l: "Gluten-Free", v: dietary["Gluten-Free"] || dietary["Gluten-free"] || 0, c: isDark ? darkColors.earth : colors.earth, e: "🚫" },
-            { l: "None / Not Specified", v: dietary["None"] || 0, c: isDark ? darkColors.sage : colors.sage, e: "" },
+            { l: "Vegetarian", v: dietary["Vegetarian"] || 0, c: isDark ? darkColors.moss : colors.moss, e: "🥬", d: "vegetarian" },
+            { l: "Vegan", v: dietary["Vegan"] || 0, c: isDark ? darkColors.canopy : colors.canopy, e: "🌱", d: "vegan" },
+            { l: "Gluten-Free", v: dietary["Gluten-Free"] || dietary["Gluten-free"] || 0, c: isDark ? darkColors.earth : colors.earth, e: "🚫", d: "gluten" },
+            { l: "None / Not Specified", v: dietary["None"] || 0, c: isDark ? darkColors.sage : colors.sage, e: "", d: undefined },
           ].map((d) => (
-            <div key={d.l} className="mb-3">
+            <div
+              key={d.l}
+              className={`mb-3 rounded-lg px-2 py-1 -mx-2 transition ${d.d && d.v > 0 ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5" : ""}`}
+              onClick={d.d && d.v > 0 ? () => setActiveFilter({ label: d.l, subtitle: `${d.v} attendees`, dietary: d.d }) : undefined}
+            >
               <div className="flex items-center justify-between text-sm mb-1">
                 <span style={{ color: textSub }}>
                   {d.e ? d.e + " " : ""}
@@ -418,6 +474,16 @@ export default function EventDashboardPage({
           )}
         </div>
       </div>
+
+      {/* Interactive attendee sheet */}
+      <AttendeeSheet
+        isOpen={!!activeFilter}
+        onClose={() => setActiveFilter(null)}
+        title={activeFilter?.label ?? ""}
+        subtitle={activeFilter?.subtitle}
+        registrations={sheetRegs ?? []}
+        loading={sheetLoading}
+      />
 
       {/* Quick Actions */}
       <div className="flex flex-wrap gap-3">

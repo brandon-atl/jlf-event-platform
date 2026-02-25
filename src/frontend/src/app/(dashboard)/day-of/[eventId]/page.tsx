@@ -1,13 +1,14 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { AttendeeSheet } from "@/components/dashboard/attendee-sheet";
 import { MapPin, Send, Video } from "lucide-react";
 import { toast } from "sonner";
 
-import { dashboard, events as eventsApi, notifications, type EventResponse, type EventDashboard } from "@/lib/api";
+import { dashboard, events as eventsApi, notifications, registrations as registrationsApi, type EventResponse, type EventDashboard, type RegistrationDetail } from "@/lib/api";
 import { colors, darkColors } from "@/lib/theme";
-import { isDemoMode, DEMO_EVENTS, DEMO_DASHBOARD } from "@/lib/demo-data";
+import { isDemoMode, DEMO_EVENTS, DEMO_DASHBOARD, DEMO_REGISTRATIONS } from "@/lib/demo-data";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 
 export default function DayOfPage({
@@ -17,6 +18,10 @@ export default function DayOfPage({
 }) {
   const { eventId } = use(params);
   const { isDark } = useDarkMode();
+
+  // Interactive attendee sheet
+  type FilterConfig = { label: string; subtitle: string; status?: string; accom?: string; dietary?: string };
+  const [activeFilter, setActiveFilter] = useState<FilterConfig | null>(null);
 
   const c = isDark ? darkColors : colors;
   const cardBg = isDark ? darkColors.surface : "#ffffff";
@@ -43,6 +48,26 @@ export default function DayOfPage({
       if (isDemoMode()) return Promise.resolve(DEMO_DASHBOARD(eventId) as unknown as EventDashboard);
       return dashboard.event(eventId);
     },
+  });
+
+  const { data: sheetRegs, isLoading: sheetLoading } = useQuery({
+    queryKey: ["registrations", eventId, activeFilter?.status, activeFilter?.accom, activeFilter?.dietary],
+    queryFn: async () => {
+      if (isDemoMode()) {
+        const all = DEMO_REGISTRATIONS(eventId).data as unknown as RegistrationDetail[];
+        let filtered = all;
+        if (activeFilter?.status) filtered = filtered.filter((r) => r.status === activeFilter.status);
+        if (activeFilter?.accom) filtered = filtered.filter((r) => r.accommodation_type?.replace(/ /g, "_") === activeFilter.accom);
+        if (activeFilter?.dietary) filtered = filtered.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+        return filtered;
+      }
+      const res = await registrationsApi.list(eventId, { status: activeFilter?.status, per_page: 500 });
+      let data = res.data;
+      if (activeFilter?.accom) data = data.filter((r) => r.accommodation_type?.replace(/ /g, "_") === activeFilter.accom);
+      if (activeFilter?.dietary) data = data.filter((r) => r.dietary_restrictions?.toLowerCase().includes(activeFilter.dietary!.toLowerCase()));
+      return data;
+    },
+    enabled: !!activeFilter,
   });
 
   if (!event || !dash) {
@@ -83,25 +108,43 @@ export default function DayOfPage({
         <p className="text-xs mt-0.5" style={{ color: textMuted }}>{event.name}</p>
       </div>
 
-      {/* Hero Confirmed Count */}
+      {/* Hero Confirmed Count — tap number or pills to drill into list */}
       <div
         className="rounded-2xl p-8 text-center text-white"
         style={{
           background: `linear-gradient(135deg, ${colors.forest}, ${colors.canopy})`,
         }}
       >
-        <p
-          className="text-7xl font-bold tracking-tight"
-          style={{ fontFamily: "var(--font-dm-serif), serif" }}
+        <button
+          type="button"
+          className="group"
+          onClick={() => setActiveFilter({ label: "Confirmed Attendees", subtitle: "Completed registrations", status: "complete" })}
         >
-          {sb.complete}
-        </p>
-        <p className="text-base opacity-80 mt-1 font-medium">
-          Confirmed Attendees
-        </p>
+          <p
+            className="text-7xl font-bold tracking-tight group-hover:opacity-80 transition"
+            style={{ fontFamily: "var(--font-dm-serif), serif" }}
+          >
+            {sb.complete}
+          </p>
+          <p className="text-base opacity-80 mt-1 font-medium group-hover:opacity-100 transition">
+            Confirmed Attendees
+          </p>
+        </button>
         <div className="flex justify-center gap-6 mt-4 text-sm opacity-70">
-          <span>{sb.pending_payment} pending</span>
-          <span>{sb.expired} expired</span>
+          <button
+            type="button"
+            className="hover:opacity-100 transition underline-offset-2 hover:underline"
+            onClick={() => setActiveFilter({ label: "Pending Payment", subtitle: `${sb.pending_payment} awaiting checkout`, status: "pending_payment" })}
+          >
+            {sb.pending_payment} pending
+          </button>
+          <button
+            type="button"
+            className="hover:opacity-100 transition underline-offset-2 hover:underline"
+            onClick={() => setActiveFilter({ label: "Expired", subtitle: `${sb.expired} checkout timed out`, status: "expired" })}
+          >
+            {sb.expired} expired
+          </button>
         </div>
       </div>
 
@@ -113,11 +156,17 @@ export default function DayOfPage({
         </h3>
         <div className="grid grid-cols-3 gap-3 text-center">
           {[
-            { l: "Bell Tent", v: acc.bell_tent, e: "⛺" },
-            { l: "Nylon Tent", v: acc.nylon_tent, e: "🏕️" },
-            { l: "Self-Camp", v: acc.self_camping, e: "🌲" },
+            { l: "Bell Tent", v: acc.bell_tent, e: "⛺", a: "bell_tent" },
+            { l: "Nylon Tent", v: acc.nylon_tent, e: "🏕️", a: "nylon_tent" },
+            { l: "Self-Camp", v: acc.self_camping, e: "🌲", a: "self_camping" },
           ].map((t) => (
-            <div key={t.l} className="p-4 rounded-xl" style={{ background: subtleBg }}>
+            <button
+              key={t.l}
+              type="button"
+              className="p-4 rounded-xl hover:opacity-80 transition active:scale-95"
+              style={{ background: subtleBg }}
+              onClick={() => setActiveFilter({ label: t.l, subtitle: `${t.v} attendees`, accom: t.a })}
+            >
               <div className="text-3xl mb-1">{t.e}</div>
               <p
                 className="text-3xl font-bold"
@@ -129,7 +178,7 @@ export default function DayOfPage({
                 {t.v}
               </p>
               <p className="text-xs mt-0.5" style={{ color: textMuted }}>{t.l}</p>
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -142,30 +191,25 @@ export default function DayOfPage({
         </h3>
         <div className="space-y-2">
           {[
-            { l: "Vegetarian", v: dietary["Vegetarian"] || 0, e: "🥬" },
-            { l: "Vegan", v: dietary["Vegan"] || 0, e: "🌱" },
-            {
-              l: "Gluten-Free",
-              v: dietary["Gluten-Free"] || dietary["Gluten-free"] || 0,
-              e: "🚫",
-            },
+            { l: "Vegetarian", v: dietary["Vegetarian"] || 0, e: "🥬", d: "vegetarian" },
+            { l: "Vegan", v: dietary["Vegan"] || 0, e: "🌱", d: "vegan" },
+            { l: "Gluten-Free", v: dietary["Gluten-Free"] || dietary["Gluten-free"] || 0, e: "🚫", d: "gluten" },
           ].map((d) => (
-            <div
+            <button
               key={d.l}
-              className="flex items-center justify-between p-3 rounded-xl"
+              type="button"
+              className="w-full flex items-center justify-between p-3 rounded-xl hover:opacity-80 transition active:scale-[0.98] text-left"
               style={{ background: subtleBg }}
+              onClick={() => setActiveFilter({ label: d.l, subtitle: `${d.v} attendees`, dietary: d.d })}
             >
               <span className="text-sm flex items-center gap-2" style={{ color: textSub }}>
                 <span className="text-base">{d.e}</span>
                 {d.l}
               </span>
-              <span
-                className="text-lg font-bold"
-                style={{ color: textMain }}
-              >
+              <span className="text-lg font-bold" style={{ color: textMain }}>
                 {d.v}
               </span>
-            </div>
+            </button>
           ))}
         </div>
         <div className="mt-3 p-3 rounded-xl border-2 border-dashed text-center" style={{
@@ -236,6 +280,16 @@ export default function DayOfPage({
           </a>
         </div>
       )}
+
+      {/* Interactive attendee sheet */}
+      <AttendeeSheet
+        isOpen={!!activeFilter}
+        onClose={() => setActiveFilter(null)}
+        title={activeFilter?.label ?? ""}
+        subtitle={activeFilter?.subtitle}
+        registrations={sheetRegs ?? []}
+        loading={sheetLoading}
+      />
 
       {/* Send SMS Button */}
       <button
