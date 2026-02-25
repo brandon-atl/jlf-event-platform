@@ -6,7 +6,7 @@ import { Calendar, Users, MapPin, ChevronRight } from "lucide-react";
 
 import { events as eventsApi, type EventResponse } from "@/lib/api";
 import { colors, darkColors } from "@/lib/theme";
-import { formatDateShort } from "@/lib/format";
+import { formatDateShort, isEventPast } from "@/lib/format";
 import { isDemoMode, DEMO_EVENTS } from "@/lib/demo-data";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 
@@ -31,7 +31,8 @@ export default function DayOfPage() {
     },
   });
 
-  const activeEvents = data?.data?.filter((e) => e.status === "active") ?? [];
+  const activeEvents = data?.data?.filter((e) => e.status === "active" && !isEventPast(e))
+    .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime()) ?? [];
 
   return (
     <div className="space-y-5">

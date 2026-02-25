@@ -1,18 +1,20 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, Users, BarChart3, ChevronRight } from "lucide-react";
+import { Calendar, Users, BarChart3, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 
 import { events as eventsApi, type EventResponse } from "@/lib/api";
 import { colors, darkColors } from "@/lib/theme";
-import { formatDateShort } from "@/lib/format";
+import { formatDateShort, isEventPast } from "@/lib/format";
 import { isDemoMode, DEMO_EVENTS } from "@/lib/demo-data";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { isDark } = useDarkMode();
+  const [showPast, setShowPast] = useState(false);
   const cardBg = isDark ? darkColors.surface : "#ffffff";
   const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
   const textMain = isDark ? darkColors.textPrimary : colors.forest;
@@ -33,6 +35,8 @@ export default function DashboardPage() {
   });
 
   const allEvents = data?.data ?? [];
+  const upcoming = allEvents.filter(e => !isEventPast(e)).sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
+  const past = allEvents.filter(e => isEventPast(e)).sort((a, b) => new Date(b.event_date).getTime() - new Date(a.event_date).getTime());
 
   return (
     <div className="space-y-5">
@@ -71,76 +75,73 @@ export default function DashboardPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4">
-          {allEvents.map((event, i) => (
-            <div
-              key={event.id}
-              onClick={() => router.push(`/dashboard/${event.id}`)}
-              className="rounded-2xl border p-5 flex items-center gap-5 cursor-pointer hover:translate-y-[-2px] active:translate-y-0 transition-all duration-250 group shadow-sm animate-in slide-in-from-bottom-2 fade-in"
-              style={{
-                background: cardBg,
-                borderColor,
-                animationDelay: `${i * 60}ms`,
-                animationFillMode: "both",
-              }}
-            >
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                style={{ background: `${isDark ? darkColors.canopy : colors.canopy}10` }}
-              >
-                <BarChart3 size={24} style={{ color: isDark ? darkColors.canopy : colors.canopy }} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3
-                  className="text-base font-bold truncate group-hover:opacity-80 transition mb-1"
-                  style={{ color: textMain }}
-                >
-                  {event.name}
-                </h3>
-                <div className="flex items-center gap-4 text-sm flex-wrap" style={{ color: textMuted }}>
-                  <span className="flex items-center gap-1">
-                    <Calendar size={13} />
-                    {formatDateShort(event.event_date)}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users size={13} />
-                    {event.complete_count} confirmed
-                  </span>
-                  {event.pending_count > 0 && (
-                    <span
-                      className="text-xs font-semibold px-2.5 py-1 rounded-full border"
-                      style={{
-                        color: isDark ? darkColors.sun : "#92700c",
-                        borderColor: isDark ? `${darkColors.sun}50` : "#92700c50",
-                        background: isDark ? `${darkColors.sun}12` : "#92700c12",
-                      }}
-                    >
-                      {event.pending_count} pending
-                    </span>
-                  )}
-                  <span
-                    className="text-xs font-semibold px-2.5 py-1 rounded-full"
-                    style={{
-                      color: event.status === "active" ? (isDark ? darkColors.canopy : colors.canopy) : textMuted,
-                      background:
-                        event.status === "active"
-                          ? `${isDark ? darkColors.canopy : colors.canopy}12`
-                          : `${textMuted}12`,
-                    }}
-                  >
-                    {event.status}
-                  </span>
-                </div>
-              </div>
-              <ChevronRight
-                size={16}
-                className="transition shrink-0"
+        <div className="space-y-4">
+          <div className="grid gap-4">
+            {upcoming.map((event, i) => (
+              <DashboardEventRow key={event.id} event={event} isPast={false} idx={i} router={router} isDark={isDark} cardBg={cardBg} borderColor={borderColor} textMain={textMain} textMuted={textMuted} />
+            ))}
+          </div>
+          {past.length > 0 && (
+            <div>
+              <button
+                onClick={() => setShowPast(!showPast)}
+                className="flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-xl transition"
                 style={{ color: textMuted }}
-              />
+                aria-expanded={showPast}
+              >
+                {past.length} past event{past.length !== 1 ? "s" : ""}
+                {showPast ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              {showPast && (
+                <div className="grid gap-3 mt-2">
+                  {past.map((event, i) => (
+                    <DashboardEventRow key={event.id} event={event} isPast idx={i} router={router} isDark={isDark} cardBg={cardBg} borderColor={borderColor} textMain={textMain} textMuted={textMuted} />
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function DashboardEventRow({ event, isPast, idx, router, isDark, cardBg, borderColor, textMain, textMuted }: {
+  event: EventResponse;
+  isPast: boolean;
+  idx: number;
+  router: ReturnType<typeof import("next/navigation").useRouter>;
+  isDark: boolean;
+  cardBg: string;
+  borderColor: string;
+  textMain: string;
+  textMuted: string;
+}) {
+  const accent = isPast ? textMuted : (isDark ? darkColors.canopy : colors.canopy);
+  const statusLabel = isPast ? "Past" : event.status;
+  return (
+    <div
+      onClick={() => router.push(`/dashboard/${event.id}`)}
+      className="rounded-2xl border p-5 flex items-center gap-5 cursor-pointer hover:translate-y-[-2px] active:translate-y-0 transition-all duration-250 group shadow-sm animate-in slide-in-from-bottom-2 fade-in"
+      style={{ background: cardBg, borderColor, opacity: isPast ? 0.6 : 1, animationDelay: `${idx * 60}ms`, animationFillMode: "both" }}
+    >
+      <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0" style={{ background: `${accent}10` }}>
+        <BarChart3 size={24} style={{ color: accent }} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-base font-bold truncate group-hover:opacity-80 transition mb-1" style={{ color: textMain }}>
+          {event.name}
+        </h3>
+        <div className="flex items-center gap-4 text-sm flex-wrap" style={{ color: textMuted }}>
+          <span className="flex items-center gap-1"><Calendar size={13} />{formatDateShort(event.event_date)}</span>
+          <span className="flex items-center gap-1"><Users size={13} />{event.complete_count} confirmed</span>
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ color: accent, background: `${accent}12` }}>
+            {statusLabel}
+          </span>
+        </div>
+      </div>
+      <ChevronRight size={16} className="transition shrink-0" style={{ color: textMuted }} />
     </div>
   );
 }
