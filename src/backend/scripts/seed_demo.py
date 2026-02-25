@@ -35,18 +35,18 @@ ATTENDEES = [
     {"key": "mara",    "first": "Mara",    "last": "Chen",        "email": "mara.chen@gmail.com",         "phone": "7705550101", "dietary": "Vegetarian"},
     {"key": "devon",   "first": "Devon",   "last": "Okafor",      "email": "devon.okafor@gmail.com",      "phone": "4045550102", "dietary": "Vegan"},
     {"key": "sage",    "first": "Sage",    "last": "Willowbrook", "email": "sage.willowbrook@icloud.com", "phone": "6785550103", "dietary": "Gluten-Free"},
-    {"key": "river",   "first": "River",   "last": "Nakamura",    "email": "river.nakamura@gmail.com",    "phone": "7705550104", "dietary": None},
+    {"key": "river",   "first": "River",   "last": "Nakamura",    "email": "river.nakamura@gmail.com",    "phone": "7705550104", "dietary": "None"},
     {"key": "juniper", "first": "Juniper", "last": "Hayes",       "email": "juniper.hayes@gmail.com",     "phone": "4045550105", "dietary": "Vegetarian"},
-    {"key": "aspen",   "first": "Aspen",   "last": "Torres",      "email": "aspen.torres@gmail.com",      "phone": "6785550106", "dietary": None},
+    {"key": "aspen",   "first": "Aspen",   "last": "Torres",      "email": "aspen.torres@gmail.com",      "phone": "6785550106", "dietary": "None"},
     {"key": "indigo",  "first": "Indigo",  "last": "Park",        "email": "indigo.park@icloud.com",      "phone": "4045550107", "dietary": "Vegetarian"},
     {"key": "wren",    "first": "Wren",    "last": "Delacroix",   "email": "wren.delacroix@gmail.com",    "phone": "7705550108", "dietary": "Vegan"},
     {"key": "cedar",   "first": "Cedar",   "last": "Mbeki",       "email": "cedar.mbeki@gmail.com",       "phone": "4045550109", "dietary": "Gluten-Free"},
-    {"key": "fern",    "first": "Fern",    "last": "Kowalski",    "email": "fern.kowalski@gmail.com",     "phone": "6785550110", "dietary": None},
-    {"key": "sol",     "first": "Sol",     "last": "Reeves",      "email": "sol.reeves@gmail.com",        "phone": "4045550111", "dietary": None},
-    {"key": "lark",    "first": "Lark",    "last": "Johansson",   "email": "lark.johansson@icloud.com",   "phone": "7705550112", "dietary": None},
+    {"key": "fern",    "first": "Fern",    "last": "Kowalski",    "email": "fern.kowalski@gmail.com",     "phone": "6785550110", "dietary": "None"},
+    {"key": "sol",     "first": "Sol",     "last": "Reeves",      "email": "sol.reeves@gmail.com",        "phone": "4045550111", "dietary": "None"},
+    {"key": "lark",    "first": "Lark",    "last": "Johansson",   "email": "lark.johansson@icloud.com",   "phone": "7705550112", "dietary": "Vegetarian"},
     {"key": "willow",  "first": "Willow",  "last": "Tanaka",      "email": "willow.tanaka@gmail.com",     "phone": "4045550113", "dietary": "Vegan"},
     {"key": "rowan",   "first": "Rowan",   "last": "Baptiste",    "email": "rowan.baptiste@gmail.com",    "phone": "6785550114", "dietary": "Gluten-Free"},
-    {"key": "sky",     "first": "Sky",     "last": "Petrov",      "email": "sky.petrov@gmail.com",        "phone": "4045550115", "dietary": None},
+    {"key": "sky",     "first": "Sky",     "last": "Petrov",      "email": "sky.petrov@gmail.com",        "phone": "4045550115", "dietary": "None"},
 ]
 
 def ago(days=0, hours=0):
@@ -83,12 +83,12 @@ REGISTRATIONS = {
         ("mara",    "complete", 12500, "bell_tent",   None, None, 28),
         ("devon",   "complete", 12500, "nylon_tent",  None, None, 27),
         ("sage",    "complete", 12500, "self_camping",None, None, 26),
-        ("river",   "complete", 12500, "yurt_shared", None, None, 25),
+        ("river",   "complete", 12500, "self_camping",None, None, 25),
         ("juniper", "complete", 12500, "bell_tent",   None, None, 24),
         ("indigo",  "complete", 12500, "nylon_tent",  None, None, 23),
         ("wren",    "complete", 12500, "self_camping",None, None, 22),
-        ("fern",    "complete", 12500, "none",        None, None, 20),
-        ("lark",    "complete", 12500, "yurt_shared", None, None, 18),
+        ("fern",    "complete", 12500, "self_camping",None, None, 20),
+        ("lark",    "complete", 12500, "bell_tent",   None, None, 18),
         ("willow",  "complete", 12500, "bell_tent",   None, None, 17),
         ("aspen",   "expired",      0, "bell_tent",   None, None, 15),
         ("sol",     "pending_payment", 0, "nylon_tent",None,None, 4),
@@ -107,20 +107,21 @@ REGISTRATIONS = {
     ],
 
     # e4: March Community Weekend — flagship demo, $50, mix of statuses + check-ins
+    # Accommodation (complete only): bell_tent(4), nylon_tent(2), self_camping(3), none(1 day-visitor) = 10 + willow "none" = 11
     "e4": [
         ("mara",    "complete",        5000, "bell_tent",   None,          1, 14),  # checked in 1h after start
         ("devon",   "complete",        5000, "nylon_tent",  None,          None, 13),
         ("sage",    "complete",        5000, "self_camping","Gluten-Free", None, 12),
-        ("river",   "complete",        5000, "yurt_shared", None,          2, 11),
+        ("river",   "complete",        5000, "self_camping",None,          2, 11),
         ("juniper", "complete",        5000, "bell_tent",   "Vegetarian",  None, 10),
         ("aspen",   "expired",            0, "nylon_tent",  None,          None, 9),
         ("indigo",  "complete",        5000, "nylon_tent",  "Vegetarian",  3, 8),
         ("wren",    "pending_payment",    0, "self_camping","Vegan",       None, 7),
-        ("cedar",   "pending_payment",    0, "yurt_shared", "Gluten-Free", None, 6),
-        ("fern",    "complete",        5000, "none",        None,          4, 5),
+        ("cedar",   "pending_payment",    0, "nylon_tent",  "Gluten-Free", None, 6),
+        ("fern",    "complete",        5000, "self_camping",None,          4, 5),
         ("sol",     "complete",        5000, "bell_tent",   None,          None, 4),
-        ("lark",    "complete",        5000, "yurt_shared", None,          5, 3),
-        ("willow",  "complete",        5000, "bell_tent",   "Vegan",       None, 2),
+        ("lark",    "complete",        5000, "bell_tent",   None,          5, 3),
+        ("willow",  "complete",        5000, "none",        "Vegan",       None, 2),  # day visitor
         ("rowan",   "pending_payment",    0, "nylon_tent",  "Gluten-Free", None, 1),
         ("sky",     "complete",        5000, "self_camping",None,          None, 0),
     ],
@@ -159,17 +160,17 @@ REGISTRATIONS = {
         ("mara",    "complete", 25000, "bell_tent",   "Vegetarian",  None, 42),
         ("devon",   "complete", 25000, "nylon_tent",  "Vegan",       None, 40),
         ("sage",    "complete", 25000, "self_camping","Gluten-Free", None, 38),
-        ("river",   "complete", 25000, "yurt_shared", None,          None, 36),
+        ("river",   "complete", 25000, "self_camping",None,          None, 36),
         ("juniper", "complete", 25000, "bell_tent",   "Vegetarian",  None, 35),
         ("aspen",   "complete", 25000, "nylon_tent",  None,          None, 33),
         ("indigo",  "complete", 25000, "bell_tent",   "Vegetarian",  None, 31),
-        ("fern",    "complete", 25000, "yurt_shared", None,          None, 28),
-        ("lark",    "complete", 25000, "yurt_shared", None,          None, 25),
+        ("fern",    "complete", 25000, "self_camping",None,          None, 28),
+        ("lark",    "complete", 25000, "bell_tent",   None,          None, 25),
         ("willow",  "complete", 25000, "bell_tent",   "Vegan",       None, 22),
         ("sol",     "complete", 25000, "nylon_tent",  None,          None, 20),
         ("sky",     "complete", 25000, "self_camping",None,          None, 18),
         ("wren",    "pending_payment", 0, "nylon_tent","Vegan",      None, 10),
-        ("cedar",   "pending_payment", 0, "yurt_shared","Gluten-Free",None, 8),
+        ("cedar",   "pending_payment", 0, "nylon_tent","Gluten-Free",None, 8),
         ("rowan",   "pending_payment", 0, "self_camping","Gluten-Free",None,5),
     ],
 
@@ -177,15 +178,15 @@ REGISTRATIONS = {
     "e8": [
         ("mara",    "complete", 45000, "bell_tent",   "Vegetarian",  None, 50),
         ("devon",   "complete", 45000, "bell_tent",   "Vegan",       None, 48),
-        ("river",   "complete", 45000, "yurt_shared", None,          None, 45),
+        ("river",   "complete", 45000, "self_camping",None,          None, 45),
         ("juniper", "complete", 45000, "bell_tent",   "Vegetarian",  None, 42),
         ("indigo",  "complete", 45000, "nylon_tent",  "Vegetarian",  None, 40),
-        ("lark",    "complete", 45000, "yurt_shared", None,          None, 38),
+        ("lark",    "complete", 45000, "bell_tent",   None,          None, 38),
         ("willow",  "complete", 45000, "bell_tent",   "Vegan",       None, 35),
         ("sol",     "complete", 45000, "nylon_tent",  None,          None, 33),
         ("sky",     "complete", 45000, "self_camping",None,          None, 30),
         ("wren",    "pending_payment", 0, "bell_tent","Vegan",       None, 15),
-        ("cedar",   "pending_payment", 0, "yurt_shared","Gluten-Free",None,10),
+        ("cedar",   "pending_payment", 0, "nylon_tent","Gluten-Free",None,10),
         ("rowan",   "expired",      0, "nylon_tent",  "Gluten-Free", None, 5),
     ],
 
@@ -193,17 +194,17 @@ REGISTRATIONS = {
     "e9": [
         ("mara",    "complete", 27500, "bell_tent",   "Vegetarian",  None, 55),
         ("sage",    "complete", 27500, "self_camping","Gluten-Free", None, 52),
-        ("river",   "complete", 27500, "yurt_shared", None,          None, 50),
+        ("river",   "complete", 27500, "self_camping",None,          None, 50),
         ("aspen",   "complete", 27500, "nylon_tent",  None,          None, 48),
         ("indigo",  "complete", 27500, "bell_tent",   "Vegetarian",  None, 45),
-        ("fern",    "complete", 27500, "none",        None,          None, 42),
-        ("lark",    "complete", 27500, "yurt_shared", None,          None, 40),
+        ("fern",    "complete", 27500, "self_camping",None,          None, 42),
+        ("lark",    "complete", 27500, "bell_tent",   None,          None, 40),
         ("willow",  "complete", 27500, "bell_tent",   "Vegan",       None, 38),
         ("sol",     "complete", 27500, "nylon_tent",  None,          None, 35),
         ("sky",     "complete", 27500, "self_camping",None,          None, 32),
         ("wren",    "pending_payment", 0, "bell_tent","Vegan",       None, 20),
-        ("cedar",   "pending_payment", 0, "yurt_shared","Gluten-Free",None,15),
-        ("rowan",   "pending_payment", 0, "none",     "Gluten-Free", None, 10),
+        ("cedar",   "pending_payment", 0, "nylon_tent","Gluten-Free",None,15),
+        ("rowan",   "pending_payment", 0, "nylon_tent","Gluten-Free",None, 10),
         ("devon",   "expired",      0, "nylon_tent",  "Vegan",       None, 5),
         ("juniper", "expired",      0, "bell_tent",   "Vegetarian",  None, 3),
     ],
@@ -270,17 +271,6 @@ async def seed_demo():
                     print(f"    ⚠️  No attendee ID for {att_key}")
                     continue
 
-                # Check if registration already exists
-                result = await session.execute(
-                    select(Registration).where(
-                        Registration.attendee_id == att_id,
-                        Registration.event_id == uuid.UUID(event_uuid)
-                    )
-                )
-                if result.scalar_one_or_none():
-                    total_skipped += 1
-                    continue
-
                 # Determine check-in time
                 checked_in_at = None
                 if checkin_hours is not None and status == "complete" and event_start:
@@ -288,34 +278,61 @@ async def seed_demo():
 
                 dietary = dietary_override if dietary_override is not None else att_dietary.get(att_key)
 
-                reg = Registration(
-                    id=uuid.uuid4(),
-                    attendee_id=att_id,
-                    event_id=uuid.UUID(event_uuid),
-                    status=RegistrationStatus(status),
-                    payment_amount_cents=amount if status == "complete" else 0,
-                    accommodation_type=accom or "none",
-                    dietary_restrictions=dietary,
-                    intake_data={
+                # Upsert: update existing registration or create new
+                result = await session.execute(
+                    select(Registration).where(
+                        Registration.attendee_id == att_id,
+                        Registration.event_id == uuid.UUID(event_uuid)
+                    )
+                )
+                existing_reg = result.scalar_one_or_none()
+
+                status_icon = {"complete": "✓", "pending_payment": "⏳", "expired": "✗", "cancelled": "—"}.get(status, "?")
+                name = next(a["first"] + " " + a["last"] for a in ATTENDEES if a["key"] == att_key)
+
+                if existing_reg:
+                    # Update the existing registration with correct values
+                    existing_reg.status = RegistrationStatus(status)
+                    existing_reg.payment_amount_cents = amount if status == "complete" else 0
+                    existing_reg.accommodation_type = accom or "none"
+                    existing_reg.dietary_restrictions = dietary
+                    existing_reg.checked_in_at = checked_in_at
+                    existing_reg.checked_in_by = "brian@justloveforest.com" if checked_in_at else None
+                    existing_reg.updated_at = ago(days=max(0, created_days - 1))
+                    existing_reg.intake_data = {
                         "experience": ["Beginner", "Returning", "Regular"][hash(att_key) % 3],
                         "how_heard": ["Instagram", "Friend referral", "Newsletter", "Website", "Returning attendee"][hash(att_key + event_key) % 5],
                         "emergency_contact": f"{att_key.capitalize()} Emergency, 555-{900 + hash(att_key) % 100:04d}",
-                    },
-                    waiver_accepted_at=ago(days=created_days) if status != "expired" else None,
-                    source="registration_form",
-                    created_at=ago(days=created_days, hours=2),
-                    updated_at=ago(days=max(0, created_days - 1)),
-                    checked_in_at=checked_in_at,
-                    checked_in_by="brian@justloveforest.com" if checked_in_at else None,
-                )
-                session.add(reg)
-                total_created += 1
-                status_icon = {"complete": "✓", "pending_payment": "⏳", "expired": "✗", "cancelled": "—"}.get(status, "?")
-                name = next(a["first"] + " " + a["last"] for a in ATTENDEES if a["key"] == att_key)
-                print(f"    {status_icon} {name:<22} {status:<18} ${amount/100:>6.2f}  {accom or 'no accom'}")
+                    }
+                    total_skipped += 1  # count as "updated"
+                    print(f"    ↻ {name:<22} {status:<18} ${amount/100:>6.2f}  {accom or 'no accom'}  [updated]")
+                else:
+                    reg = Registration(
+                        id=uuid.uuid4(),
+                        attendee_id=att_id,
+                        event_id=uuid.UUID(event_uuid),
+                        status=RegistrationStatus(status),
+                        payment_amount_cents=amount if status == "complete" else 0,
+                        accommodation_type=accom or "none",
+                        dietary_restrictions=dietary,
+                        intake_data={
+                            "experience": ["Beginner", "Returning", "Regular"][hash(att_key) % 3],
+                            "how_heard": ["Instagram", "Friend referral", "Newsletter", "Website", "Returning attendee"][hash(att_key + event_key) % 5],
+                            "emergency_contact": f"{att_key.capitalize()} Emergency, 555-{900 + hash(att_key) % 100:04d}",
+                        },
+                        waiver_accepted_at=ago(days=created_days) if status != "expired" else None,
+                        source="registration_form",
+                        created_at=ago(days=created_days, hours=2),
+                        updated_at=ago(days=max(0, created_days - 1)),
+                        checked_in_at=checked_in_at,
+                        checked_in_by="brian@justloveforest.com" if checked_in_at else None,
+                    )
+                    session.add(reg)
+                    total_created += 1
+                    print(f"    {status_icon} {name:<22} {status:<18} ${amount/100:>6.2f}  {accom or 'no accom'}")
 
         await session.commit()
-        print(f"\n🌲 Demo seed complete! Created {total_created} registrations, skipped {total_skipped} existing.")
+        print(f"\n🌲 Demo seed complete! Created {total_created} new registrations, updated {total_skipped} existing.")
 
 
 if __name__ == "__main__":

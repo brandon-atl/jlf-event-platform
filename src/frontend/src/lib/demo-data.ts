@@ -40,18 +40,18 @@ const PEOPLE: Record<string, { name: string; email: string; phone: string; dieta
   mara:    { name: "Mara Chen",        email: "mara.chen@gmail.com",         phone: "+1-770-555-0101", dietary: "Vegetarian" },
   devon:   { name: "Devon Okafor",     email: "devon.okafor@gmail.com",      phone: "+1-404-555-0102", dietary: "Vegan" },
   sage:    { name: "Sage Willowbrook", email: "sage.willowbrook@icloud.com", phone: "+1-678-555-0103", dietary: "Gluten-Free" },
-  river:   { name: "River Nakamura",   email: "river.nakamura@gmail.com",    phone: "+1-770-555-0104" },
+  river:   { name: "River Nakamura",   email: "river.nakamura@gmail.com",    phone: "+1-770-555-0104", dietary: "None" },
   juniper: { name: "Juniper Hayes",    email: "juniper.hayes@gmail.com",     phone: "+1-404-555-0105", dietary: "Vegetarian" },
-  aspen:   { name: "Aspen Torres",     email: "aspen.torres@gmail.com",      phone: "+1-678-555-0106" },
+  aspen:   { name: "Aspen Torres",     email: "aspen.torres@gmail.com",      phone: "+1-678-555-0106", dietary: "None" },
   indigo:  { name: "Indigo Park",      email: "indigo.park@icloud.com",      phone: "+1-404-555-0107", dietary: "Vegetarian" },
   wren:    { name: "Wren Delacroix",   email: "wren.delacroix@gmail.com",    phone: "+1-770-555-0108", dietary: "Vegan" },
   cedar:   { name: "Cedar Mbeki",      email: "cedar.mbeki@gmail.com",       phone: "+1-404-555-0109", dietary: "Gluten-Free" },
-  fern:    { name: "Fern Kowalski",    email: "fern.kowalski@gmail.com",     phone: "+1-678-555-0110" },
-  sol:     { name: "Sol Reeves",       email: "sol.reeves@gmail.com",        phone: "+1-404-555-0111" },
-  lark:    { name: "Lark Johansson",   email: "lark.johansson@icloud.com",   phone: "+1-770-555-0112" },
+  fern:    { name: "Fern Kowalski",    email: "fern.kowalski@gmail.com",     phone: "+1-678-555-0110", dietary: "None" },
+  sol:     { name: "Sol Reeves",       email: "sol.reeves@gmail.com",        phone: "+1-404-555-0111", dietary: "None" },
+  lark:    { name: "Lark Johansson",   email: "lark.johansson@icloud.com",   phone: "+1-770-555-0112", dietary: "Vegetarian" },
   willow:  { name: "Willow Tanaka",    email: "willow.tanaka@gmail.com",     phone: "+1-404-555-0113", dietary: "Vegan" },
   rowan:   { name: "Rowan Baptiste",   email: "rowan.baptiste@gmail.com",    phone: "+1-678-555-0114", dietary: "Gluten-Free" },
-  sky:     { name: "Sky Petrov",       email: "sky.petrov@gmail.com",        phone: "+1-404-555-0115" },
+  sky:     { name: "Sky Petrov",       email: "sky.petrov@gmail.com",        phone: "+1-404-555-0115", dietary: "None" },
 };
 
 const HOW_HEARD = ["Instagram", "Friend referral", "Newsletter", "Website", "Returning attendee"];
@@ -213,12 +213,12 @@ const REG_DATA: Record<string, DemoRegistration[]> = {
     mkReg("e2",0, "mara",   "complete", 12500,"bell_tent",   undefined,"2026-02-21T15:10:00Z",daysAgo(28)),
     mkReg("e2",1, "devon",  "complete", 12500,"nylon_tent",  undefined,"2026-02-21T15:25:00Z",daysAgo(27)),
     mkReg("e2",2, "sage",   "complete", 12500,"self_camping",undefined,"2026-02-21T15:05:00Z",daysAgo(26)),
-    mkReg("e2",3, "river",  "complete", 12500,"yurt_shared", undefined,"2026-02-21T14:55:00Z",daysAgo(25)),
+    mkReg("e2",3, "river",  "complete", 12500,"self_camping",undefined,"2026-02-21T14:55:00Z",daysAgo(25)),
     mkReg("e2",4, "juniper","complete", 12500,"bell_tent",   undefined,"2026-02-21T15:00:00Z",daysAgo(24)),
     mkReg("e2",5, "indigo", "complete", 12500,"nylon_tent",  undefined,"2026-02-21T15:30:00Z",daysAgo(23)),
     mkReg("e2",6, "wren",   "complete", 12500,"self_camping",undefined,"2026-02-21T15:45:00Z",daysAgo(22)),
-    mkReg("e2",7, "fern",   "complete", 12500,"none",        undefined,"2026-02-21T14:50:00Z",daysAgo(20)),
-    mkReg("e2",8, "lark",   "complete", 12500,"yurt_shared", undefined,"2026-02-21T16:00:00Z",daysAgo(18)),
+    mkReg("e2",7, "fern",   "complete", 12500,"self_camping",undefined,"2026-02-21T14:50:00Z",daysAgo(20)),
+    mkReg("e2",8, "lark",   "complete", 12500,"bell_tent",   undefined,"2026-02-21T16:00:00Z",daysAgo(18)),
     mkReg("e2",9, "willow", "complete", 12500,"bell_tent",   undefined,"2026-02-21T15:15:00Z",daysAgo(17)),
     mkReg("e2",10,"aspen",  "expired",      0,"bell_tent",   undefined, null,                  daysAgo(15)),
     mkReg("e2",11,"sol",    "pending_payment",0,"nylon_tent",undefined, null,                  daysAgo(4)),
@@ -238,22 +238,24 @@ const REG_DATA: Record<string, DemoRegistration[]> = {
 
   // e4: March Community Weekend — primary demo event, 15 registrations
   // 11 complete (5 checked in), 3 pending, 1 expired
+  // Accommodation: bell_tent(4), nylon_tent(3), self_camping(3), none(1 day-visitor) — 11 complete total
+  // Dietary: everyone has a value (form is required)
   e4: [
     mkReg("e4",0, "mara",   "complete",        5000,"bell_tent",   "Vegetarian",  "2026-03-06T16:45:00Z", daysAgo(14)),
     mkReg("e4",1, "devon",  "complete",        5000,"nylon_tent",  "Vegan",        null,                   daysAgo(13)),
     mkReg("e4",2, "sage",   "complete",        5000,"self_camping","Gluten-Free",  null,                   daysAgo(12)),
-    mkReg("e4",3, "river",  "complete",        5000,"yurt_shared",  null,          "2026-03-06T18:00:00Z", daysAgo(11)),
+    mkReg("e4",3, "river",  "complete",        5000,"self_camping", undefined,     "2026-03-06T18:00:00Z", daysAgo(11)),
     mkReg("e4",4, "juniper","complete",        5000,"bell_tent",   "Vegetarian",   null,                   daysAgo(10)),
-    mkReg("e4",5, "aspen",  "expired",            0,"nylon_tent",   null,           null,                  daysAgo(9)),
+    mkReg("e4",5, "aspen",  "expired",            0,"nylon_tent",   undefined,      null,                  daysAgo(9)),
     mkReg("e4",6, "indigo", "complete",        5000,"nylon_tent",  "Vegetarian",  "2026-03-06T18:42:00Z", daysAgo(8)),
     mkReg("e4",7, "wren",   "pending_payment",    0,"self_camping","Vegan",         null,                  daysAgo(7)),
-    mkReg("e4",8, "cedar",  "pending_payment",    0,"yurt_shared", "Gluten-Free",   null,                  daysAgo(6)),
-    mkReg("e4",9, "fern",   "complete",        5000,"none",         null,          "2026-03-06T19:03:00Z", daysAgo(5)),
-    mkReg("e4",10,"sol",    "complete",        5000,"bell_tent",    null,           null,                  daysAgo(4)),
-    mkReg("e4",11,"lark",   "complete",        5000,"yurt_shared",  null,          "2026-03-06T19:22:00Z", daysAgo(3)),
-    mkReg("e4",12,"willow", "complete",        5000,"bell_tent",   "Vegan",         null,                  daysAgo(2)),
+    mkReg("e4",8, "cedar",  "pending_payment",    0,"nylon_tent",  "Gluten-Free",   null,                  daysAgo(6)),
+    mkReg("e4",9, "fern",   "complete",        5000,"self_camping", undefined,     "2026-03-06T19:03:00Z", daysAgo(5)),
+    mkReg("e4",10,"sol",    "complete",        5000,"bell_tent",    undefined,      null,                  daysAgo(4)),
+    mkReg("e4",11,"lark",   "complete",        5000,"bell_tent",    undefined,     "2026-03-06T19:22:00Z", daysAgo(3)),
+    mkReg("e4",12,"willow", "complete",        5000,"none",        "Vegan",         null,                  daysAgo(2)),
     mkReg("e4",13,"rowan",  "pending_payment",    0,"nylon_tent",  "Gluten-Free",   null,                  daysAgo(1)),
-    mkReg("e4",14,"sky",    "complete",        5000,"self_camping", null,            null,                  daysAgo(0)),
+    mkReg("e4",14,"sky",    "complete",        5000,"self_camping", undefined,       null,                  daysAgo(0)),
   ],
 
   // e5: Ram Dass Evenings — donation-based, evening check-ins
@@ -285,22 +287,22 @@ const REG_DATA: Record<string, DemoRegistration[]> = {
     mkReg("e6",9,"rowan",  "expired",      0,"none",        "Gluten-Free", null,                  daysAgo(1)),
   ],
 
-  // e7: Loving Awareness Retreat — $250, 16 registrations
+  // e7: Loving Awareness Retreat — $250, 15 registrations
   e7: [
     mkReg("e7",0, "mara",   "complete", 25000,"bell_tent",   "Vegetarian", null,daysAgo(42)),
     mkReg("e7",1, "devon",  "complete", 25000,"nylon_tent",  "Vegan",      null,daysAgo(40)),
     mkReg("e7",2, "sage",   "complete", 25000,"self_camping","Gluten-Free",null,daysAgo(38)),
-    mkReg("e7",3, "river",  "complete", 25000,"yurt_shared",  null,        null,daysAgo(36)),
+    mkReg("e7",3, "river",  "complete", 25000,"self_camping", undefined,   null,daysAgo(36)),
     mkReg("e7",4, "juniper","complete", 25000,"bell_tent",   "Vegetarian", null,daysAgo(35)),
-    mkReg("e7",5, "aspen",  "complete", 25000,"nylon_tent",   null,        null,daysAgo(33)),
+    mkReg("e7",5, "aspen",  "complete", 25000,"nylon_tent",   undefined,   null,daysAgo(33)),
     mkReg("e7",6, "indigo", "complete", 25000,"bell_tent",   "Vegetarian", null,daysAgo(31)),
-    mkReg("e7",7, "fern",   "complete", 25000,"yurt_shared",  null,        null,daysAgo(28)),
-    mkReg("e7",8, "lark",   "complete", 25000,"yurt_shared",  null,        null,daysAgo(25)),
+    mkReg("e7",7, "fern",   "complete", 25000,"self_camping", undefined,   null,daysAgo(28)),
+    mkReg("e7",8, "lark",   "complete", 25000,"bell_tent",    undefined,   null,daysAgo(25)),
     mkReg("e7",9, "willow", "complete", 25000,"bell_tent",   "Vegan",      null,daysAgo(22)),
-    mkReg("e7",10,"sol",    "complete", 25000,"nylon_tent",   null,        null,daysAgo(20)),
-    mkReg("e7",11,"sky",    "complete", 25000,"self_camping", null,        null,daysAgo(18)),
+    mkReg("e7",10,"sol",    "complete", 25000,"nylon_tent",   undefined,   null,daysAgo(20)),
+    mkReg("e7",11,"sky",    "complete", 25000,"self_camping", undefined,   null,daysAgo(18)),
     mkReg("e7",12,"wren",   "pending_payment",0,"nylon_tent","Vegan",      null,daysAgo(10)),
-    mkReg("e7",13,"cedar",  "pending_payment",0,"yurt_shared","Gluten-Free",null,daysAgo(8)),
+    mkReg("e7",13,"cedar",  "pending_payment",0,"nylon_tent","Gluten-Free",null,daysAgo(8)),
     mkReg("e7",14,"rowan",  "pending_payment",0,"self_camping","Gluten-Free",null,daysAgo(5)),
   ],
 
@@ -308,15 +310,15 @@ const REG_DATA: Record<string, DemoRegistration[]> = {
   e8: [
     mkReg("e8",0, "mara",   "complete", 45000,"bell_tent",   "Vegetarian",  null,daysAgo(50)),
     mkReg("e8",1, "devon",  "complete", 45000,"bell_tent",   "Vegan",       null,daysAgo(48)),
-    mkReg("e8",2, "river",  "complete", 45000,"yurt_shared",  null,         null,daysAgo(45)),
+    mkReg("e8",2, "river",  "complete", 45000,"self_camping", undefined,    null,daysAgo(45)),
     mkReg("e8",3, "juniper","complete", 45000,"bell_tent",   "Vegetarian",  null,daysAgo(42)),
     mkReg("e8",4, "indigo", "complete", 45000,"nylon_tent",  "Vegetarian",  null,daysAgo(40)),
-    mkReg("e8",5, "lark",   "complete", 45000,"yurt_shared",  null,         null,daysAgo(38)),
+    mkReg("e8",5, "lark",   "complete", 45000,"bell_tent",    undefined,    null,daysAgo(38)),
     mkReg("e8",6, "willow", "complete", 45000,"bell_tent",   "Vegan",       null,daysAgo(35)),
-    mkReg("e8",7, "sol",    "complete", 45000,"nylon_tent",   null,         null,daysAgo(33)),
-    mkReg("e8",8, "sky",    "complete", 45000,"self_camping", null,         null,daysAgo(30)),
+    mkReg("e8",7, "sol",    "complete", 45000,"nylon_tent",   undefined,    null,daysAgo(33)),
+    mkReg("e8",8, "sky",    "complete", 45000,"self_camping", undefined,    null,daysAgo(30)),
     mkReg("e8",9, "wren",   "pending_payment",0,"bell_tent", "Vegan",      null,daysAgo(15)),
-    mkReg("e8",10,"cedar",  "pending_payment",0,"yurt_shared","Gluten-Free",null,daysAgo(10)),
+    mkReg("e8",10,"cedar",  "pending_payment",0,"nylon_tent","Gluten-Free", null,daysAgo(10)),
     mkReg("e8",11,"rowan",  "expired",      0,"nylon_tent",  "Gluten-Free", null,daysAgo(5)),
   ],
 
@@ -324,17 +326,17 @@ const REG_DATA: Record<string, DemoRegistration[]> = {
   e9: [
     mkReg("e9",0, "mara",   "complete", 27500,"bell_tent",   "Vegetarian",  null,daysAgo(55)),
     mkReg("e9",1, "sage",   "complete", 27500,"self_camping","Gluten-Free", null,daysAgo(52)),
-    mkReg("e9",2, "river",  "complete", 27500,"yurt_shared",  null,         null,daysAgo(50)),
-    mkReg("e9",3, "aspen",  "complete", 27500,"nylon_tent",   null,         null,daysAgo(48)),
+    mkReg("e9",2, "river",  "complete", 27500,"self_camping", undefined,    null,daysAgo(50)),
+    mkReg("e9",3, "aspen",  "complete", 27500,"nylon_tent",   undefined,    null,daysAgo(48)),
     mkReg("e9",4, "indigo", "complete", 27500,"bell_tent",   "Vegetarian",  null,daysAgo(45)),
-    mkReg("e9",5, "fern",   "complete", 27500,"none",         null,         null,daysAgo(42)),
-    mkReg("e9",6, "lark",   "complete", 27500,"yurt_shared",  null,         null,daysAgo(40)),
+    mkReg("e9",5, "fern",   "complete", 27500,"self_camping", undefined,    null,daysAgo(42)),
+    mkReg("e9",6, "lark",   "complete", 27500,"bell_tent",    undefined,    null,daysAgo(40)),
     mkReg("e9",7, "willow", "complete", 27500,"bell_tent",   "Vegan",       null,daysAgo(38)),
-    mkReg("e9",8, "sol",    "complete", 27500,"nylon_tent",   null,         null,daysAgo(35)),
-    mkReg("e9",9, "sky",    "complete", 27500,"self_camping", null,         null,daysAgo(32)),
+    mkReg("e9",8, "sol",    "complete", 27500,"nylon_tent",   undefined,    null,daysAgo(35)),
+    mkReg("e9",9, "sky",    "complete", 27500,"self_camping", undefined,    null,daysAgo(32)),
     mkReg("e9",10,"wren",   "pending_payment",0,"bell_tent", "Vegan",      null,daysAgo(20)),
-    mkReg("e9",11,"cedar",  "pending_payment",0,"yurt_shared","Gluten-Free",null,daysAgo(15)),
-    mkReg("e9",12,"rowan",  "pending_payment",0,"none",      "Gluten-Free", null,daysAgo(10)),
+    mkReg("e9",11,"cedar",  "pending_payment",0,"nylon_tent","Gluten-Free", null,daysAgo(15)),
+    mkReg("e9",12,"rowan",  "pending_payment",0,"nylon_tent","Gluten-Free", null,daysAgo(10)),
     mkReg("e9",13,"devon",  "expired",      0,"nylon_tent",  "Vegan",       null,daysAgo(5)),
     mkReg("e9",14,"juniper","expired",      0,"bell_tent",   "Vegetarian",  null,daysAgo(3)),
   ],
@@ -357,7 +359,7 @@ export const DEMO_DASHBOARD = (eventId: string) => {
   const regs = REG_DATA[eventId] ?? [];
 
   const status_breakdown = { complete: 0, pending_payment: 0, expired: 0, cancelled: 0, refunded: 0 };
-  const acc_map: Record<string, number> = { bell_tent: 0, nylon_tent: 0, self_camping: 0, yurt_shared: 0, none: 0 };
+  const acc_map: Record<string, number> = { bell_tent: 0, nylon_tent: 0, self_camping: 0, none: 0 };
   const dietary: Record<string, number> = {};
   let revenue = 0;
   let paid_count = 0;

@@ -346,41 +346,72 @@ export default function EventDashboardPage({
           <h3 className="text-sm font-bold mb-4" style={{ color: textSub }}>
             Accommodation Breakdown
           </h3>
-          {[
-            { l: "Bell Tent", v: acc.bell_tent, cl: isDark ? darkColors.canopy : colors.canopy, e: "⛺" },
-            { l: "Nylon Tent", v: acc.nylon_tent, cl: isDark ? darkColors.moss : colors.moss, e: "🏕️" },
-            { l: "Self-Camping", v: acc.self_camping, cl: isDark ? darkColors.earth : colors.earth, e: "🌲" },
-          ].map((t) => (
-            <div key={t.l} className="mb-4">
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className="text-base">{t.e}</span>
-                <span className="text-sm flex-1" style={{ color: textSub }}>{t.l}</span>
-                <span className="text-sm font-bold" style={{ color: textMain }}>
-                  {t.v}
-                </span>
-              </div>
-              <ProgressBar value={t.v} max={total} color={t.cl} isDark={isDark} />
-            </div>
-          ))}
-          <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-            {[
-              { l: "Bell", v: acc.bell_tent, e: "⛺", a: "bell_tent" },
-              { l: "Nylon", v: acc.nylon_tent, e: "🏕️", a: "nylon_tent" },
-              { l: "Self", v: acc.self_camping, e: "🌲", a: "self_camping" },
-            ].map((t) => (
-              <button
-                key={t.l}
-                type="button"
-                className="py-3 rounded-xl text-center hover:opacity-80 transition active:scale-95"
-                style={{ background: subtleBg }}
-                onClick={() => setActiveFilter({ label: `${t.l} Tent`, subtitle: `${t.v} confirmed`, accom: t.a, status: "complete" })}
-              >
-                <span className="text-lg">{t.e}</span>
-                <p className="text-xl font-bold mt-0.5" style={{ color: textMain }}>{t.v}</p>
-                <p className="text-[10px]" style={{ color: textMuted }}>{t.l}</p>
-              </button>
-            ))}
-          </div>
+          {(() => {
+            const ACCOM_META: Record<string, { label: string; short: string; emoji: string; color: string; darkColor: string }> = {
+              bell_tent:    { label: "Bell Tent",          short: "Bell",    emoji: "⛺", color: colors.canopy,  darkColor: darkColors.canopy },
+              nylon_tent:   { label: "Nylon Tent",         short: "Nylon",   emoji: "🏕️", color: colors.moss,    darkColor: darkColors.moss },
+              self_camping: { label: "Self-Camping",       short: "Self",    emoji: "🌲", color: colors.earth,   darkColor: darkColors.earth },
+              none:         { label: "Day Pass",           short: "Day",     emoji: "📍", color: colors.sage,    darkColor: darkColors.sage },
+            };
+            const accomTypes = Object.entries(acc)
+              .filter(([key, v]) => key !== "none" && v > 0)
+              .map(([key, v]) => {
+                const meta = ACCOM_META[key] ?? { label: key.replace(/_/g, " "), short: key.slice(0, 4), emoji: "🏠", color: colors.forest, darkColor: darkColors.canopy };
+                return { key, v, ...meta };
+              });
+            const dayCount = (acc as Record<string, number>)["none"] ?? 0;
+            return (
+              <>
+                {accomTypes.map((t) => (
+                  <div key={t.key} className="mb-4">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-base">{t.emoji}</span>
+                      <span className="text-sm flex-1" style={{ color: textSub }}>{t.label}</span>
+                      <span className="text-sm font-bold" style={{ color: textMain }}>{t.v}</span>
+                    </div>
+                    <ProgressBar value={t.v} max={total} color={isDark ? t.darkColor : t.color} isDark={isDark} />
+                  </div>
+                ))}
+                {dayCount > 0 && (
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-base">📍</span>
+                      <span className="text-sm flex-1" style={{ color: textSub }}>Day Pass</span>
+                      <span className="text-sm font-bold" style={{ color: textMain }}>{dayCount}</span>
+                    </div>
+                    <ProgressBar value={dayCount} max={total} color={isDark ? darkColors.sage : colors.sage} isDark={isDark} />
+                  </div>
+                )}
+                <div className={`grid gap-2 mt-4 text-center`} style={{ gridTemplateColumns: `repeat(${Math.min(accomTypes.length + (dayCount > 0 ? 1 : 0), 4)}, 1fr)` }}>
+                  {accomTypes.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      className="py-3 rounded-xl text-center hover:opacity-80 transition active:scale-95"
+                      style={{ background: subtleBg }}
+                      onClick={() => setActiveFilter({ label: t.label, subtitle: `${t.v} confirmed`, accom: t.key, status: "complete" })}
+                    >
+                      <span className="text-lg">{t.emoji}</span>
+                      <p className="text-xl font-bold mt-0.5" style={{ color: textMain }}>{t.v}</p>
+                      <p className="text-[10px]" style={{ color: textMuted }}>{t.short}</p>
+                    </button>
+                  ))}
+                  {dayCount > 0 && (
+                    <button
+                      type="button"
+                      className="py-3 rounded-xl text-center hover:opacity-80 transition active:scale-95"
+                      style={{ background: subtleBg }}
+                      onClick={() => setActiveFilter({ label: "Day Pass", subtitle: `${dayCount} confirmed`, accom: "none", status: "complete" })}
+                    >
+                      <span className="text-lg">📍</span>
+                      <p className="text-xl font-bold mt-0.5" style={{ color: textMain }}>{dayCount}</p>
+                      <p className="text-[10px]" style={{ color: textMuted }}>Day</p>
+                    </button>
+                  )}
+                </div>
+              </>
+            );
+          })()}
         </div>
         )}
 
