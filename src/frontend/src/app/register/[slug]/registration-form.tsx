@@ -188,6 +188,41 @@ export function RegistrationForm({
     );
   }
 
+  // Sold out state
+  if (event.spots_remaining === 0) {
+    return (
+      <div className="mx-auto max-w-2xl text-center">
+        <Card className="rounded-2xl border-gray-100 shadow-sm">
+          <CardContent className="py-12">
+            <div className="mx-auto mb-5 text-4xl">🌲</div>
+            <h1
+              className="mb-2 text-3xl font-bold"
+              style={{
+                color: "#1a3a2a",
+                fontFamily: "'DM Serif Display', serif",
+              }}
+            >
+              Sold Out
+            </h1>
+            <p className="mx-auto max-w-md text-gray-500">
+              <strong>{event.name}</strong> has reached capacity.
+              <br />
+              Please check back later or contact Just Love Forest to join the waitlist.
+            </p>
+            <Separator className="mx-auto my-6 max-w-xs" />
+            <a
+              href="https://justloveforest.com"
+              className="inline-block text-sm font-medium transition-colors hover:underline"
+              style={{ color: "#2d5a3d" }}
+            >
+              &larr; Back to justloveforest.com
+            </a>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-2xl">
       {/* Event info header */}

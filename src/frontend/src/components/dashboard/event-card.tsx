@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Users, CreditCard, Mountain, ChevronRight } from "lucide-react";
+import { Calendar, Users, CreditCard, Mountain, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { colors, darkColors } from "@/lib/theme";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 import { formatDateShort, formatCents, eventStatusColor } from "@/lib/format";
@@ -9,6 +9,8 @@ import type { EventResponse } from "@/lib/api";
 interface EventCardProps {
   event: EventResponse;
   onClick: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
   index?: number;
   isPast?: boolean;
 }
@@ -37,7 +39,7 @@ function CountPill({
   );
 }
 
-export function EventCard({ event, onClick, index = 0, isPast: isPastProp }: EventCardProps) {
+export function EventCard({ event, onClick, onEdit, onDelete, index = 0, isPast: isPastProp }: EventCardProps) {
   const { isDark } = useDarkMode();
   const c = isDark ? darkColors : colors;
 
@@ -114,6 +116,40 @@ export function EventCard({ event, onClick, index = 0, isPast: isPastProp }: Eve
           label="pending"
           color="#92700c"
         />
+
+        {(onEdit || onDelete) && (
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition"
+                aria-label="Edit event"
+                title="Edit"
+              >
+                <Pencil size={15} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
+                aria-label="Delete event"
+                title="Delete"
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
+          </div>
+        )}
+
         <ChevronRight
           size={16}
           className="text-gray-300 group-hover:text-gray-500 transition ml-1"

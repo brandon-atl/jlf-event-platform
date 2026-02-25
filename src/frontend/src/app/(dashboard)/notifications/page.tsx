@@ -2,13 +2,14 @@
 
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bell, Mail, Clock, AlertTriangle, Save, Eye } from "lucide-react";
+import { Bell, Mail, Clock, AlertTriangle, Save, Eye, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 
-import { events as eventsApi, type EventResponse } from "@/lib/api";
+import { events as eventsApi, notifications, type EventResponse } from "@/lib/api";
 import { colors, darkColors } from "@/lib/theme";
 import { isDemoMode, DEMO_EVENTS } from "@/lib/demo-data";
 import { useDarkMode } from "@/hooks/use-dark-mode";
+import { formatDateLong } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 
 type TemplateKey = "confirmation" | "reminder" | "expiry";
@@ -202,6 +203,46 @@ export default function NotificationsPage() {
     return rendered;
   };
 
+  const renderBlastMessage = (text: string) => {
+    const replacements: Record<string, string> = {
+      "{{attendee_name}}": "friend",
+      "{{event_name}}": selectedEvent?.name || SAMPLE_DATA["{{event_name}}"],
+      "{{event_date}}": selectedEvent?.event_date
+        ? formatDateLong(selectedEvent.event_date)
+        : SAMPLE_DATA["{{event_date}}"],
+      "{{meeting_point}}": (selectedEvent?.meeting_point_a || "").trim() || SAMPLE_DATA["{{meeting_point}}"],
+    };
+
+    let rendered = text;
+    for (const [tag, value] of Object.entries(replacements)) {
+      rendered = rendered.split(tag).join(value);
+    }
+    return rendered;
+  };
+
+  const smsMutation = useMutation({
+    mutationFn: async (message: string) => {
+      if (isDemoMode()) return { sent_count: 0, failed_count: 0 };
+      return notifications.sendSms(selectedEventId!, message);
+    },
+    onSuccess: () => {
+      toast.success("SMS blast sent");
+    },
+    onError: () => {
+      toast.error("Failed to send SMS blast");
+    },
+  });
+
+  const handleSendSmsBlast = () => {
+    if (!selectedEventId) return;
+    const message = renderBlastMessage(templates[activeTab]);
+    const ok = window.confirm(
+      `Send this SMS blast to all complete attendees for ${selectedEvent?.name || "this event"}?`
+    );
+    if (!ok) return;
+    smsMutation.mutate(message);
+  };
+
   const allEvents = eventList?.data || [];
 
   // Event selector view
@@ -254,6 +295,7 @@ export default function NotificationsPage() {
   }
 
   const Icon = TEMPLATE_META[activeTab].icon;
+  const canSendSms = TEMPLATE_META[activeTab].channels.includes("sms");
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -288,6 +330,21 @@ export default function NotificationsPage() {
             <Eye size={14} />
             {showPreview ? "Edit" : "Preview"}
           </Button>
+
+          {canSendSms && (
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl font-semibold"
+              style={isDark ? { borderColor, color: textSub } : {}}
+              onClick={handleSendSmsBlast}
+              disabled={smsMutation.isPending}
+            >
+              <MessageSquare size={14} />
+              {smsMutation.isPending ? "Sending..." : "Send SMS Blast"}
+            </Button>
+          )}
+
           <Button
             onClick={handleSave}
             disabled={!hasChanges || saveMutation.isPending}

@@ -17,6 +17,7 @@ from app.models.registration import (
     RegistrationStatus,
 )
 from app.schemas.registration import EventInfo, RegistrationCreate, RegistrationResponse
+from app.services.email_service import send_confirmation_email
 from app.services.stripe_service import create_checkout_session
 
 router = APIRouter(prefix="/register", tags=["registration"])
@@ -152,6 +153,14 @@ async def create_registration(
 
     if not checkout_url and event.pricing_model.value == "free":
         registration.status = RegistrationStatus.complete
+
+        # Ensure relationships are set to avoid async lazy-load issues
+        registration.attendee = attendee
+        registration.event = event
+
+        # Persist before sending (email failures should not block registration)
+        await db.commit()
+        await send_confirmation_email(registration, event)
 
     return RegistrationResponse(
         registration_id=registration.id,

@@ -54,6 +54,7 @@ def create_app() -> FastAPI:
     # Routers
     from app.routers import (
         auth,
+        bootstrap,
         co_creators,
         dashboard,
         events,
@@ -65,6 +66,7 @@ def create_app() -> FastAPI:
         webhooks,
     )
 
+    app.include_router(bootstrap.router, prefix="/api/v1")
     app.include_router(registration.router, prefix="/api/v1")
     app.include_router(auth.router, prefix="/api/v1")
     app.include_router(webhooks.router, prefix="/api/v1")
