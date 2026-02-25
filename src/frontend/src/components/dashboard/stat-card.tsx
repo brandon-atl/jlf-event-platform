@@ -11,6 +11,7 @@ interface StatCardProps {
   sub?: string;
   color?: string;
   accent?: number;
+  onClick?: () => void;
 }
 
 export function StatCard({
@@ -20,6 +21,7 @@ export function StatCard({
   sub,
   color = colors.canopy,
   accent,
+  onClick,
 }: StatCardProps) {
   const { isDark } = useDarkMode();
   const cardBg = isDark ? darkColors.surface : "#ffffff";
@@ -30,8 +32,12 @@ export function StatCard({
 
   return (
     <div
-      className="rounded-2xl border p-5 hover:shadow-md transition-all duration-300 shadow-sm"
-      style={{ background: cardBg, borderColor }}
+      className={`rounded-2xl border p-5 shadow-sm transition-all duration-300 ${onClick ? "cursor-pointer hover:shadow-md hover:ring-1 hover:ring-inset active:scale-[0.98]" : "hover:shadow-md"}`}
+      style={{ background: cardBg, borderColor, ...(onClick ? { ["--tw-ring-color" as string]: `${color}40` } : {}) }}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") onClick(); } : undefined}
     >
       <div className="flex items-center justify-between">
         <div

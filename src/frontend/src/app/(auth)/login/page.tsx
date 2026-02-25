@@ -16,6 +16,7 @@ import { useDarkMode } from "@/hooks/use-dark-mode";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { colors, darkColors } from "@/lib/theme";
 import { enableDemo } from "@/lib/demo-data";
+import { auth as authApi } from "@/lib/api";
 
 const FEATURES = [
   "Automated reconciliation",
@@ -30,6 +31,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
   const { isDark } = useDarkMode();
@@ -39,6 +44,20 @@ export default function LoginPage() {
   const textSub = isDark ? darkColors.textSecondary : "#9ca3af";
   const inputBg = isDark ? darkColors.cream : "#ffffff";
   const inputBorder = isDark ? darkColors.surfaceBorder : "#e5e7eb";
+
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotLoading(true);
+    try {
+      await authApi.sendMagicLink(forgotEmail || email);
+      setForgotSent(true);
+    } catch {
+      // Don't reveal whether the email exists
+      setForgotSent(true);
+    } finally {
+      setForgotLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -212,6 +231,52 @@ export default function LoginPage() {
               {loading && <Loader2 size={16} className="animate-spin" />}
               {loading ? "Signing in..." : "Sign In"}
             </button>
+
+            <div className="text-center mt-3">
+              <button
+                type="button"
+                className="text-xs transition-colors hover:underline underline-offset-2"
+                style={{ color: textSub }}
+                onClick={() => { setShowForgot(!showForgot); setForgotSent(false); setForgotEmail(email); }}
+              >
+                Forgot password?
+              </button>
+            </div>
+
+            {showForgot && !forgotSent && (
+              <form onSubmit={handleForgot} className="mt-3 p-4 rounded-xl border space-y-3" style={{ background: isDark ? darkColors.surfaceHover : "#f9fafb", borderColor: inputBorder }}>
+                <p className="text-xs font-semibold" style={{ color: textMain }}>
+                  Send a magic sign-in link
+                </p>
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 rounded-lg border text-sm outline-none focus:ring-2 transition"
+                  style={{ background: inputBg, borderColor: inputBorder, color: textMain }}
+                />
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="w-full py-2.5 text-white text-sm font-semibold rounded-lg flex items-center justify-center gap-2 transition disabled:opacity-70"
+                  style={{ background: colors.canopy }}
+                >
+                  {forgotLoading && <Loader2 size={14} className="animate-spin" />}
+                  {forgotLoading ? "Sending…" : "Send Magic Link"}
+                </button>
+              </form>
+            )}
+
+            {showForgot && forgotSent && (
+              <div className="mt-3 p-4 rounded-xl border flex items-center gap-3" style={{ background: isDark ? "rgba(52,211,153,0.08)" : "#ecfdf5", borderColor: isDark ? "rgba(52,211,153,0.2)" : "#a7f3d0" }}>
+                <CheckCircle size={18} style={{ color: isDark ? "#34d399" : "#059669" }} className="flex-shrink-0" />
+                <p className="text-xs" style={{ color: isDark ? "#34d399" : "#065f46" }}>
+                  If that email exists, a magic link is on its way. Check your inbox.
+                </p>
+              </div>
+            )}
           </form>
 
           <div className="mt-6 text-center">
