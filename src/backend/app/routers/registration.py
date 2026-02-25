@@ -160,7 +160,10 @@ async def create_registration(
 
         # Persist before sending (email failures should not block registration)
         await db.commit()
-        await send_confirmation_email(registration, event)
+        try:
+            await send_confirmation_email(registration, event)
+        except Exception as e:
+            print(f"Error sending confirmation email: {e}")
 
     return RegistrationResponse(
         registration_id=registration.id,

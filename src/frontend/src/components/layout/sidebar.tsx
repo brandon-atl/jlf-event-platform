@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import {
+import { LucideIcon,
   Calendar,
   BarChart3,
   Sun,
@@ -25,7 +25,7 @@ export interface SidebarProps {
   onCloseMobile: () => void;
 }
 
-const NAV_ITEMS: Array<{ icon: any; label: string; href: string; adminOnly?: boolean }> = [
+const NAV_ITEMS: Array<{ icon: LucideIcon; label: string; href: string; adminOnly?: boolean }> = [
   { icon: Calendar, label: "Events", href: "/events" },
   { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
   { icon: Sun, label: "Day-of View", href: "/day-of" },

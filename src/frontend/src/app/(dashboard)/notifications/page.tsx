@@ -223,7 +223,8 @@ export default function NotificationsPage() {
   const smsMutation = useMutation({
     mutationFn: async (message: string) => {
       if (isDemoMode()) return { sent_count: 0, failed_count: 0 };
-      return notifications.sendSms(selectedEventId!, message);
+      if (!selectedEventId) return { sent_count: 0, failed_count: 0 };
+      return notifications.sendSms(selectedEventId, message);
     },
     onSuccess: () => {
       toast.success("SMS blast sent");

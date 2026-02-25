@@ -22,9 +22,7 @@ class BootstrapRequest(BaseModel):
 async def bootstrap_admin(data: BootstrapRequest, db: AsyncSession = Depends(get_db)):
     """Create the first admin user. Only works when zero users exist in the DB."""
     count_result = await db.execute(select(func.count()).select_from(User))
-    user_count = count_result.scalar() or 0
-
-    if user_count > 0:
+    if (count_result.scalar() or 0) > 0:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Admin user already exists. Bootstrap is only available when no users exist.",
@@ -37,6 +35,13 @@ async def bootstrap_admin(data: BootstrapRequest, db: AsyncSession = Depends(get
         password_hash=hash_password(data.password),
     )
     db.add(user)
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Admin user already exists. Bootstrap is only available when no users exist.",
+        ) from e
 
     return {"message": "Admin user created", "email": data.email}
