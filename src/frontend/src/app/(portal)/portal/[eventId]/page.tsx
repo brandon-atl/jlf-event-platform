@@ -214,24 +214,24 @@ export default function PortalEventDetailPage({
                 )}
               </tr>
             </thead>
-            <tbody style={{ borderColor }}>
+            <tbody>
               {attendees.map((att) => (
                 <tr key={att.email} className="border-t transition" style={{ borderColor }}>
-                  <td className="px-5 py-3 font-medium" style={{ color: textMain }}>
+                  <td className="px-5 py-3 font-medium border-r" style={{ color: textMain, borderColor }}>
                     {att.first_name} {att.last_name}
                   </td>
-                  <td className="px-5 py-3" style={{ color: textSub }}>{att.email}</td>
-                  <td className="px-5 py-3" style={{ color: textSub }}>
+                  <td className="px-5 py-3 border-r" style={{ color: textSub, borderColor }}>{att.email}</td>
+                  <td className="px-5 py-3 border-r" style={{ color: textSub, borderColor }}>
                     {att.phone || "-"}
                   </td>
-                  <td className="px-5 py-3 capitalize" style={{ color: textSub }}>
+                  <td className="px-5 py-3 capitalize border-r" style={{ color: textSub, borderColor }}>
                     {att.accommodation_type?.replace(/_/g, " ") || "-"}
                   </td>
-                  <td className="px-5 py-3" style={{ color: textSub }}>
+                  <td className="px-5 py-3 border-r" style={{ color: textSub, borderColor }}>
                     {att.dietary_restrictions || "-"}
                   </td>
                   {showPayment && (
-                    <td className="px-5 py-3" style={{ color: textSub }}>
+                    <td className="px-5 py-3 border-r" style={{ color: textSub, borderColor }}>
                       {att.payment_amount_cents != null ? (
                         <span className="flex items-center gap-1">
                           <DollarSign size={12} />

@@ -85,6 +85,14 @@ export default function PortalLayout({
               className="p-2 rounded-lg transition"
               style={{ color: isDark ? darkColors.textMuted : "rgba(255,255,255,0.6)" }}
               title="Sign out"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = isDark ? darkColors.textPrimary : "white";
+                e.currentTarget.style.background = !isDark ? "rgba(255,255,255,0.15)" : "transparent";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = isDark ? darkColors.textMuted : "rgba(255,255,255,0.6)";
+                e.currentTarget.style.background = "transparent";
+              }}
             >
               <LogOut size={16} />
             </button>

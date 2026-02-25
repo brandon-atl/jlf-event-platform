@@ -22,7 +22,8 @@ export const metadata: Metadata = {
     "Event Management System for Just Love Forest — where community gathering meets operational clarity.",
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
+      { rel: 'icon', type: 'image/svg+xml', url: '/favicon.svg' },
+      { rel: 'icon', type: 'image/x-icon', url: '/favicon.ico' }
     ],
   },
   openGraph: {
