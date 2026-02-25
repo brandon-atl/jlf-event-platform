@@ -60,24 +60,32 @@ const SAMPLE_DATA: Record<string, string> = {
   "{{meeting_point}}": "Heated Yurt — Basecamp",
 };
 
-const TEMPLATE_META: Record<TemplateKey, { label: string; icon: typeof Mail; description: string; channel: string }> = {
+/** Channel capabilities are data; rendering is handled at the call site. */
+type ChannelType = "email" | "sms";
+
+const CHANNEL_DISPLAY: Record<ChannelType, string> = {
+  email: "📧 Email",
+  sms: "📱 SMS",
+};
+
+const TEMPLATE_META: Record<TemplateKey, { label: string; icon: typeof Mail; description: string; channels: ChannelType[] }> = {
   confirmation: {
     label: "Confirmation",
     icon: Mail,
     description: "Sent when payment is complete",
-    channel: "📧 Email",
+    channels: ["email"],
   },
   reminder: {
     label: "Reminder",
     icon: Clock,
     description: "Sent before event if payment pending",
-    channel: "📧 Email · 📱 SMS (when Twilio configured)",
+    channels: ["email", "sms"],
   },
   expiry: {
     label: "Expiry Notice",
     icon: AlertTriangle,
     description: "Sent when registration auto-expires",
-    channel: "📧 Email",
+    channels: ["email"],
   },
 };
 
@@ -335,7 +343,7 @@ export default function NotificationsPage() {
                 {TEMPLATE_META[activeTab].label}
               </span>
               <span className="text-xs px-2 py-0.5 rounded-lg" style={{ color: textMuted, background: isDark ? darkColors.surfaceHover : "#f3f4f6" }}>
-                {TEMPLATE_META[activeTab].channel}
+                {TEMPLATE_META[activeTab].channels.map((ch) => CHANNEL_DISPLAY[ch]).join(" · ")}
               </span>
               <span className="text-xs ml-auto" style={{ color: textMuted }}>
                 {TEMPLATE_META[activeTab].description}

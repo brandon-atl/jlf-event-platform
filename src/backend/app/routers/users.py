@@ -1,5 +1,7 @@
 """User management router — admin-only CRUD for users."""
 
+from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -17,13 +19,13 @@ router = APIRouter(prefix="/admin/users", tags=["users"])
 class UserCreate(BaseModel):
     email: EmailStr
     name: str
-    role: str = "admin"
+    role: Literal["admin", "operator"] = "admin"
     password: str
 
 
 class UserUpdate(BaseModel):
     name: str | None = None
-    role: str | None = None
+    role: Literal["admin", "operator"] | None = None
     password: str | None = None
 
 
@@ -32,7 +34,7 @@ class UserResponse(BaseModel):
     email: str
     name: str
     role: str
-    created_at: str
+    created_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -59,7 +61,7 @@ async def list_users(
             email=u.email,
             name=u.name,
             role=u.role.value,
-            created_at=u.created_at.isoformat(),
+            created_at=u.created_at,
         )
         for u in users
     ]
@@ -78,22 +80,14 @@ async def create_user(
             detail="A user with this email already exists",
         )
 
-    try:
-        role = UserRole(data.role)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Invalid role: {data.role}. Must be 'admin' or 'operator'",
-        )
-
     user = User(
         email=data.email,
         name=data.name,
-        role=role,
+        role=UserRole(data.role),
         password_hash=hash_password(data.password),
     )
     db.add(user)
-    await db.flush()
+    await db.commit()
     await db.refresh(user)
 
     return UserResponse(
@@ -101,7 +95,7 @@ async def create_user(
         email=user.email,
         name=user.name,
         role=user.role.value,
-        created_at=user.created_at.isoformat(),
+        created_at=user.created_at,
     )
 
 
@@ -120,17 +114,11 @@ async def update_user(
     if data.name is not None:
         user.name = data.name
     if data.role is not None:
-        try:
-            user.role = UserRole(data.role)
-        except ValueError:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Invalid role: {data.role}",
-            )
+        user.role = UserRole(data.role)
     if data.password is not None:
         user.password_hash = hash_password(data.password)
 
-    await db.flush()
+    await db.commit()
     await db.refresh(user)
 
     return UserResponse(
@@ -138,7 +126,7 @@ async def update_user(
         email=user.email,
         name=user.name,
         role=user.role.value,
-        created_at=user.created_at.isoformat(),
+        created_at=user.created_at,
     )
 
 
@@ -160,4 +148,4 @@ async def delete_user(
         raise HTTPException(status_code=404, detail="User not found")
 
     await db.delete(user)
-    await db.flush()
+    await db.commit()

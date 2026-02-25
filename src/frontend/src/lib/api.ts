@@ -339,10 +339,10 @@ export interface AdminUser {
 
 export const adminUsers = {
   list: () => request<AdminUser[]>("/admin/users"),
-  create: (data: { email: string; name: string; role: string; password: string }) =>
-    request<AdminUser>("/admin/users", { method: "POST", body: JSON.stringify(data), headers: { "Content-Type": "application/json" } }),
-  update: (id: string, data: { name?: string; role?: string; password?: string }) =>
-    request<AdminUser>(`/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(data), headers: { "Content-Type": "application/json" } }),
+  create: (data: { email: string; name: string; role: "admin" | "operator"; password: string }) =>
+    request<AdminUser>("/admin/users", { method: "POST", body: JSON.stringify(data) }),
+  update: (id: string, data: { name?: string; role?: "admin" | "operator"; password?: string }) =>
+    request<AdminUser>(`/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   delete: (id: string) =>
     request<void>(`/admin/users/${id}`, { method: "DELETE" }),
 };

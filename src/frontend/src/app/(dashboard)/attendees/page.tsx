@@ -155,18 +155,21 @@ export default function AttendeesDirectoryPage() {
         />
       </div>
 
-      {/* Status Legend */}
+      {/* Status Legend — explicit ordered list so additions to STATUS_BADGE don't silently appear */}
       <div className="flex flex-wrap items-center gap-4 text-xs" style={{ color: textMuted }}>
         <span className="font-semibold">Status key:</span>
-        {Object.entries(STATUS_BADGE).map(([key, badge]) => (
-          <span key={key} className="flex items-center gap-1.5">
-            <span
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ background: isDark ? badge.darkTx : badge.tx }}
-            />
-            <span className="capitalize">{key.replace(/_/g, " ")}</span>
-          </span>
-        ))}
+        {(["complete", "pending_payment", "expired", "cancelled"] as const).map((key) => {
+          const badge = STATUS_BADGE[key];
+          return (
+            <span key={key} className="flex items-center gap-1.5">
+              <span
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ background: isDark ? badge.darkTx : badge.tx }}
+              />
+              <span className="capitalize">{key.replace(/_/g, " ")}</span>
+            </span>
+          );
+        })}
       </div>
 
       {/* Table */}
