@@ -4,6 +4,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
@@ -306,3 +307,71 @@ async def delete_event(
 
     await db.commit()
     return {"detail": "Event cancelled", "id": event_id}
+
+
+@router.post("/{event_id}/duplicate", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
+async def duplicate_event(
+    event_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Duplicate an event — copies all fields except id, slug, status, created_at, updated_at."""
+    result = await db.execute(select(Event).where(Event.id == event_id))
+    source_event = result.scalar_one_or_none()
+    if not source_event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Generate unique slug — deterministic base, then retry on collision
+    date_suffix = datetime.now().strftime("%Y%m%d")
+    base_slug = f"{source_event.slug}-copy-{date_suffix}"
+
+    new_event = None
+    for attempt in range(1, 11):  # max 10 attempts
+        candidate_slug = base_slug if attempt == 1 else f"{base_slug}-{attempt}"
+        candidate = Event(
+            name=f"Copy of {source_event.name}",
+            slug=candidate_slug,
+            description=source_event.description,
+            event_date=source_event.event_date,
+            event_end_date=source_event.event_end_date,
+            event_type=source_event.event_type,
+            status=EventStatus.draft,  # Always start as draft
+            pricing_model=source_event.pricing_model,
+            fixed_price_cents=source_event.fixed_price_cents,
+            min_donation_cents=source_event.min_donation_cents,
+            capacity=source_event.capacity,
+            meeting_point_a=source_event.meeting_point_a,
+            meeting_point_b=source_event.meeting_point_b,
+            virtual_meeting_url=source_event.virtual_meeting_url,
+            notification_templates=source_event.notification_templates,
+            registration_fields=source_event.registration_fields,
+            reminder_delay_minutes=source_event.reminder_delay_minutes,
+            auto_expire_hours=source_event.auto_expire_hours,
+        )
+        db.add(candidate)
+        try:
+            await db.flush()
+            await db.refresh(candidate)
+            new_event = candidate
+            break
+        except IntegrityError:
+            await db.rollback()
+            continue  # try next slug variant
+
+    if new_event is None:
+        raise HTTPException(status_code=409, detail="Could not generate a unique slug for the duplicated event.")
+
+    await _audit_log(
+        db,
+        entity_type="event",
+        entity_id=new_event.id,
+        action="duplicated",
+        actor=current_user.email,
+        old_value={"source_event_id": str(event_id)},
+        new_value={"new_event_id": str(new_event.id)},
+    )
+
+    await db.commit()
+
+    stats = await _compute_event_stats(db, new_event)
+    return _event_to_response(new_event, stats=stats)

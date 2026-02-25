@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -27,12 +29,13 @@ export default function EventsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventResponse | null>(null);
+  const [pendingDuplicate, setPendingDuplicate] = useState<EventResponse | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["events"],
     queryFn: () => {
       if (isDemoMode()) {
-        return Promise.resolve({ data: DEMO_EVENTS as unknown as import("@/lib/api").EventResponse[], meta: { total: DEMO_EVENTS.length, page: 1, per_page: 50 } });
+        return Promise.resolve({ data: DEMO_EVENTS as unknown as EventResponse[], meta: { total: DEMO_EVENTS.length, page: 1, per_page: 50 } });
       }
       return events.list({ per_page: 50 });
     },
@@ -75,6 +78,17 @@ export default function EventsPage() {
     },
   });
 
+  const duplicateMutation = useMutation({
+    mutationFn: (id: string) => events.duplicate(id),
+    onSuccess: (newEvent) => {
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      toast.success(`Duplicated as "${newEvent.name}"`);
+    },
+    onError: () => {
+      toast.error("Failed to duplicate event");
+    },
+  });
+
   const openEdit = (ev: EventResponse) => {
     setEditingEvent(ev);
     setEditDialogOpen(true);
@@ -86,6 +100,17 @@ export default function EventsPage() {
     );
     if (!ok) return;
     deleteMutation.mutate(ev.id);
+  };
+
+  const handleDuplicate = (ev: EventResponse) => {
+    setPendingDuplicate(ev);
+  };
+
+  const confirmDuplicate = () => {
+    if (!pendingDuplicate || duplicateMutation.isPending) return;
+    duplicateMutation.mutate(pendingDuplicate.id, {
+      onSettled: () => setPendingDuplicate(null),
+    });
   };
 
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
@@ -566,6 +591,7 @@ export default function EventsPage() {
                 onClick={() => router.push(`/dashboard/${event.id}`)}
                 onEdit={() => openEdit(event)}
                 onDelete={() => handleDelete(event)}
+                onDuplicate={() => handleDuplicate(event)}
               />
             ))}
           </div>
@@ -595,6 +621,7 @@ export default function EventsPage() {
                       onClick={() => router.push(`/dashboard/${event.id}`)}
                       onEdit={() => openEdit(event)}
                       onDelete={() => handleDelete(event)}
+                      onDuplicate={() => handleDuplicate(event)}
                     />
                   ))}
                 </div>
@@ -603,6 +630,26 @@ export default function EventsPage() {
           )}
         </>
       )}
+      {/* Duplicate confirm dialog */}
+      <Dialog open={!!pendingDuplicate} onOpenChange={(open) => { if (!open) setPendingDuplicate(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicate event?</DialogTitle>
+            <DialogDescription>
+              A new draft copy of <strong>&ldquo;{pendingDuplicate?.name}&rdquo;</strong> will be created.
+              You can edit and publish it when ready.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDuplicate(null)} disabled={duplicateMutation.isPending}>
+              Cancel
+            </Button>
+            <Button onClick={confirmDuplicate} disabled={duplicateMutation.isPending}>
+              {duplicateMutation.isPending ? "Duplicating…" : "Duplicate"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

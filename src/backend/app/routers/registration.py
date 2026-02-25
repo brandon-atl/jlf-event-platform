@@ -3,11 +3,54 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.limiter import limiter  # shared app-level limiter
+
+
+def sanitize_intake_data(data: dict | None, max_size_kb: int = 10) -> dict:
+    """Sanitize intake_data JSON to prevent abuse.
+    
+    - Removes keys starting with _ or $
+    - Truncates string values to 2000 chars
+    - Limits nesting depth to 2
+    - Rejects if serialized size > max_size_kb
+    """
+    import json
+    
+    if data is None:
+        return {}
+    
+    def _sanitize(obj: object, depth: int = 0) -> object:
+        if depth > 2:
+            return "[truncated]"  # Too deep — explicit sentinel instead of null
+        
+        if isinstance(obj, dict):
+            return {
+                k: _sanitize(v, depth + 1)
+                for k, v in obj.items()
+                if isinstance(k, str) and not k.startswith(("_", "$"))
+            }
+        elif isinstance(obj, list):
+            return [_sanitize(item, depth + 1) for item in obj[:100]]  # Max 100 items
+        elif isinstance(obj, str):
+            return obj[:2000]  # Truncate long strings
+        elif isinstance(obj, (int, float, bool, type(None))):
+            return obj
+        else:
+            return str(obj)[:500]  # Convert unknown types to string
+    
+    sanitized = _sanitize(data)
+    
+    # Check size using compact JSON (no extra whitespace) for accurate byte count
+    serialized = json.dumps(sanitized, separators=(",", ":"))
+    if len(serialized) > max_size_kb * 1024:
+        raise ValueError(f"intake_data exceeds {max_size_kb}KB limit")
+    
+    return sanitized
 from app.models.attendee import Attendee
 from app.models.event import Event, EventStatus
 from app.models.registration import (
@@ -61,7 +104,9 @@ async def get_event_info(event_slug: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/{event_slug}", response_model=RegistrationResponse, status_code=201)
+@limiter.limit("20/minute")
 async def create_registration(
+    request: Request,
     event_slug: str,
     data: RegistrationCreate,
     background_tasks: BackgroundTasks,
@@ -133,6 +178,12 @@ async def create_registration(
         except ValueError:
             raise HTTPException(status_code=422, detail="Invalid accommodation type")
 
+    # Sanitize intake_data (arbitrary JSON from user input)
+    try:
+        safe_intake = sanitize_intake_data(data.intake_data)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
     # Create registration
     registration = Registration(
         attendee_id=attendee.id,
@@ -140,7 +191,7 @@ async def create_registration(
         status=RegistrationStatus.pending_payment,
         accommodation_type=accommodation,
         dietary_restrictions=data.dietary_restrictions,
-        intake_data=data.intake_data or {},
+        intake_data=safe_intake,
         waiver_accepted_at=datetime.now(timezone.utc),
         source=RegistrationSource.registration_form,
     )

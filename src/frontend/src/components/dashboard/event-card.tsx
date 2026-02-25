@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Users, CreditCard, Mountain, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { Calendar, Users, CreditCard, Mountain, ChevronRight, Pencil, Trash2, Copy } from "lucide-react";
 import { colors, darkColors } from "@/lib/theme";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 import { formatDateShort, formatCents, eventStatusColor } from "@/lib/format";
@@ -11,6 +11,7 @@ interface EventCardProps {
   onClick: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onDuplicate?: () => void;
   index?: number;
   isPast?: boolean;
 }
@@ -39,7 +40,7 @@ function CountPill({
   );
 }
 
-export function EventCard({ event, onClick, onEdit, onDelete, index = 0, isPast: isPastProp }: EventCardProps) {
+export function EventCard({ event, onClick, onEdit, onDelete, onDuplicate, index = 0, isPast: isPastProp }: EventCardProps) {
   const { isDark } = useDarkMode();
   const c = isDark ? darkColors : colors;
 
@@ -148,6 +149,20 @@ export function EventCard({ event, onClick, onEdit, onDelete, index = 0, isPast:
               </button>
             )}
           </div>
+        )}
+        {onDuplicate && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate();
+            }}
+            className="p-2 rounded-xl text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition opacity-0 group-hover:opacity-100"
+            aria-label="Duplicate event"
+            title="Duplicate"
+          >
+            <Copy size={15} />
+          </button>
         )}
 
         <ChevronRight
