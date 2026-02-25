@@ -328,6 +328,25 @@ export const attendees = {
   },
 };
 
+// ── Admin Users ────────────────────────────────
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  created_at: string;
+}
+
+export const adminUsers = {
+  list: () => request<AdminUser[]>("/admin/users"),
+  create: (data: { email: string; name: string; role: string; password: string }) =>
+    request<AdminUser>("/admin/users", { method: "POST", body: JSON.stringify(data), headers: { "Content-Type": "application/json" } }),
+  update: (id: string, data: { name?: string; role?: string; password?: string }) =>
+    request<AdminUser>(`/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(data), headers: { "Content-Type": "application/json" } }),
+  delete: (id: string) =>
+    request<void>(`/admin/users/${id}`, { method: "DELETE" }),
+};
+
 // ── Portal (Co-Creator) ────────────────────────
 export const portal = {
   events: () => request<PortalEvent[]>("/portal/events"),
