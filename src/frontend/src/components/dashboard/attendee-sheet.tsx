@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Mail, Phone, Tent, Utensils, DollarSign, CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { X, Mail, Phone, Tent, Utensils, CheckCircle, Clock, AlertTriangle } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -134,8 +134,7 @@ export function AttendeeSheet({
                   </div>
                 </div>
                 {reg.payment_amount_cents != null && reg.payment_amount_cents > 0 && (
-                  <span className="flex items-center gap-0.5 text-xs font-semibold flex-shrink-0" style={{ color: c.bark }}>
-                    <DollarSign size={11} />
+                  <span className="text-xs font-semibold flex-shrink-0" style={{ color: c.bark }}>
                     {formatCents(reg.payment_amount_cents)}
                   </span>
                 )}

@@ -373,7 +373,7 @@ export default function EventDashboardPage({
                 type="button"
                 className="py-3 rounded-xl text-center hover:opacity-80 transition active:scale-95"
                 style={{ background: subtleBg }}
-                onClick={() => setActiveFilter({ label: `${t.l} Tent`, subtitle: `${t.v} attendees`, accom: t.a })}
+                onClick={() => setActiveFilter({ label: `${t.l} Tent`, subtitle: `${t.v} confirmed`, accom: t.a, status: "complete" })}
               >
                 <span className="text-lg">{t.e}</span>
                 <p className="text-xl font-bold mt-0.5" style={{ color: textMain }}>{t.v}</p>
