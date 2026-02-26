@@ -372,8 +372,11 @@ export const DEMO_DASHBOARD = (eventId: string) => {
       revenue += r.payment_amount_cents;
       if (r.payment_amount_cents > 0) paid_count++;
     }
-    const dk = r.dietary_restrictions ?? "None";
-    dietary[dk] = (dietary[dk] ?? 0) + 1;
+    // Only count dietary for confirmed attendees (matches backend behavior)
+    if (r.status === "complete") {
+      const dk = r.dietary_restrictions ?? "None";
+      dietary[dk] = (dietary[dk] ?? 0) + 1;
+    }
   }
 
   return {
