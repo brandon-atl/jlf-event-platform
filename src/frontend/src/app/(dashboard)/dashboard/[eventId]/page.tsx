@@ -194,13 +194,24 @@ export default function EventDashboardPage({
     enabled: !!activeFilter,
   });
 
+  // Fetch ALL registrations for timeline + revenue charts (both demo and live)
+  const { data: allRegs } = useQuery({
+    queryKey: ["all-registrations", eventId],
+    queryFn: async () => {
+      if (isDemoMode()) {
+        return DEMO_REGISTRATIONS(eventId).data as unknown as RegistrationDetail[];
+      }
+      const res = await registrationsApi.list(eventId, { per_page: 500 });
+      return res.data;
+    },
+  });
+
   // C4: Registration timeline — group registrations by week (memoized)
   // MUST be before early return to satisfy Rules of Hooks
   const timelineData = useMemo(() => {
-    if (!isDemoMode()) return [];
-    const regs = DEMO_REGISTRATIONS(eventId).data;
+    if (!allRegs || allRegs.length === 0) return [];
     const weeks: Record<string, number> = {};
-    for (const r of regs) {
+    for (const r of allRegs) {
       const d = new Date(r.created_at);
       const weekStart = new Date(d);
       weekStart.setDate(d.getDate() - d.getDay());
@@ -208,22 +219,21 @@ export default function EventDashboardPage({
       weeks[key] = (weeks[key] || 0) + 1;
     }
     return Object.entries(weeks).map(([week, count]) => ({ week, count }));
-  }, [eventId]);
+  }, [allRegs]);
 
   // C4: Revenue by accommodation type (memoized, complete registrations only)
   // MUST be before early return to satisfy Rules of Hooks
   const revenueByAccom = useMemo(() => {
-    if (!isDemoMode()) return [];
-    const regs = DEMO_REGISTRATIONS(eventId).data;
+    if (!allRegs || allRegs.length === 0) return [];
     const map: Record<string, number> = {};
-    for (const r of regs) {
+    for (const r of allRegs) {
       if (r.status === "complete" && r.payment_amount_cents) {
         const key = r.accommodation_type?.replace(/_/g, " ") || "none";
         map[key] = (map[key] || 0) + r.payment_amount_cents;
       }
     }
     return Object.entries(map).map(([type, cents]) => ({ type, cents }));
-  }, [eventId]);
+  }, [allRegs]);
 
   if (!event || !dash) {
     return (
@@ -568,7 +578,7 @@ export default function EventDashboardPage({
           ) : (
             <div className="flex items-center justify-center py-8" style={{ color: textMuted }}>
               <TrendingUp size={16} className="mr-2" />
-              <span className="text-sm">Timeline data available in demo mode</span>
+              <span className="text-sm">No registration data yet</span>
             </div>
           )}
         </div>
