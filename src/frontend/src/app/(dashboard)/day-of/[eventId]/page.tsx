@@ -224,7 +224,7 @@ export default function DayOfPage({
         <div className="grid grid-cols-3 gap-3 text-center">
           {[
             { l: "Bell Tent", v: acc.bell_tent, e: "⛺", a: "bell_tent" },
-            { l: "Nylon Tent", v: acc.nylon_tent, e: "🏕️", a: "nylon_tent" },
+            { l: "Tipi Twin", v: acc.nylon_tent, e: "🏕️", a: "nylon_tent" },
             { l: "Self-Camp", v: acc.self_camping, e: "🌲", a: "self_camping" },
           ].map((t) => (
             <button

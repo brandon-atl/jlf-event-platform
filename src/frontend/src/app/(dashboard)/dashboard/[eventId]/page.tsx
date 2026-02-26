@@ -17,6 +17,9 @@ import {
   TrendingUp,
   BarChart2,
   Activity,
+  Download,
+  Printer,
+  Link2,
 } from "lucide-react";
 import {
   PieChart,
@@ -67,6 +70,60 @@ export default function EventDashboardPage({
   const { eventId } = use(params);
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Export CSV — passes auth token via query param (simplest cross-browser approach)
+  const handleExportCsv = () => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("jlf_token") : null;
+    const base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").replace(/\/$/, "");
+    const url = `${base}/events/${eventId}/registrations/export${token ? `?token=${token}` : ""}`;
+    window.open(url, "_blank");
+  };
+
+  // Print kitchen sheet — opens a styled print window with confirmed attendees + dietary
+  const handlePrintKitchen = async () => {
+    if (isDemoMode()) {
+      const regs = (DEMO_REGISTRATIONS(eventId).data as unknown as RegistrationDetail[])
+        .filter((r) => r.status === "complete");
+      _openKitchenPrint(regs, event?.name ?? "Event");
+      return;
+    }
+    try {
+      const res = await registrationsApi.list(eventId, { status: "complete", per_page: 500 });
+      _openKitchenPrint(res.data, event?.name ?? "Event");
+    } catch {
+      toast.error("Failed to load attendee data for printing");
+    }
+  };
+
+  function _openKitchenPrint(regs: RegistrationDetail[], eventName: string) {
+    const rows = regs.map((r) => `
+      <tr>
+        <td>${r.attendee_name ?? "—"}</td>
+        <td>${r.dietary_restrictions && r.dietary_restrictions !== "None" ? `<strong>${r.dietary_restrictions}</strong>` : "None"}</td>
+        <td>${r.accommodation_type ? r.accommodation_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "—"}</td>
+        <td>${r.attendee_email ?? "—"}</td>
+      </tr>`).join("");
+    const html = `<!DOCTYPE html><html><head><title>Kitchen Sheet — ${eventName}</title>
+      <style>
+        body { font-family: system-ui, sans-serif; padding: 24px; }
+        h1 { font-size: 20px; margin-bottom: 4px; }
+        p { color: #666; margin: 0 0 16px; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #f3f4f6; text-align: left; padding: 8px 10px; border-bottom: 2px solid #e5e7eb; }
+        td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        tr:nth-child(even) td { background: #fafafa; }
+        strong { color: #b45309; }
+        @media print { body { padding: 0; } }
+      </style></head><body>
+      <h1>🌿 Kitchen Sheet — ${eventName}</h1>
+      <p>${regs.length} confirmed attendees · Printed ${new Date().toLocaleDateString()}</p>
+      <table><thead><tr><th>Name</th><th>Dietary Needs</th><th>Accommodation</th><th>Email</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+      <script>window.onload=()=>{window.print();}<\/script>
+      </body></html>`;
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(html); w.document.close(); }
+  }
   const { isDark } = useDarkMode();
 
   // Recharts fix: prevent SSR/hydration mismatch (recharts uses DOM APIs on mount)
@@ -349,7 +406,7 @@ export default function EventDashboardPage({
           {(() => {
             const ACCOM_META: Record<string, { label: string; short: string; emoji: string; color: string; darkColor: string }> = {
               bell_tent:    { label: "Bell Tent",          short: "Bell",    emoji: "⛺", color: colors.canopy,  darkColor: darkColors.canopy },
-              nylon_tent:   { label: "Nylon Tent",         short: "Nylon",   emoji: "🏕️", color: colors.moss,    darkColor: darkColors.moss },
+              nylon_tent:   { label: "Tipi Twin",          short: "Tipi",    emoji: "🏕️", color: colors.moss,    darkColor: darkColors.moss },
               self_camping: { label: "Self-Camping",       short: "Self",    emoji: "🌲", color: colors.earth,   darkColor: darkColors.earth },
               none:         { label: "Day Pass",           short: "Day",     emoji: "📍", color: colors.sage,    darkColor: darkColors.sage },
             };
@@ -563,6 +620,37 @@ export default function EventDashboardPage({
         >
           <Activity size={14} />
           Audit Log
+        </Button>
+        <Button
+          variant="outline"
+          className="rounded-xl font-semibold"
+          style={isDark ? { borderColor, color: textSub } : {}}
+          onClick={() => {
+            if (!event?.slug) { toast.error("No slug for this event"); return; }
+            const url = `${window.location.origin}/register/${event.slug}`;
+            navigator.clipboard.writeText(url).then(() => toast.success("Registration link copied!"));
+          }}
+        >
+          <Link2 size={14} />
+          Copy Reg Link
+        </Button>
+        <Button
+          variant="outline"
+          className="rounded-xl font-semibold"
+          style={isDark ? { borderColor, color: textSub } : {}}
+          onClick={handleExportCsv}
+        >
+          <Download size={14} />
+          Export CSV
+        </Button>
+        <Button
+          variant="outline"
+          className="rounded-xl font-semibold"
+          style={isDark ? { borderColor, color: textSub } : {}}
+          onClick={handlePrintKitchen}
+        >
+          <Printer size={14} />
+          Print Kitchen Sheet
         </Button>
         <Button
           variant="outline"

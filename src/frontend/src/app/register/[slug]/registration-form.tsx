@@ -48,7 +48,7 @@ type RegistrationFormData = z.infer<typeof registrationSchema>;
 
 const ACCOMMODATION_OPTIONS = [
   { value: "bell_tent", label: "Bell Tent" },
-  { value: "nylon_tent", label: "Nylon Tent" },
+  { value: "nylon_tent", label: "Tipi Twin" },
   { value: "self_camping", label: "Self-Camping (bring your own)" },
   { value: "yurt_shared", label: "Yurt (shared)" },
   { value: "none", label: "No accommodation needed" },
