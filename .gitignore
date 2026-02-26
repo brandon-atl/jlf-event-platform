@@ -46,3 +46,4 @@ htmlcov/
 
 # Build
 *.egg-info/
+fix_jsonb
