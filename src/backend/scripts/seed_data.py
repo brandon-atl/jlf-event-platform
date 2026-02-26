@@ -215,9 +215,9 @@ SAMPLE_NAMES = [
 
 ACCOMMODATIONS = [
     AccommodationType.bell_tent,
-    AccommodationType.nylon_tent,
+    AccommodationType.tipi_twin,
     AccommodationType.self_camping,
-    AccommodationType.yurt_shared,
+    AccommodationType.day_only,
     AccommodationType.none,
 ]
 

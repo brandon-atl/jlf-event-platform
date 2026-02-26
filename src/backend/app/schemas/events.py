@@ -14,15 +14,17 @@ class EventCreate(BaseModel):
     event_date: datetime
     event_end_date: datetime | None = None
     event_type: str = Field(..., max_length=50)
-    pricing_model: str  # fixed | donation | free
+    pricing_model: str  # fixed | donation | free | composite
     fixed_price_cents: int | None = None
     min_donation_cents: int | None = None
     stripe_price_id: str | None = None
     capacity: int | None = None
     meeting_point_a: str | None = None
     meeting_point_b: str | None = None
-    reminder_delay_minutes: int = 60
-    auto_expire_hours: int = 24
+    location_text: str | None = None
+    zoom_link: str | None = None
+    allow_cash_payment: bool = False
+    max_member_discount_slots: int = 3
     day_of_sms_time: str | None = None
     registration_fields: dict[str, Any] | None = None
     notification_templates: dict[str, Any] | None = None
@@ -44,8 +46,10 @@ class EventUpdate(BaseModel):
     capacity: int | None = None
     meeting_point_a: str | None = None
     meeting_point_b: str | None = None
-    reminder_delay_minutes: int | None = None
-    auto_expire_hours: int | None = None
+    location_text: str | None = None
+    zoom_link: str | None = None
+    allow_cash_payment: bool | None = None
+    max_member_discount_slots: int | None = None
     day_of_sms_time: str | None = None
     registration_fields: dict[str, Any] | None = None
     notification_templates: dict[str, Any] | None = None
@@ -57,6 +61,7 @@ class EventStats(BaseModel):
     total_registrations: int = 0
     complete: int = 0
     pending_payment: int = 0
+    cash_pending: int = 0
     cancelled: int = 0
     refunded: int = 0
     expired: int = 0
@@ -80,8 +85,10 @@ class EventResponse(BaseModel):
     capacity: int | None = None
     meeting_point_a: str | None = None
     meeting_point_b: str | None = None
-    reminder_delay_minutes: int
-    auto_expire_hours: int
+    location_text: str | None = None
+    zoom_link: str | None = None
+    allow_cash_payment: bool = False
+    max_member_discount_slots: int = 3
     day_of_sms_time: str | None = None
     registration_fields: dict[str, Any] | None = None
     notification_templates: dict[str, Any] | None = None

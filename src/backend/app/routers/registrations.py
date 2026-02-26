@@ -27,7 +27,6 @@ from ..schemas.registrations import (
     RegistrationUpdate,
 )
 from ..services.auth_service import get_current_user
-from ..services.email_service import send_reminder_email
 
 router = APIRouter(tags=["registrations"])
 
@@ -323,63 +322,6 @@ async def manual_registration(
     reg = result.scalar_one()
     return _reg_to_response(reg)
 
-
-@router.post("/registrations/{registration_id}/remind", status_code=200)
-async def send_registration_reminder(
-    registration_id: str,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Manually send a payment reminder to a specific attendee."""
-    result = await db.execute(
-        select(Registration)
-        .options(
-            selectinload(Registration.attendee),
-            selectinload(Registration.event),
-        )
-        .where(Registration.id == registration_id)
-    )
-    reg = result.scalar_one_or_none()
-    if not reg:
-        raise HTTPException(status_code=404, detail="Registration not found")
-
-    if not reg.attendee:
-        raise HTTPException(status_code=400, detail="No attendee associated")
-
-    if reg.status != RegistrationStatus.pending_payment:
-        raise HTTPException(
-            status_code=400,
-            detail="Can only remind registrations with pending_payment status",
-        )
-
-    # Rate-limit: don't send if reminded within the last 30 minutes
-    if reg.reminder_sent_at:
-        sent_at = reg.reminder_sent_at
-        if sent_at.tzinfo is None:
-            sent_at = sent_at.replace(tzinfo=timezone.utc)
-        minutes_since = (datetime.now(timezone.utc) - sent_at).total_seconds() / 60
-        if minutes_since < 30:
-            raise HTTPException(
-                status_code=429,
-                detail=f"Reminder already sent {int(minutes_since)} minutes ago. Please wait.",
-            )
-
-    success = await send_reminder_email(reg, reg.event)
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to send reminder email")
-
-    reg.reminder_sent_at = datetime.now(timezone.utc)
-
-    await _audit_log(
-        db,
-        entity_type="registration",
-        entity_id=reg.id,
-        action="manual_reminder",
-        actor=current_user.email,
-    )
-    await db.flush()
-
-    return {"detail": "Reminder sent", "attendee_email": reg.attendee.email}
 
 
 @router.get("/events/{event_id}/registrations/export")

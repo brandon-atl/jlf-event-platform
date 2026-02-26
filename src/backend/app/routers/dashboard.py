@@ -119,6 +119,9 @@ async def event_dashboard(
             .filter(Registration.status == RegistrationStatus.pending_payment)
             .label("pending_payment"),
             func.count(Registration.id)
+            .filter(Registration.status == RegistrationStatus.cash_pending)
+            .label("cash_pending"),
+            func.count(Registration.id)
             .filter(Registration.status == RegistrationStatus.cancelled)
             .label("cancelled"),
             func.count(Registration.id)
@@ -134,17 +137,21 @@ async def event_dashboard(
         total=hc.total,
         complete=hc.complete,
         pending_payment=hc.pending_payment,
+        cash_pending=hc.cash_pending,
         cancelled=hc.cancelled,
         refunded=hc.refunded,
         expired=hc.expired,
     )
 
-    # Accommodation breakdown (COMPLETE registrations)
+    # Accommodation breakdown (COMPLETE + CASH_PENDING registrations)
     acc_result = await db.execute(
         select(Registration.accommodation_type, func.count(Registration.id))
         .where(
             Registration.event_id == event_id,
-            Registration.status == RegistrationStatus.complete,
+            Registration.status.in_([
+                RegistrationStatus.complete,
+                RegistrationStatus.cash_pending,
+            ]),
             Registration.accommodation_type.is_not(None),
         )
         .group_by(Registration.accommodation_type)
@@ -152,9 +159,9 @@ async def event_dashboard(
     acc_map = {r[0]: r[1] for r in acc_result.all()}
     accommodation = AccommodationBreakdown(
         bell_tent=acc_map.get("bell_tent", 0),
-        nylon_tent=acc_map.get("nylon_tent", 0),
+        tipi_twin=acc_map.get("tipi_twin", 0),
         self_camping=acc_map.get("self_camping", 0),
-        yurt_shared=acc_map.get("yurt_shared", 0),
+        day_only=acc_map.get("day_only", 0),
         none=acc_map.get("none", 0),
     )
 

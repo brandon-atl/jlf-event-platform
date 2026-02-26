@@ -18,8 +18,10 @@ class EventCreate(BaseModel):
     capacity: int | None = None
     meeting_point_a: str | None = None
     meeting_point_b: str | None = None
-    reminder_delay_minutes: int = 60
-    auto_expire_hours: int = 24
+    location_text: str | None = None
+    zoom_link: str | None = None
+    allow_cash_payment: bool = False
+    max_member_discount_slots: int = 3
     day_of_sms_time: time | None = None
     registration_fields: dict | None = None
     notification_templates: dict | None = None

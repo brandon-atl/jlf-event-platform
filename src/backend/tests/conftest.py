@@ -80,8 +80,6 @@ async def sample_event(db_session: AsyncSession) -> Event:
         fixed_price_cents=25000,
         capacity=20,
         meeting_point_a="Main gate parking area",
-        reminder_delay_minutes=60,
-        auto_expire_hours=24,
         status=EventStatus.active,
     )
     db_session.add(event)

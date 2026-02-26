@@ -3,6 +3,7 @@ from app.models.event import Event, EventStatus, PricingModel
 from app.models.attendee import Attendee
 from app.models.registration import (
     AccommodationType,
+    PaymentMethod,
     Registration,
     RegistrationSource,
     RegistrationStatus,
@@ -12,6 +13,8 @@ from app.models.notification import NotificationChannel, NotificationLog, Notifi
 from app.models.webhook import WebhookRaw
 from app.models.audit import AuditLog
 from app.models.user import User, UserRole
+from app.models.form_template import FormTemplate, FormType
+from app.models.event_form_link import EventFormLink
 
 __all__ = [
     "Base",
@@ -22,6 +25,7 @@ __all__ = [
     "Registration",
     "RegistrationStatus",
     "AccommodationType",
+    "PaymentMethod",
     "RegistrationSource",
     "CoCreator",
     "EventCoCreator",
@@ -32,4 +36,7 @@ __all__ = [
     "AuditLog",
     "User",
     "UserRole",
+    "FormTemplate",
+    "FormType",
+    "EventFormLink",
 ]

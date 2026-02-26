@@ -10,6 +10,7 @@ class HeadcountByStatus(BaseModel):
     total: int = 0
     complete: int = 0
     pending_payment: int = 0
+    cash_pending: int = 0
     cancelled: int = 0
     refunded: int = 0
     expired: int = 0
@@ -17,9 +18,9 @@ class HeadcountByStatus(BaseModel):
 
 class AccommodationBreakdown(BaseModel):
     bell_tent: int = 0
-    nylon_tent: int = 0
+    tipi_twin: int = 0
     self_camping: int = 0
-    yurt_shared: int = 0
+    day_only: int = 0
     none: int = 0
 
 
