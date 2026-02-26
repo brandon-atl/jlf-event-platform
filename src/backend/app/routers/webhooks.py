@@ -1,6 +1,7 @@
 """Stripe webhook router — idempotent event processing."""
 
 import logging
+import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -67,6 +68,7 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
 
     # Mark as processed
     webhook_record.processed_at = datetime.now(timezone.utc)
+    await db.flush()
 
     return {"status": "processed"}
 
@@ -74,10 +76,16 @@ async def stripe_webhook(request: Request, db: AsyncSession = Depends(get_db)):
 async def _handle_checkout_completed(event: dict, webhook: WebhookRaw, db: AsyncSession):
     """Handle checkout.session.completed — mark registration as COMPLETE."""
     session = event["data"]["object"]
-    registration_id = session.get("client_reference_id")
+    registration_id_raw = session.get("client_reference_id")
 
-    if not registration_id:
+    if not registration_id_raw:
         logger.warning("checkout.session.completed missing client_reference_id")
+        return
+
+    try:
+        registration_id = uuid.UUID(str(registration_id_raw))
+    except (ValueError, AttributeError):
+        logger.warning("checkout.session.completed invalid client_reference_id: %s", registration_id_raw)
         return
 
     result = await db.execute(
@@ -119,10 +127,16 @@ async def _handle_checkout_completed(event: dict, webhook: WebhookRaw, db: Async
 async def _handle_checkout_expired(event: dict, webhook: WebhookRaw, db: AsyncSession):
     """Handle checkout.session.expired — mark registration as EXPIRED."""
     session = event["data"]["object"]
-    registration_id = session.get("client_reference_id")
+    registration_id_raw = session.get("client_reference_id")
 
-    if not registration_id:
+    if not registration_id_raw:
         logger.warning("checkout.session.expired missing client_reference_id")
+        return
+
+    try:
+        registration_id = uuid.UUID(str(registration_id_raw))
+    except (ValueError, AttributeError):
+        logger.warning("checkout.session.expired invalid client_reference_id: %s", registration_id_raw)
         return
 
     result = await db.execute(

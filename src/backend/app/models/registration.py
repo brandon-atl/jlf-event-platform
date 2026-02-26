@@ -3,10 +3,9 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, gen_uuid
+from app.models.base import JSONType, Base, TimestampMixin, gen_uuid
 
 
 class RegistrationStatus(str, enum.Enum):
@@ -71,7 +70,7 @@ class Registration(TimestampMixin, Base):
         Enum(AccommodationType, native_enum=False), nullable=True
     )
     dietary_restrictions: Mapped[str | None] = mapped_column(Text, nullable=True)
-    intake_data: Mapped[dict | None] = mapped_column(JSONB, nullable=True, default=dict)
+    intake_data: Mapped[dict | None] = mapped_column(JSONType, nullable=True, default=dict)
     waiver_accepted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

@@ -2,10 +2,9 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import DateTime, String
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.models.base import Base, gen_uuid
+from app.models.base import JSONType, Base, gen_uuid
 
 
 class AuditLog(Base):
@@ -16,8 +15,8 @@ class AuditLog(Base):
     entity_id: Mapped[uuid.UUID] = mapped_column()
     action: Mapped[str] = mapped_column(String(50))
     actor: Mapped[str] = mapped_column(String(100))
-    old_value: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    new_value: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    old_value: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
+    new_value: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

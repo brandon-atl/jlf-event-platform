@@ -1,0 +1,920 @@
+00:00:00 Brandon A.
+And Sorry for text bombing you, but I've honestly just been so like I love doing this stuff. Like the making this making these things, products and stuff for people. Especially people that I love and like organizations and good causes. And like just making people's lives easier. So yeah,
+00:00:21 Brian Y.
+Yeah no, I appreciate it. Thank you very much. Yeah, it's just been taking me a little bit of time to wrap my head around all the different pieces of things. Um, yeah. So let me just talk to you about everything, and then you can tell me uh what you want to do. Um, So first,
+00:00:38 Brandon A.
+Sorry first first, sorry, did did youum did you get to take a look at it yet? Yeah yeah.
+00:00:44 Brian Y.
+Oh sweet I never know if I am like seeing everything, because like I mean, I don't know if I clicked on every button. I think I've seen a lot of it, but I might have missed some things. But uh it's looking really good.
+00:00:55 Brandon A.
+Quick or great great and cool go ahead sorry. 
+00:00:59 Brian Y.
+Okay, I am gonna again. Um, yeah, So I was just, i had to take a second one the other day and be like, okay, Let me just trace the steps on like where we started from and like where we're at now and like what our options are, et cetera. So I am just going to say it back to you. So make sure that we all know that how this has kind of changed over time. So originally I thought I was going to keep my registration first, which is what I've always done. And then. Send them a link at the end that says, "Don't forget to pay. You are not registered until you pay." And then you are going to go to Stripe. I need to keep Stripe because of the donation amounts they can type in custom, and the tax does automatically in the back end. And so, my original problem statement was some of those people don't actually click to pay, And then I have to manually before an event like look at email addresses and match it up with the Strike payments and see who didn't pay and then reach out to them, which is like completely insane obviously.
+00:01:54 Brian Y.
+Um, yeah, so originally it was like, ", how can we create a reminder system for those people who were given the link, but they didn't pay?" That's where we started. So Neveah created, sort of like a rudimentary way that we could do that on Zaps and then wrote up that document that we sent to you. And so that's where we started. And then I went ahead after that and I changed. I was like, "okay, I am going to go ahead and." Make them pay first, and then that's going to redirect them to the registration system. That way, I've alleviated with what I have existing today. I've alleviated that whole missing link around whether or not they paid. And so then my because my thing originally was like, I didn't know whether or not we could sort of jailbreak the Acuity integrated system to change one of those buttons to put it on Stripe.
+00:02:48 Brian Y.
+I thought from my research I'd done before it wasn't possible. Later, you looked at it and said," Yeah, it's not possible." So so anyway, so that's what I am doing now. Right? So everything works now; it's just highly inconvenient. Which uh means it's not just inconvenient but it's like intuitively odd. You know, It's like we give them this really nice soft, gentle landing with information. And then it's like hey two fifty, Yeah, Yeah It just It doesn't energetically;. It feels strange. But it does work, and it does eliminate me having to chase people around or not being sure if they come. So that was the second thing: was like, okay, well, Can we use our existing system? And then can you hack that button so that we can just have everything as it is, even if it's not perfect? And then they go and they go to Stripe, they pay, and then we somehow communicate that back to security. He said that's not possible, which I agree. I think again I looked and said it wasn't in the meantime.
+00:03:44 Brian Y.
+In the meantime, from these notes and things, And us kind of explaining verbally things that we are having challenges with you. You know, ran really, really fast which is sweet and like created this whole amazing custom system. Um, And so like originally like when I was looking at this, i was I was like, okay, maybe we'll have to pay a consultant or someone around a thousand dollars to try to help them figure out these apps or. Or have them help us, like integrate this button into Stripe or something. And I definitely didn't have like on my my radar, like I am going to build a custom you know management system planning system.
+00:04:22 Brandon A.
+Can I interject really quickly?
+00:04:24 Brian Y.
+Yes, you can interject. Yeah.
+00:04:26 Brandon A.
+So the so theum the research and stuff that I did on like cause i was like, i don't you know me, i was like, uh, i'll take a cheeseburger. I don't know. But I think the research that I looked at was like for like if it was like a big corporate business type thing. So, I had no intention of asking. I mean, honestly, I just spent the only cost that I incurred were like two, three hundred dollars for like the tools and some of the things that I used to build it.
+00:05:07 Brandon A.
+And so, I mean, honestly, like I would just be fine with that. I mean,
+00:05:13 Brian Y.
+You really no no that's sweet. Like i but I also know you are in a bad spot. And I wish I did have like, i wish this was a traditional business, and i had thousands of dollars coming in And. I would love to just help you as my friend. But am still seeing it's not so You know, I do want to offer you cash for your time. That's why I kept asking and you know multiple times and i, I, especially with friends, don't like it when they get too far into a project. And I don't really know like what the reciprocity is, even if they're trying to be sweet. Just because like I don't want to have any damage done to a friendship regarding, you know, reciprocity for a project that we didn't really define. So.
+00:05:51 Brandon A.
+Um, no, I mean thank. 
+00:05:53 Brian Y.
+You for calling me Bala instead of Brian. That's good.
+00:05:56 Brandon A.
+Yeah, I am just yeah, that's very cognizant and very sweet of you, but it would not let something as stupid as this. I mean, like I said, it's more of like a passion project. Like, um if anything, like for I'll put it this way: it looks good on my portfolio. It looks great on my portfolio. So there is value in it for me, you know.
+00:06:17 Brian Y.
+Well, that would be super helpful. Um, It's not that I don't like it; I just uh, you know, i just want to make sure you kind of saw the same way I did, which was exactly what you said, which was I came with like a really small problem. And you. Had the time and the creative love that you wanted to create something for this, And I just want to make sure that it wasn't interpreted any different way. Or you felt like I was misleading you in any way.
+00:06:40 Brandon A.
+Not at all. No, that's just kind of how I am. I go above and beyond sometimes a little too beyond, but no, I mean, I just i value anything with my name on it. I put one hundred and twenty percent, E ffort into it and don't I hope. Yeah I mean, no, you don't think that I was like, oh, I'm just going to build this whole thing out and then be like, hey, gotcha I spent eighty hours on it like, yeah, no, no, no.
+00:07:12 Brian Y.
+I didn't feel like that. It's just like as we were getting further and further along, and you were throwing up these really cool things instead of me being able to be like fully excited about him. I was also like had an increasing level of discomfort of like, oh shit, like how much time has he spent on this? And like what is he? You know? Just because I don't know, I also don't know like from a technology perspective today, what it takes to pull all this stuff in and make all this stuff in a customized way. So anyway, I just without having the reciprocity conversation, like I haven't been able to fully embrace it with like a cheerful, happy, Excited attitude because there is also a part of me in the background. That's like, okay, like what's the scope on this? Like what's the reciprocity? You understand?
+00:07:54 Brandon A.
+Yeah. And I am sorry that I, That I made you feel that way. Um, that was well,
+00:07:59 Brian Y.
+You didn't make me feel that way, but I just that's why I kept kind of saying to you," I was like give me some kind of scoping so I know," you know. Yeah,
+00:08:06 Brandon A.
+I thought you were yeah because you were like give me a right or I thought that yeah, because I don't know. I mean, I knew what my rate was at You know my previous job is like sixty seven an hour or something. Yeah, but i mean i am not gonna basically what i did, Um, is I made i I did a lot of research and I estimated. Um, I got like, you know all of the all of what your current system costs and then what what the system that I just built cost. Let me pull it up real quick. Run some numbers for you. So are. 
+00:08:46 Brian Y.
+Talking about in terms of like uh like recurring subscription fees and stuff precisely,
+00:08:51 Brandon A.
+Yes. So currently you guys use Squarespace. Acuity Stripe, which isn't going away. Zapier, Squarespace email for the newsletters is that correct?
+00:09:06 Brian Y.
+Uh yes.
+00:09:07 Brandon A.
+Okay so I can also I've already yeah I've alreadyum. I mean,
+00:09:11 Brian Y.
+Our fees are adding up because there'll always be like one feature or the next level that we have to use for something. And like we're not on a nice list, but it's it's retarded. I mean like i i i think i'm now at the level where, I can send fifty thousand emails per month, and I think I send five. But I have to be in that tier for a couple of different things, so yeah, we're spending a decent amount.
+00:09:33 Brandon A.
+Can you give me a ballpark? Because my estimate that I have here is eighty seven to one hundred fifteen a month.
+00:09:40 Brian Y.
+Yeah, that probably sounds about right. Let me look and see one second;, let me check something,
+00:09:49 Brandon A.
+And then I want to. Get a reaction when I tell you how much mine is going to cost.
+00:09:54 Brian Y.
+Yeah, Let me look and see if I can actually look in my Lily account and see what that is for my first case. I see all the little bills come through, And it's not one bill;. It's like all these little small bills that add up. You know how the software game works? Yup. All right, let's see. But, Having said what we said, At least in terms of just explaining what I was trying to do and the amount of money I was able to put into any sort of tech dev project right now, um, I mean, I do sincerely appreciate your enthusiasm and trying to pull this together. It is pretty mind boggling in terms of what it can do.
+00:10:39 Brandon A.
+Yeah. Um So you want me to go ahead and just tell you the.
+00:10:44 Brian Y.
+Um I'm just looking now to see if I can tell you quickly what it is from.
+00:10:50 Brandon A.
+Take your time. It'll be a good one.
+00:10:54 Brian Y.
+Um, where is this thing at?
+00:11:18 Brandon A.
+Whatever happened to elevator music? Haha, random shower thought.
+00:11:30 Brian Y.
+Um, yeah, I don't know, but I am going to sayum.
+00:11:50 Brian Y.
+Yeah, I don't know, but it's yeah. I mean, I think a range sounds pretty reasonable.
+00:11:56 Brandon A.
+Yeah, so eighty seven to one hundred and fifteen. So, let's just call it like one hundred bucks variable plus or minus. You know, yeah. So let's seeum my system is going to cost approximately six dollars and fifteen cents per month. Okay. Depending on, um, so you get three thousand free emails to send a month, which should cover. That should be good I think. Um. And then you're gonna, we're gonna retain Stripe for payments for the tax, no tax purposes. And then um the SMS I need to set that up. So you don't have to be tech because that is I was showing this to my mom and kind of explaining how like why I'm building it.
+00:12:51 Brandon A.
+And I was telling her the individually texted people like the day of, and she was like," Oh my god." But so I've got to set that up, And it'sum for you buy like a phone number from them.;. It's one dollar and fifteen cents a month.
+00:13:06 Brian Y.
+Yeah, so I had some questions on the texting, but we don't we don't have to talk about it right now. I mean, I have some questions in general. So I didn't know if you want to talk about stuff now or. Yeah, I was holding off on giving you the Stripe invite again until we just talked about the reciprocity, just so that it wasn't weird.
+00:13:21 Brandon A.
+Yeah, no, it's it's I mean I've basically built this whole thing out already. That'sum yeah but not you know, I mean I still have some things to do. But soum just i'll i'll just go through this really quickly. So, the SMS is for the phone number. It's one dollar and fifteen cents a month. And then. Pay as you go, depending on, um, how many texts you send. But it's like you know. Maybe a penny or two per per text or something like that. Um and then the back end API it's called railway. And that's gonna contain all of data that you need. So it's gonna have um like dietary preferences. It's gonna have if they've paid um.
+00:14:12 Brandon A.
+How many events they've attended, um, if you know if they got to the, if they got to the payment part and then for whatever reason, it expired like it just timed out or something. Mhm. And then uh their accommodations, bell, nylon self camp, whatever. So just staying for a day. And then um the total revenue average payment and um for the day of view.
+00:14:42 Brandon A.
+You haveum pretty all the same data and then the meeting points, and then the attendee roster to where you can, literally you'll have a list of the people that have both. If they've if they've signed up, then uh if they've paid, then they will uhum signed up because the form comes first.
+00:15:02 Brian Y.
+So and Nabe just came in too, by the way. Oh, hey, Nabe how you doing.
+00:15:08 Brandon A.
+Pretty good, pretty good. I am excited. I am just running through some of these new features with them.
+00:15:14 Nivay N.
+Yeah, we got a chance to look at a lot of them earlier. Thank you so much for the.
+00:15:19 Brandon A.
+Yeah, yeah, no, This is I was telling him. This is more of like a like a passion project that it's uh it's cool stuff, but yeah, so let's see. And then. 
+00:15:29 Brian Y.
+So Brandon I have some questions on. Do you mean to ask your questions yet?
+00:15:33 Brandon A.
+Yeahum well let me tell Navay the the costum differential real quick, So, You guys are paying around anywhere from like eighty seven to a hundred and fifteen a month ballpark. And so, The system that I've built out is going to cost a grand total of approximately six dollars and fifteen cents per month. And, then that's going to include real time dashboard accommodation, like all the all the data that you guys would need.
+00:16:07 Brandon A.
+Um and I did kind of like. Think of, you know. I was kind of like a engineer but also a product manager, Like what would I want if I were you What would I want in it So. Like um, You know, there is like logins and stuff like that And, then automated reminders. There is email templates. I picked that up from the last meeting from you Brian And then um, I wrote it like a little SOP And then um And then yeah so I'm leaving a lot of stuff out, But I'll go ahead and let you ask some questions as soon as I give you this figure that blew my mind. The system, like the ROI on it, it's cash flow positive immediately upon deployment. So if that's factoring in your time savings, So estimated fifteen to thirty eight hours a month, depending on how much you value your time.
+00:17:05 Brandon A.
+Yeah, I mean about eleven to twenty four thousand dollars of total annual value for accounting for time and revenue recovery. Yeah, thank you. Yeah, that's awesome. But yeah, go ahead.
+00:17:21 Brian Y.
+Um, so hold on. I just had it pulled up earlier today. Um, all right so the I think, We don't need pending payments anymore. We're not gonna. We're going to integrate it in such a way that they're gonna sign up. And then we're gonna take them to Stripe to pay. I don't think we'll have a scenario anymore of pending payments.
+00:17:49 Brandon A.
+Yeah, that was actually something that I was thinking aboutum because I was like, wait, what That's the whole point of this. Um yeah, so I can definitely remove that like status.
+00:18:03 Brandon A.
+Because yeah, it's like I don't know. Maybe maybe it was thinking, if I mean you don't you guys don't take check or cash or anything like that right?
+00:18:13 Brian Y.
+No, I mean if people say they're going to bring cash. I mean, that is one thing that like I do have to give people an ability to register if they don't pay. Like that would be a good example. I generally don't take cash, but if someone says I can only bring cash. Then, what I do now is I just send them the Q D registration link and make i don't. I make them bypass the payment page. Okay, so I need some sort of back door where they can register without paying. Um,
+00:18:41 Brandon A.
+Yeah, I can put, i can do like a toggle on the form or somethingum to where like, you know, I will like i'll pay pay in person with cash. Yeah, and then then you would know and then you, I could set up automated reminders to text them, stuff like that, or email them.
+00:19:03 Brian Y.
+So that's one thing. So I think we can totally remove all the pending payments. I don't think we'll have anything where someone signed up anymore and they haven't paid. And we have to remind them. So I think we can just remove that.
+00:19:14 Brandon A.
+Yeah, I agree.
+00:19:17 Brian Y.
+Um, And then I guess. So then i just don't have it straight yet in my mind like what we're depending on Acuity. Or anymore or not, but likeum. Sorry, I just had one thing in my mind that. Well,
+00:19:33 Brandon A.
+We we wouldn't, we wouldn't have to so this whole this thing that I built is going to contain all the data. Um. Like the scheduling, it's going to handle everything Acuity does.
+00:19:45 Brian Y.
+And then do you have access to our Acuity account? Remember, do you have a fixture account where you can see Acuity?
+00:19:52 Brandon A.
+I don't I don't have access to anything.
+00:19:55 Brian Y.
+Okay, okay, okay. Because the other thing that we have to do is for every event, We have different forms and different waivers that vary significantly for every event, they have to sign. So, we just have to the way they do it is we can just create forms, and they have the ability to do like dropdown check like all the kind of standard stuff you do if you are creating different kinds of forms. Yeah. And so, then, like I might for example, it might be like okay for this one we're gonna have three arrival times. So I'll make them fill out a form that says what's your arrival time, one, three or five. Um and then all that stuff from the forms, including our waivers, including their health history, including like their allergies, all that stuff is then tied to like a registration. And, then what we'd like to do is at the and before an event. Uh, we.
+00:20:50 Brian Y.
+We'll download that on a spreadsheet, and that's what we do now. And then in the notes, it'll have next to every attendee anything they typed in specifics. The things we're looking at most often are allergies and like health conditions. And so like we'll have to see if anyone's like celiac versus gluten free, and that way we know if they're celiac, like we have to be really scrutinous otherwise, like we could kill them you know with gluten.
+00:21:16 Brandon A.
+Allergies yeah Yeah. 
+00:21:18 Brian Y.
+So we have all the forms already in Acuity that we need to use. Um, So like I could I could give you access or show you those forms,
+00:21:29 Brandon A.
+If you can get me access, That'd be an easy, that'd be a low hanging like easy, uh, easy effortum high impact.
+00:21:38 Brian Y.
+The thing the thing I don't know about that if it's hard or not is like if I need to create a new custom form that has options. It's like check the box next to these things. That's a. 
+00:21:48 Brandon A.
+Well, if you'll notice on the events page, You can create custom events and stuff like that with like a type and like the price. Like pay what you want, fixed price, meeting point. And so I could basically just do that same kind of idea to where you can just create the custom forms and link it to tie it to an event in the database. And then yeah, and then um yeah. So it's pretty. 
+00:22:17 Brian Y.
+Do you need or want to like what's the best thing for me to do just to give you access somehow. So you can see in our QD?
+00:22:23 Brandon A.
+Yeah, If there is a I mean, if there is a way to like add me as a as an admin orum yeah,
+00:22:31 Brian Y.
+I can add you. I think it's like aum contributor or something whatever they call it.
+00:22:37 Brandon A.
+Is it well, so I would need I would want to be able to see like as a as the technical, like engineer like developer, I would want. Yeah. Be able to see everything, so if there is an option to do admin,
+00:22:49 Brian Y.
+Yeah, we can do that. That'd be great.
+00:22:50 Brandon A.
+But if not,
+00:22:51 Brian Y.
+I'll just work in the group. No, I am just going to do it now because if I don't do it now, I probably will forget later.
+00:22:59 Nivay N.
+Um, one second for permissions and ownership. Okay. Um yeah i have an invite sent to you yet excited okay okay okay. 
+00:23:15 Brian Y.
+Here, I'll do it now.
+00:23:17 Brandon A.
+And then I set up my own temporary Stripe account just as a testing sandbox. So, I would need that as well.
+00:23:28 Nivay N.
+Just want a calendar? I don't,
+00:23:32 Brian Y.
+I mean, I don't really feel like it does much for me. Like, if we have like, if we go back to the dashboard that he had, I mean to me like that's the calendar like, We don't, I mean, maybe in the future we change. Right now we don't have so many events in a week that we're like, wait, what are we doing on Tuesday when saying Thursday night? It's more like oh.
+00:23:52 Brandon A.
+Was that you guys wanted to add a calendar? I mean yeah.
+00:23:55 Brian Y.
+Like well, We were just looking back into Q D C and like what's there that we use. So we don't forget.
+00:24:00 Brandon A.
+Yeah because I want to make it because you guys are familiar with that system, so it don't be shy anything. You know you want to you want to pull from that Do,
+00:24:11 Nivay N.
+You think it would use a calendar? Does it help us? Well, so this calendar, what does it afford you? So this calendar, basically, you click on it and you get the exact same information that Brandon's already given us. Yeah. It's just showing in a calendar view. Yeah.
+00:24:24 Brandon A.
+And then I did notice you guys have the Google Calendar links and the iCal link. I think those are just like to download through the event, yeah? So I can add those as well, I guess.
+00:24:35 Brian Y.
+What email do we need to do this invite to?
+00:24:38 Brandon A.
+Um, it's going to be Brandon dot Abbott, Two B's, two T's. Ninety six. Mhm. I'm almost thirty is crazy and then at gmail dot com.
+00:24:53 Nivay N.
+Gmail dot com, alright. Alright, that one should come to you now. Mhm mhm Mhm. 
+00:25:14 Brandon A.
+I'm down here in the sticks, so the internet's not the fastest.
+00:25:18 Brian Y.
+Oh, I understand. You said you kept saying" the swamp." Like, you know, I'm in the swamp.
+00:25:24 Brandon A.
+I'm in. Yeah, there's. I'm looking at three mounted deer heads on the wall in front of me, and then to my right is a is aum cabinet of shotguns. So yeah, I've been to country.
+00:25:38 Nivay N.
+That's exciting. Yeah.
+00:25:43 Brian Y.
+I'm Gonna have to refresh my memory on where it is. It was not very intuitive and straightforward. I had to like kind of dig for it before.
+00:25:53 Brandon A.
+In the meantime, I'm going to send you these deer.
+00:25:59 Brian Y.
+So, See if you can access our acuity because that would be easier to sort of talk through with you in real time, like, What's in here and the things we use and the things we don't care about.
+00:26:12 Brandon A.
+For sure, did you did it? Email go through.
+00:26:23 Brandon A.
+Mailbox Synchronize all accounts.
+00:26:28 Brandon A.
+You Spell my name correctly, right?
+00:26:41 Brandon A.
+Oh, did whatum address did you send it from?
+00:26:47 Brian Y.
+Oh, I'll be sending directly from SquareSpace.
+00:26:58 Brandon A.
+Can you read out the address, the email address that you sent it to?
+00:27:05 Brian Y.
+Um, I am going to send you this.
+00:27:15 Brian Y.
+Um. If I text it to you on your phone, is that unhelpful?
+00:27:18 Brandon A.
+No, that's perfect.
+00:27:20 Brian Y.
+All right, see if this link does anything for you then. It should be the invite link. Maybe didn't get an email. Hold on one second.
+00:27:27 Brandon A.
+Don't mind the deers.
+00:27:30 Brandon A.
+Yeah, I just saw that there it's facing the bed. So oh, yeah,
+00:27:35 Brian Y.
+Fucking Emma Jean's parents. Is that them doing anything for you?
+00:27:41 Brandon A.
+Yeah, so I'm getting a create your account. Um, so let's see. Should I. Continue with Google or Apple or email Oh my. I'll just do it Apple. So I guess I'm gonna create an account. And then that will add me to your board or whatever you call it. One minute,
+00:28:10 Brian Y.
+Uh, think so.
+00:28:11 Brandon A.
+Yeah, I'm just signing up. Pigeon Decagon. Interesting. That's your URL now. Okay, yeah, I'm in perfect.
+00:28:27 Brian Y.
+Go toum scheduling? Yeah, if you go to scheduling. 
+00:28:41 Brian Y.
+Okay, so this is obviously that takes you to Acuity, and then so this is our calendar view. I don't really care about the calendar view. I mean, I know, we only have a small so that I am not forgetting on what's on different days or having to like overbook something. So to me, that doesn't really matter. Um, so things in here that are good scheduling page, I don't care about um. 
+00:29:12 Brian Y.
+So it does have like all these. Well, I'll just tell you things that are most important. So, intake forms are really important for us. So, if you scroll down on your business settings,
+00:29:28 Brandon A.
+Go back and then go to you said business settings.
+00:29:32 Brian Y.
+Yeah, um yeah it's under yeah business settings availability appointment types intake form questions.
+00:29:42 Brandon A.
+Okay, I'm just saying settings template monthly daily classes. Are you on a MacBook? Yeah. Okay, let'sum, I'm gonna I'm gonna FaceTime you from from there and maybe screen share. Would that be?
+00:30:03 Nivay N.
+Yeah, We can do that. Real quick talk asking if those things are paid for, and if she can get it one day.
+00:30:12 Nivay N.
+Uh, Monday. Yeah, she's got stuff. Um,
+00:30:19 Brian Y.
+Well, I'll do that later. She hasn't communicated with him then, right?
+00:30:23 Nivay N.
+I think she might have. What did she say? Is it okay if I pick up Monday? I'll ask Noah, But I have people coming to town tomorrow.; six people staying at my home and forty students showing up this week.
+00:30:40 Brandon A.
+Okay, let me. See if I can do this.
+00:30:45 Nivay N.
+Are you, so you get FaceTime calls on your computer. Bala. Uh yeah I do. Let me do it from my phone first. Then switch it to my computer.
+00:31:11 Nivay N.
+Hey. Hi. Alright. Switchy switchy switchy. Oh, it switched.
+00:31:26 Brandon A.
+Hey there. No, I can't hear you. Hey, what's up? Can you talk? Yeah, can you hear me? I can now, perfect. Hello? Hello? Gotcha. Alright, I'm gonna share my screen. I don't wonder is it gonna share my. Okay, I can just share this one because my monitor's fifty inches wide. Let me know when you can see it.
+00:32:14 Nivay N.
+Any luck.
+00:32:16 Brian Y.
+No, just as blank right now. Says viewing the base screen. Share. 
+00:32:31 Brandon A.
+My screen.
+00:32:33 Nivay N.
+I don't know how to share this on my computer, man. What's your happening? I don't know. Hey man, I didn't do anything. We need to have a conversation about boundaries. I didn't do anything.
+00:32:47 Brandon A.
+Still no luck. Maybe it's because it's Chrome. Try Safari really quickly.
+00:32:59 Brandon A.
+Yeah, These are those guys, and we got like a musket or something up there, and then a bunch of guns.
+00:33:10 Brandon A.
+Very relaxing chill environment.
+00:33:34 Brandon A.
+Right. Okay, any luck with uh with this, No.
+00:33:39 Brian Y.
+No, it's just blank. It says viewing the vase screen.
+00:33:44 Brandon A.
+Viewing the vase screen?
+00:33:46 Nivay N.
+Yeah, we don't know why I just think that's like maybe it is checking somehow.
+00:33:50 Brandon A.
+Maybe, if you go down to you see ellipses down by the microphone button on FaceTime? Yeah,
+00:33:59 Nivay N.
+That's the first ellipses. The dot dot dot.
+00:34:03 Brandon A.
+And then click screen sharing.
+00:34:08 Brian Y.
+This is for what icon? Um,
+00:34:10 Brandon A.
+It's going to be a purple little person in front of a screen.
+00:34:14 Nivay N.
+Open it out and see what happens.
+00:34:20 Brandon A.
+And then so there's the dots, and then you'll see like it'll say like live captions or screen sharing. Then if you right- click or just click screen sharing,
+00:34:33 Brian Y.
+Click You may share my screen or ask to share.
+00:34:36 Brandon A.
+Doum ask, To share. And then now you're asking to see my screen. Maybe that'll work.
+00:34:56 Brian Y.
+No luck. Yep, I got it.
+00:34:59 Brian Y.
+Woo! Not Nevada's screen now, it's Brandon's screen. I like better looking at Vance's screen when he doesn't give us permission,
+00:35:05 Brian Y.
+That's fun. Okay. 
+00:35:07 Brian Y.
+Okay, so under uh underum. 
+00:35:10 Brandon A.
+Sorryum do it one more time. I just don't have my stuff in storage.
+00:35:24 Nivay N.
+Here we go. But now to go send me, so I gotta go make this one out of those. To get those tools, five of them specifically.
+00:35:39 Nivay N.
+And I was going to get groceries because I don't actually have any food here. You have two burgers in there now. Yeah, I need some of those for this lunch. To see it,
+00:35:49 Brian Y.
+It's made from mushrooms. Yeah, I can see that. Okay, So if you click on intake form questions, so basically if you go to custom new form new custom form. 
+00:36:04 Brian Y.
+So, this is kind of how it'll allow us to create a form name. And then just give you some simple options for checkboxes and dropdowns. I use this pretty often because we have a lot of like edge cases for different kinds of events where we have to ask specific questions. Something to think about. And. Then the way they would do this is you can kind of create the form and then apply it to whatever events you can see down there, sort of in the middle at the bottom. So, it's like you save the form, and then you can check which ones you want it to apply to. But then if you click on "form intake questions" again, like just click back on the same button where we started, these are all the forms that are already existing. And so I probably use maybe six of these every single time, and the rest of them I probably do one-offs. But um, so this would be something that would be. 
+00:37:02 Brian Y.
+Critical for us to have to get health information and stuff. Yeah, so,
+00:37:09 Brandon A.
+Yeah, so essentially I built. Um, I already have kind of something similar to this where. It's the email templates that you can build and then duplicate saveum customize. So I can utilize that existing code. And okay, to kind of create this so okay yeah.
+00:37:31 Brian Y.
+I don't need all the options they have, but I would need to create stuff where. Uh, like I can check boxes with options. That's probably the one I use most often. Um. So I could create like a list of things and be like, please check the ones that apply.
+00:37:49 Brandon A.
+Yeah, sorry I was like looking at a few. Well. 
+00:37:57 Brian Y.
+Now all these are gonna force you to pay first. But if you go to uh in your QD, if you go to I'll show you where you can find it, where it takes you to. If you go to appointment types and then like these are actually the events. This is actually the so if you go to, for example, uh Hanuman Tuesday as an example, where is that one?
+00:38:29 Brian Y.
+Just below your your thing, it's right there. You just forever go down a little further. Go down, go down on one Tuesday. Just an example, click that one. So, if you click on that one, and then you click on direct scheduling link. 
+00:38:45 Brandon A.
+Up in the upper right donation, right? Sorry, direct scheduling link to the right in the upper right.
+00:38:51 Brian Y.
+Yeah. And they actually click on that link itself is provided. So this is the. Page it would take you to after paying right now. And so like if you click on that first one. So this is this is the registration page. So this is kind of the questions it would ask you as an example.
+00:39:16 Brandon A.
+Yeah. Yeah okay so I've seen similar forms. Um but yeah so this is behind the pay gate, the paywall, but we, We want this.
+00:39:29 Brian Y.
+This would be coming first again. Their version of this would be coming first, and then they'd pay. But right now I am doing it reverse just based on my constraints.
+00:39:39 Brandon A.
+Yeah, So basically, I can link. So I'll have you be able to create custom forms and then save them, duplicate them, yada yada yada link those to events in the database and then, It would be that's how it. It would be associated with that, so then they would fill this out, for that event. Um, They would click a link on your site, and then it would lead them to a form. And then it would capture everything that Acuity captures. Uhhuh. And then more actually. Mhm, and then yeah,
+00:40:15 Brian Y.
+This is obviously really important, because later, if someone comes and says, you know, like we'd even fed them gluten when they told us they were uh could. Die from it, then like we have to show that like in our registration system, like they didn't tell us that or they did or so.
+00:40:32 Brandon A.
+The waiver doesn't cover that.
+00:40:33 Brian Y.
+All the stuff will have to be saved.
+00:40:35 Brandon A.
+That liability thing doesn't cover stuff like that. I mean, it's still good to not. You know you don't want anybody getting hurt here.
+00:40:42 Brian Y.
+Yeah, it does.
+00:40:47 Brandon A.
+Cool. Gosh, I think I'm gonna save this as a PDF. 
+00:41:09 Nivay N.
+Cool. Okay, back to security.
+00:41:16 Brian Y.
+And then if you look under client emails under notifications. Uh, sorry. Click back on the upper left to go back.
+00:41:32 Nivay N.
+Again. Clients.
+00:41:38 Brian Y.
+Well, so one thing to mention, like I don't know how we want to line this up, but like while we're here, why don't you go actually go back to where you were. Go back to appointment types and then click on the Hanuman one again.
+00:41:58 Brian Y.
+So this might already be covered, but I'm not sure. Yeah, so click on that. So the way Acuity does it, which I think is good, especially for things like community weekends that are recurring. Like it will show you all of the upcoming events of that type. So this is someone who's registering. So now they can see if you scroll down, they can see like the next Tuesday coming up, the next Tuesday they can pick for the ones that do have recurring events. So like our community weekends on them on Tuesdays. 
+00:42:29 Brian Y.
+They can go ahead and pick like multiple times or or the specific time and date throughout the year that they want to register for. So, some of our events are one offs, and some of our events are recurring. For the ones recurring, We would want them to be able to pick, which month obviously of a recurring event that they're specifically intending to register for.
+00:42:54 Brandon A.
+Okay, so am I I'm just going to restate this tell me if I'm, Understand you correctly, so they would pay a flat fee, but then they they would see this and they could book multiple events.
+00:43:06 Brian Y.
+Well, And the way that we're doing it with you, just like they would be building. I mean, If they were doing I guess ideally, the way this would be working is that for the recurring events, They would either be picking one or they could pick multiple, and they could check out and register for those events at the same time. If that's complicated, that's not a big deal. I would just want them to be able to at least pick out one event from Are you listening to this Is that why you are squinting? Yes. So like if someone wanted to register for like three community weekends, For them to add them to their cart, so to speak and sign up and register for three events. But if we didn't do that, They at least need the ability to see all the dates for the entire year. So like today if they want to sign up for September community weekend.
+00:43:54 Brian Y.
+They're not always just have the ability to sign up for the next upcoming community weekend. They need to be able to pick, the date for the upcoming event. So it is.
+00:44:04 Brandon A.
+Oh, go ahead.
+00:44:05 Brian Y.
+No, no, that's all I was going to say.
+00:44:07 Brandon A.
+So it is literally like a shopping cart, right? So each each event is going to be a product. Yes, how I am thinking about it right? Yes soum yes so. 
+00:44:19 Brian Y.
+The other thing that's a challenge is like, People often want to register for other people, like couples come or like they're bringing their kids. Right now, because I have to have them sign the waiver individually, if they register if they say Brandon and Bala in the name, They'll often do this Brandon and Bala, and then they'll add for two people in the price. But then I have to email them back. I have to catch it manually with my eye, and then I have to email them back and be like, "Hey, so sorry but we actually need Brandon to register separately because we need."
+00:44:53 Brian Y.
+We need him to submit his waivers. So, I. 
+00:44:57 Brandon A.
+Could do a number of guests, like one or two. And then if it's more than one, it would then prompt them to. It would tell them what you basically just said that they'd have to do a separate form. Or, I could do I am trying to think of UI UX user experience). If they select two people, then maybe it would just kind of double they would, Two pages of a form. Mhm.
+00:45:26 Brian Y.
+Yeah, I think there's two pages of a form. And, then we would just have some kind of legal language. I would put in there that certifies that by you know, clicking purchase, they're certifying that each individual who is part of this reservation is individually committing to their own sets of terms and permissions. Yeah. But that's something that happens often, and I have to be like," Sorry, can't do joint signups."
+00:45:55 Brandon A.
+Yeah. There was another edge case that I was thinking about, but I just escaped me.
+00:46:06 Brian Y.
+So like community weekends, probably our most complex registration because you can come to lots of different parts or no parts, and we have to keep track of how many people are coming. Friday and Saturday and Sunday, and so like with community weekends specifically. If you click on this is the best example to look at. If you click on appointment types, and go to see if you can find something about community weekend. I am going to scroll down some. Yeah, there it is, community weekend. So click on that because that's kind of our most complicated example. This is just the way I had to do a lot of. 
+00:46:46 Brian Y.
+Fenagling for me to kind of. So this is if you want to come to all or one part of this weekend, so pick any one of them. Pick book. So they are going to put in their name and everything else, and then if you keep scrolling down, so then they're going to do these checkboxes. So the this one is like the most complicated in terms of replicating this because it's the only event that we have where there's actually separate pay. Payment amounts for different parts of the weekend, and you know they they all have their own checkbox where they're coming Friday, Saturday or Sunday only.
+00:47:26 Brandon A.
+So essentially this is this weekend like this. This event is a compum compilation amalgamation. Yeah, It's it's a positive different events that they could they could potentially if they want to do it. And then they those events each have their own sliding scale. Or fixed or you know with different payment types. Yeah. Right? To. 
+00:47:53 Brian Y.
+Make this a little more complicated, again, this is the most complicated scenario but we do it every month. It's really important to us. So, this one for the Friday night, Friday night is totally donation basis, so this one is not going to have a mandatory payment for registration. It's going to have an optional payment for registration.
+00:48:14 Brandon A.
+This one you are referring to the community.
+00:48:15 Brian Y.
+The Friday night gathering. Friday night gathering. But all the others would be, well, Saturday service day is also if you want to chip in some money, you are welcome to. The other two, you can't come unless you actually pay and register for the Saturday night and the forest therapy on Sunday.
+00:48:35 Brandon A.
+And these are the ones that they need what is it two fifty usually?
+00:48:40 Brian Y.
+The one twenty five for forest therapy, and it's fifty dollars for the Saturday night thing.
+00:48:45 Brandon A.
+Okay. So I am thinking that I could just attach those fixed costs to these two, And then if the other these two up here, if these areum donation based, we could just do how you have it worth zero, and then I'll have the language that you already have there. So like if you know give back stuff like that. And so. 
+00:49:10 Brandon A.
+I could so I'm thinking of the logic in the code, it would just add up whatever selections they made. And then it would. It would they would have to do go to a different page, for each event that they will, that they want I think maybe not. So if you're doing this and this, do they need separate waivers for each event.
+00:49:38 Brian Y.
+Uh, no, it would just be one waiver for the entire weekend. So, this is the most complicated one for us to manage because we we need one consolidated view for this event, showing how many people are coming Friday, how many Saturday not even just Saturday but like Saturday day, Saturday night and Sunday and they'll all have different headcounts. Um so it's our definitely our most challenging one. So, what I have been doing is I set it up this way, they click the box. And, then we integrated this on the back end using Zaps into a Google spreadsheet, and that was working pretty well.
+00:50:15 Brandon A.
+And how are you guys organizing it? Like, what you would have what weekend like and then yeah, like that would be composed of this.
+00:50:23 Brian Y.
+It was just uh, so they would come in. So it was just coming into Google spreadsheet. So they could sign up for any weekend during the year. So, like one line might say January, and it would have the boxes checked for which events they're coming to, and the next line might say August. Uh, you know, usually people are registering pretty much for the next upcoming weekend. But, it would show you any we could have them register for any event during the year that we'd set up. And then these. 
+00:50:48 Brandon A.
+Are all on March sixth, though, right? I mean, the week these would all be at the weekend of March sixth. This form right for that form.
+00:50:55 Brian Y.
+Yeah, but on that prior page, you were on where you clicked on this one for March, like if you clicked on January. There was just one spreadsheet that regardless of which month they were coming through, so like if you clicked a different month and did it, all these were being pulled into one Google spreadsheet with the boxes they clicked. So, we kind of going to get a sense of how many heads on which night for which event.
+00:51:17 Brandon A.
+Can, you give me an example of a workflow You're saying that they could, oh there you go. No no, so you're saying that they could select surely they can't select multiple weekends.
+00:51:30 Brian Y.
+No, they would have to do one at a time. But I'm just saying that the spreadsheet itself, which I can send you the spreadsheet. Um, it would just show. Let me just I'm just going to give you access to this.
+00:51:56 Brandon A.
+One Thing I do miss down here is this sweet tea.
+00:52:08 Brian Y.
+Either One, okay. So, I just added you to that. So, this is what we have been using. This is our way to kind of see quickly across. All events on a single weekend. Who's coming one day and. And again it was pulling in all their allergy information everything else so.
+00:52:39 Brandon A.
+That Squarespace thing finally came through. And then I got. 
+00:52:43 Brian Y.
+This is actually this is actually a really helpful setup for us because. This allowed this allowed us to add other people to it, like if we were co hosting an event with someone, this allowed us easily to like. Give them a single spreadsheet with all the information in one place.
+00:53:00 Brandon A.
+Sorry, um, I should have got you to send it to my Gmail, but I just requested access to it. So you should be getting a notification. Uh, I forgot Google Sheets Gmail. Yeah.
+00:53:14 Brian Y.
+Um, I've got to go. I've got to go meet somebody for something. Are you around in just a bit or are you tied up?
+00:53:22 Brandon A.
+No, I should i should be around. 
+00:53:24 Brian Y.
+Um Navay can keep working with you now if you want. Yeah, I can carry on with you all and just be on my phone as you two talk.
+00:53:32 Brandon A.
+Sounds like a plan.
+00:53:34 Brian Y.
+Let me see if he can rejoin now. He just walked outside.
+00:53:39 Brandon A.
+I did notice one other edge case where some of the forms aren't capturing. Theum the they're only they're extracting the names from billing info, sometimes somebody might use. Somebody else's car or something. So. Mhm. Yeah.
+00:54:01 Nivay N.
+It's like. 
+00:54:58 Brian Y.
+Um. I am going to have Navay just jump on my computer with you since you are already screen sharing. Sounds good. Um, I will call you guys in just a second. He's coming back in in one second.
+00:55:10 Brandon A.
+Um, before you step up real quickly, I might be coming up there tomorrow. Um, I have a place to stay for tomorrow night, But maybe I'll come Friday evening, and then you know show you guys when I am done.
+00:55:23 Brian Y.
+Okay. Yeah, that would be great. Cool. I still don't know what my plans are or where I'll be, but yeah, that's fine.
+00:55:30 Brandon A.
+Cool cool cool All right, I'll be seeing you.
+00:55:33 Brian Y.
+All right hold up You're gonna hold on and he's gonna come in? Yeah Okay Uh I'm gonna call you in a second on my phone.
+00:55:40 Brandon A.
+Sounds good Get up Gets everything wrong as far as like games and stuff.
+00:55:52 Nivay N.
+Well, so now Bob is calling me on my phone. So I guess you want to add him on FaceTime to this call?
+00:55:57 Brandon A.
+Yeah, yeah. You can tell him I am just going to add him. Yeah, ringing now. Yeah, I did some estimates of like you know time saved. Hey guys! Hey hey!
+00:56:21 Brian Y.
+Hey guys, hold on a second. I need to try to do this right.
+00:56:35 Nivay N.
+Alright, Can you hear me? Bottom clear. So what's all this again?
+00:56:40 Brandon A.
+Conservative estimate is thirty hours to fifty hours.
+00:56:45 Nivay N.
+I don't know why it's doing that. What. 
+00:56:50 Brian Y.
+Is it doing? It's like the music was playing over the phone sound, uh, like automatically without me even want to turn it off. Anyway, here we are. Here you are. Um, So I was just explaining to Brandon. The community weekends is kind of the most complicated in terms of different people coming on different days and us trying to get that into one spreadsheet. So I gave him access to the community weekends spreadsheet just so he could kind of see what we see on the back end. Mhm. I did tell them that in general, that form ink actually works really well. Like being able to have stuff in a shared Google spreadsheet with all the form data at one place, like and then you can just add other co creators on that. Like that has been really easy for me for other events, too, to just do that way too. Like if they need to write notes, something you can just add a column like That's been I've liked that working medium actually, in terms of just being able to.
+00:57:48 Brian Y.
+Get it into a spreadsheet. I don't know what your thoughts are on it.
+00:57:52 Nivay N.
+Yeah, I am sorry, you said co creators on the spreadsheet, but I am not sure.
+00:57:57 Brian Y.
+Yeah, So like so like if I am hosting an event with Vanessa, and then she's asking all these questions about, you know, like who's coming and how much have they paid. Like, it's been nice to just put everything into a spreadsheet. And that way like if we need to write notes or anything on it or comments or anything like t here is an easy way to do that. Yeah Brandon has a. 
+00:58:17 Brandon A.
+So, Co creators are gonna have their own login. No password. It's gonna be a magic link. So they just put their email in, they'll get a code two F A, they'll log in, They'll see you could limit what they see to where they don't see because I don't I didn't know about like the structure of like the money and that you want them visible to thatum you could toggle that. And then they could put in like notes for each event orum. I don't know what they what kind of notes they might put, but you guys obviously would.
+00:58:49 Nivay N.
+Are you saying, Bala, that you still want the ability to export to a spreadsheet?
+00:58:54 Brian Y.
+Um. Trying to think how many times I've needed to do that, or we have to have kind of like custom note columns for things that we're tracking and stuff. Um.
+00:59:08 Brandon A.
+Perhaps give a couple of examples of some custom. 
+00:59:11 Brian Y.
+Like is that Brendan like in terms of the same. I don't know when we talk about these things, like if I say something, Brandon's like," Oh, I press this button and we can add that." Or if it's Brandon's like," Okay, well I got to research this thing and then I got." So like the question would be in this example: Like. What would the complexity be to so that registration data by event by person that the co creator can see? Like, how challenging would it be to download that into a spreadsheet as a function?
+00:59:38 Brandon A.
+Uh very easy. So it's already going to be in the, In the backend database, so the backend currently has events, so it has attendees, co creators, event co creators, notifications, registrations, users. I've been some technical stuff and we could add columns. We can add tables and then since that data is already in.
+01:00:11 Brandon A.
+A relational database; it's already kind of in a spreadsheet format, and it'd be really easy to just export it.
+01:00:20 Brian Y.
+Uh, hold on. I am just trying to okay. Sorry, now I can hear better because I actually have it up to my ear. Um, I heard most of what you said. Yeah, So you are saying they would have access to all that information visually, and then they could still we could still download into a spreadsheet if we needed to.
+01:00:34 Brandon A.
+Yes, so currently I haveum a few tables in the back end database, Attendees, co creators, event co creators, and then events, notifications, registrations. And then users meaning likeum login to log into the to the air tool. Okay. And,
+01:00:56 Brian Y.
+We can add Yeah that would be good because we do have things every once in a while where we need to actually like write some custom notes about attendees, et cetera. So like I don't want us to have to build that into the platform. But in the rare case, that's something we have to do.
+01:01:09 Brandon A.
+It's just a column that I would add.
+01:01:12 Brian Y.
+Yeah, there is that, and then sometimes when people come for events, like I'll have people actually check them in. And so like having the spreadsheet I can print out and be like," Here is everyone who's attending." That's also helpful.
+01:01:25 Brandon A.
+Sorry, I've already built that one. So I have the day of view, and it's going to have everybody that's confirmed attending and paid. And it's going to have their dietary stuff or their tent. Where they're going to stay, and then you literally like check them in as they arrive.
+01:01:44 Brian Y.
+Okay, So the thing that'd be super helpful for me, because I am usually the one who has to meet everyone at the road is like what I do is I go down there, and then I am like," Hey, how's it going? I am Bala." And then there'll be a group of people there and be like," I am Chris,"" I am Jonathan,"" I am Liz,"" I am Mandy." And so then I have to actually like in my little notepad, i have to lIke put a little. I have to have their names. I have to put a little like x by it, so i cause i don't want them. Introduce themselves and they have to go back and be like, is Mandy here? And she's like, yeah, I told you I am Mandy. And then I am like already.
+01:02:15 Nivay N.
+So so you want to you basically want to check in.
+01:02:17 Brian Y.
+Yeah yeah, I just want a little checkbox next to them. It would say like have arrived question mark, and then it would just be like check check check. And that way, You know, just I would have it there in one one place kind of thing.
+01:02:33 Brandon A.
+Yeah so that I've already that's already that exists in the, Day of you, um, I'll I'll show you like really quickly. Dot or so. Dot at because yeah, I can imagine. I already forgot all the names you just said so. Yeah.
+01:02:56 Brian Y.
+Let me ask you this question. Shoot. Can you tell me when I'm frustrating you or getting tired?
+01:03:03 Brandon A.
+You're fine. I'm multi. I'm good at multitasking. 
+01:03:09 Brian Y.
+Okay. So the other thing that comes up is, um, sometimes people will be like, there are cases but they're kind of hard to keep track of. So, we say everyone has to arrive at seven, and then someone says well, I can come, but I can only arrive at nine and for larger events. Maybe that one person is like five people and one person says, I'm arriving at seven thirty I'm arriving at eight fifteen. I'm arriving at nine forty five. So just somewhere for us to be able to track. Like if they're coming in a different time, We could like type it in and say and just kind of keep track of it. So that it's noted. Anyone who has a divergent time.
+01:03:42 Brandon A.
+A good solution for that would be when, when the automatic text reminders are sent out, We can give them an option to reply withum like their ETA or their yeah estimated time of arrival. And then that would I could pull that data into this into our database. And then that would I could put that at the front. On the front end, um, to where this is and I know you are probably driving Bala, but um, this is this is a day of view. And then I don't know if you guys can see. Let me make it less blurry. Yeah. Um brother Jesus Christ. Yeah, I'll send it a screenshot perhaps easier. But basically it has the confirmed attendees. 
+01:04:32 Brandon A.
+Uh, how many tents you're gonna need, um, how many, you know, different meals you're gonna need and what kind. The meeting points. Who's checked in? Who's pending? And then as they come. You literally their their names are right there. Can you just tap it and they'll check them in.
+01:04:51 Brian Y.
+Oh Very cool I can't see it right now, but I'll have Nav Yeah,
+01:04:57 Nivay N.
+We'll run through it. That's exactly what you were thinking. It's just like a check- in. So right next to each person's name is a is a is a little bubble that you click. And then it that checks them in, lets you know that they're they're there. And then for the the concern about if someone's late and they have an A new updated arrival time, Then that person should be interacting or interfacing through the automated uh text message system.
+01:05:19 Brandon A.
+Mhm. And also on top of that, whenever you do check somebody when you tap their little bubble by their name, it it uh checks what time they got there. So checked in at.
+01:05:30 Brian Y.
+So usually, like the divergent time, yeah, if they're going to be late that changes it. But there's like sometimes people say," Hey, I saw that I have to arrive at seven," and they'll tell me like in an email they'll say," But I can only come at nine. Can do you want me to register or not?" And I'll write them back and I'll say, yes, That's fine, but please remind me day of." And sometimes they remind me and sometimes they don't. Um so I just didn't know if there's a place where I could like, At the time, Like if someone tells me they're coming in a different time outside of the text, there's just somewhere I could store that.
+01:06:02 Brandon A.
+So, they would they would reply with their with the time that they think they're like if they're going to get there at nine, they would reply with like nine p m.
+01:06:13 Nivay N.
+Oh. So like on the day off, uh uh the way I'm thinking it uh brother is day off, They get that that text message, their reminder text message. Yeah and then that reminder text message, They respond to that so even if, Even, if they told you weeks before that they were going to be hours late, it's just still that depend on that day off text message.
+01:06:31 Brian Y.
+Okay, okay, that makes sense. So Brian, can we talk about text messages for just a sec?
+01:06:40 Brandon A.
+You sure can.
+01:06:42 Brian Y.
+Um, so for text messages. I still want to be able to personalize the text. Of course. Meaning like specifically, I am not going to have like one default message with a god every time. Like, I can't have a default, But I want to be able to edit it or alter it based on the event and based on kind of anything that's unique to that event.
+01:07:06 Brandon A.
+Yeah, We've included text message templates as well as the email templates to where you okay. And it pulls dynamic variables, meaning their names like the event and stuff like that. And you can customize it and you can duplicate them. Remix them.
+01:07:24 Nivay N.
+Amazing. And I think I know what Balazs'follow- up question is going to be. So once he sends off that text message template, can he actively respond to that person in a conversation?
+01:07:38 Brian Y.
+Because usually the way it works now, there's some people and it's always like one and sometimes two. There's extensive back and forth, unfortunately. And like. So I'm trying to figure out like if the text messaging company even though it's a automatic cost, like is there a way that I can like actually see the responses, Like I'm texting them individually and I can respond to them? Or is that not something that's done?
+01:08:05 Brandon A.
+I'm gonna sayum an eighty percent sure tentative yes. Um Twilio Twilio is yeah is the is this is the platform. Yeah.
+01:08:18 Brian Y.
+I've used them in the past for some things, not for what I am doing now, but I am familiar.
+01:08:24 Brandon A.
+Yeah, cause like I think from what I was reading, I don't have a I, don't have a card to put on that would go through to buy a number. But basically you can enter like you could port port a number that you already own. So, if you want them going to your number or t here is probably like an app. Am sure that they have. But I mean, I could just Google that right now. Cause yeah, if you buy the phone number, you own it, and so you can. Right. Yeah, you can yeah. Okay. So that is a hundred percent yes.
+01:09:10 Brian Y.
+Yeah, that would make sense. So yeah, I'll just explore how I would access that and how I could, And then what I'd be able to do, so then what happens after the event, I think it's the same function is. What happens after the events we always set up a WhatsApp group. And then we send them individual texts after the events that say, hey, thanks for coming this weekend. Here's the link. Because, you know, WhatsApp is so weird, like unless I save their names, individually as individual contacts into my phone and invite them that way. Then, if I invite a bunch of random numbers, it usually gets flagged and shuts down the group.
+01:09:45 Brian Y.
+So, The way that you have to kind of do it is like send them a text, and it says," Thanks for coming to the event. Here is link if you want to join the WhatsApp group." And they join through the link versus you adding them through their number, then it doesn't get flagged. Um, are we married to WhatsApp? What's that?
+01:10:03 Brandon A.
+Are we Is there a constraint where we were tied to WhatsApp?
+01:10:08 Brian Y.
+Um, I just already have everything in it. So like I have a community there. So we have individual events. And then we have, Then there's like a master, just love forest community, where like I can send out a WhatsApp to everyone who's ever been to any event.
+01:10:23 Brandon A.
+So it sounds like an interesting interface.
+01:10:25 Nivay N.
+Yeah, what I'm hearing is you would have like a, like right now I saw an integration for send a blast SMS. So it'd be a post- retreat SMS that we would be something that WhatsApp link to. Exactly. Yeah.
+01:10:40 Brandon A.
+Take the words out of my mouth. What'd he say? So you took the words out of my brain. Yeah.
+01:10:48 Brian Y.
+Um, cool.
+01:10:52 Brandon A.
+And then I would need access to that WhatsApp group just to, I need access to everything basically.
+01:10:58 Brian Y.
+Yeah, it was still my life. Yeah,
+01:11:00 Brandon A.
+Your bank, everything.
+01:11:03 Brian Y.
+Oh, I don't know how this works just the systems. Oh. 
+01:11:09 Brian Y.
+Um, okay. Well, that answers my questions. I think so on the text that would be helpful. Yeah, I want to be able to customize it on the front end. And then if they reply back, I want to be able to reply back to them. Um, That's a pretty common thing. And I guess that's the way I would see, you know, if I say, hey, text this number, you know, if you are going to be late now need to see if they text it back and what time they're going to be. So that'll be that. And. Yeah, So is there any what else in the Qtum today since I can't see it right now? Do, we use We did the forms. Oh, The other question I have Brandon is if you look in the, can you show Brandon where to get to the email, where you create the email? And it shows like the formatting, like with the logo and stuff. Oh yeah,
+01:11:55 Nivay N.
+Brandon yeah Can you get to Qt home?
+01:11:57 Brian Y.
+I'm going to put you all on a mute just one second as I meet, this woman should take all of like two minutes.
+01:12:03 Nivay N.
+Okie dokie. Okay that's still not. 
+01:12:06 Brandon A.
+Yeah, I understand. I don't know where it went. Where in the world?
+01:12:11 Nivay N.
+I don't know. Cutie's fun, brother. There. No, uh, I guess go back to select class and keep going back up, no How, many do this?
+01:12:22 Brian Y.
+I'm gonna call you guys right back once I'm done with this.
+01:12:25 Brandon A.
+Okay Bye bye Okay let's do this History.
+01:12:37 Brandon A.
+No, not that one. You can see my screen, correct?
+01:12:41 Brian Y.
+Yeah, yeah.
+01:12:49 Brandon A.
+Did he give youum his Squarespace login or uh just the Acuity login? Um Squarespace.
+01:12:56 Nivay N.
+Yeah, I think you can just log into like Squarespace.
+01:12:59 Brandon A.
+Oh, okay. So I can oh that's right. Okay. So I do the direct link. And then that takes you to Acuity. Okay. So he said, email. Uh- huh.
+01:13:08 Nivay N.
+Hit back, uh, at the top left. Yep. And then, uh you should have emails and texts. Mhm. Got it. Uh so, We can pick one we can do Yeah sure around dusk evenings Yes around dusk And. So this is what his template currently looks like.
+01:13:37 Brandon A.
+And okay. Yeah, I could just drop these into the existing ones. Yeah.
+01:13:49 Nivay N.
+Damn, like I can even like integrate weather API. I have to tell them if it's gonna be raining, text them to bring anumbrella.
+01:13:56 Nivay N.
+Are you kidding me?
+01:13:58 Brandon A.
+I mean yeah, But I was telling him that he was he was worried that I was gonna be like all right, like give me like a million dollars. But it's it's, I love to do to create stuff like this if you can't tell, especially for great like for people and a good cause. And that is like making people's lives easier.
+01:14:18 Nivay N.
+Yeah, you can. I mean, I can't tell you man how much this guy like between you and I, Type of shit he's had to do and deal with and the manual labor he has here, like mental labor, it's just it's crazy. I mean it fries me sometimes but he's been doing it for years.
+01:14:36 Brandon A.
+You know, Like the conservative estimate for like time, saved is like thirty thirty hours a week or a month, not a week.
+01:14:49 Nivay N.
+Yeah, sounds about right.
+01:14:50 Brandon A.
+And then depending on how you value your time, Like twenty five an hour, yeah fifty dollars an hour, that's ninety thousand a year or something. That's conservative. I ran the numbers, but yeah yeah this email template, Stuff isum actually makes it easier.
+01:15:10 Nivay N.
+Yeah, there's a few of them in there. Um, they're slightly different. 
+01:15:14 Brandon A.
+Responses and nice.
+01:15:21 Nivay N.
+And, then there's uh a reminder email, but you've kind of seen that as well.
+01:15:26 Brandon A.
+Yeah, it just popped up. And you guys typically send it out a day before, Event starts.
+01:15:36 Nivay N.
+Um yeah, that's twenty four hours before. Their their appointment.
+01:15:48 Brandon A.
+Okay, and then we either have. The location, or or Zoom link. 
+01:15:54 Nivay N.
+Correct one Yeah, we have the two look one of two locations, or the Zoom link.
+01:16:00 Brandon A.
+And then. Okay yes so then. 
+01:16:09 Brandon A.
+Hey guys. Hey, hola. Sorry about that. Don't be. And, then they could change or cancel an appointment via this or theum So.
+01:16:21 Brian Y.
+We don't need all the options in there, it's just I just would like to have the logo on the emails.
+01:16:27 Nivay N.
+Yeah, right now we're in the uh we're looking at the reminder email. Okay. Yeah, So the reminder, email can they actually has anyone actually utilized that to change cancel appointment?
+01:16:38 Brian Y.
+Um. Well, they do. It doesn't actually do it.
+01:16:44 Brian Y.
+Yeah, I mean it does, but like it doesn't do anything for them financially or anything.
+01:16:48 Nivay N.
+Yeah. It just notifies you too.
+01:16:51 Brian Y.
+Yeah, It tells me okay.
+01:16:56 Nivay N.
+Which is. 
+01:16:56 Brian Y.
+You know useful. 
+01:16:58 Brandon A.
+Yeah For sure. And then let me look at one of theum. You know,
+01:17:05 Brian Y.
+Hey, real quick, Naveh, do you uh what do you want us to do for dinner tonight? Um that's a great question. You just want me to get some vegetables and we'll just saute some vegetables. Do you like a vegetable stir fry? Yeah that sounds good brother. Okay I'm going to go get some of those now okay. Do you need any food? Do you need some fruit for the morning? Uh yes please uh we'll do some fresh bananas please.
+01:17:26 Nivay N.
+Is there anything else that you need that's like an essential item? Um essential item, No fruit sounds pretty good. I was supposed to, I wanted to go grocery shopping today as well, but I have so I have some homework to do for my nurse. Sorry about that.
+01:17:40 Brian Y.
+Yeah, we're gonna get our money in less than at seven. I am hungry.
+01:17:43 Nivay N.
+Yeah, we won't talk food. Yeah, I don't know this might take a few hours for me brother. I am not sure she wants all my records for the past like year and a half consolidated and put it on, put it in her portal. Gotcha. Yeah. Um okay. Um let's see. Yeah, that feels pretty good, brother. Just some vegetables saute and maybe we'll make some rice or something.
+01:18:08 Brian Y.
+Yeah, I got it. Okay, sorry, we can get back to this now.
+01:18:13 Brandon A.
+Don't be food is important.
+01:18:16 Brian Y.
+Yeah, sustenance.
+01:18:20 Brandon A.
+Sorry, I am saving this.
+01:18:22 Brian Y.
+So the things that seem important to me about the email is the logo. And then just having their name on there.
+01:18:29 Brandon A.
+Yeah, I'm saving the logo. Into assets. Okay.
+01:18:46 Nivay N.
+And then in the body, you pretty much got like everything that they're gonna need. Brandon was saying like you know in some cases uh if there's bandwidth, you know how we mentioned you know bring a raincoat. Well, there's an API to look at the weather app and you're if then else. If weather is is if weather bad,
+01:19:07 Brandon A.
+Yeah. See what could happen. If one hundred percent community do not humidity do not wear clothes.
+01:19:17 Brandon A.
+But yeah, it's possible and I just might be crazy enough to do it.
+01:19:25 Brian Y.
+I mean, the reason I was asking about the text messages, I mean, call me old fashioned, but like.
+01:19:30 Nivay N.
+You know we're not anti technology or anti AI, but like a lot of people are coming here to separate from that. So. Like when I write text messages, I'll usually be like, hey like it's a beautiful day out today or I'll be like, oh, it's really cold like it's I do personalize them. So I still want to be able to do that kind of stuff.
+01:19:45 Brandon A.
+Oh so that would actually be that would actually come in handy yeah. I mean you don't the purpose of this is so you won't have to be writing all that right?
+01:19:55 Brian Y.
+Well, I don't mind writing one text to everyone, and I don't mind personalizing it to everyone.
+01:20:01 Brandon A.
+I thought that was one of the like things, you said, you wasted a lot of time on.
+01:20:05 Brian Y.
+No, It's like I'll write a text and then I have to copy it over to individual phone numbers on my phone and keep pressing send individual numbers.
+01:20:13 Nivay N.
+Oh. Yeah, copy.
+01:20:16 Brian Y.
+I don't mind writing a text message one time. I mean, great, That's great. We can do a default, but like I do want to be able to personalize it. Some.
+01:20:24 Brandon A.
+Yeah, so. So, you personalize it by copying it from one person to another and replacing their name, and adding like a personal note.
+01:20:33 Brian Y.
+Yeah, that's what I was doing. Yeah. I wouldn't have like a personal note, but yeah, like I would write one that would be specific to the weekend, like Happy y'all can make it out today. It's really beautiful weather or whatever, And then yeah, just be like, you know, text me if you're going to be late. And uh and I would say I would always say their name. It'd be like hey, Morning, Ashley. You know, like, just left for us. Just checking in.
+01:20:57 Brandon A.
+It has to know where it's going, right? The text. Somebody's phone number and their name. Yeah. That is a nice touch.
+01:21:09 Brian Y.
+Yeah, And I think those kinds of things are what feel important to people getting healing here. Like they don't want to feel like it's a text under dentist office when they're coming there for us. Yeah. 
+01:21:22 Brandon A.
+That makes sense.
+01:21:23 Brian Y.
+And they want to feel like if they text it, like I am going to text them back, not that it's going to go into the void. Right.
+01:21:38 Brandon A.
+Okay. Um, next steps, what do you guys got?
+01:21:44 Nivay N.
+Um, have you guys mentioned the post- retreat co- facilitator split yet? No. Okay. All right. So, If you can navigate to the interface and go to the co- facilitators piece in the app that you created.
+01:22:04 Nivay N.
+Oh, yeah.
+01:22:09 Brian Y.
+So Brenda, Would it be hard to have a field for them to write in their expenses? So we have it there?
+01:22:15 Brandon A.
+One one second. Um.
+01:22:30 Brandon A.
+Okie dokie, um so, co creators right.
+01:22:34 Nivay N.
+Yeah, so once the once the retreat is complete, Um we'd like the ability for them to uploadum like an image of their receipt and also a dollar amount like itemize their expenses. And then uh the way we the way we calculate this is, Um he looks at the total, uh income for the retreat, less the stripe fees. And then you've got and all the expenses, yeah. And then that's the first one, like take off strike fees, all the expenses from like like for me, for him uh and then for the co creators. And then uh you subtract that and do a split. And, then we he'd like the ability to likeum set the percentage split, depending on the on the event.
+01:23:20 Brian Y.
+So with most co creators, I take expenses off the top and do fifty fifty, but sometimes it involves three or four. Co creators, and sometimes it's thirty seventy. But basically, after an event ends, the problem statement is: after an event ends, I got to get all the expenses on our side. So I ask Naveh send me all the receipts. That's all text messages and he sends it to my texts. And then I go to the person who hosted the event with me and I am like, please text me all your receipts, and they send me texts. And I go through all their texts and I put it together.
+01:23:51 Brandon A.
+Am not following, What What are the co creators Are, they out grocery shopping, or what is the expense?
+01:23:56 Brian Y.
+Yeah, yeah. So co creator maybe maybe Navai went out and bought all the groceries, but then the person associated with me bought flowers and cacao. Oh okay. So I need to take all those expenses. The model I use is expenses off the top and then I divide. So I keep it very clear and easy with everyone. So everyone submits all their expenses, I subtract all that and then whatever's left i i divide different ways with different people, but usually. 
+01:24:23 Brandon A.
+And That's per is that dependent on the event, I would assume. Yeah. Yeah. Definitely could do that.
+01:24:32 Brian Y.
+So, I think at a minimum, it would be helpful if we could have the ability just for people to upload their receipts us and them. So like we would have them there and the events like so we could just easily. I could just tell everyone like, hey, please just have your your receipts for these events there by fridays, so i can pay you. And they would just go in there and put them in there. Um, that would be helpful.
+01:24:54 Nivay N.
+Yeah, so a picture of the receipt and then they can enter the dollar amount. So for example, if they bought a personal item that it's not on the receipt or whatever, we'd have that.
+01:25:02 Brandon A.
+I would I would say wouldn't wouldn't it be easier for Well, I guess you need the receipts for accounting.
+01:25:09 Nivay N.
+Correct? Yeah right?
+01:25:10 Brandon A.
+Never mind that. Yeah Like I bought five hundred dollars worth of watermelon or something like that.
+01:25:17 Brian Y.
+Yeah It happens. 
+01:25:20 Brandon A.
+I'm sure. But yeah, that's actually. Yeah, that'd be very useful.
+01:25:25 Nivay N.
+Yeah, It's more it's a calculator because I don't know if we can yet integrate like payments through this to. 
+01:25:32 Brandon A.
+The yeah So. Like basically. 
+01:25:37 Brian Y.
+Can, you send Brandon the little financial summary that we sent Sean this morning to get him a sense of what I send out, say, like this is ultimately I just do all this manually. Everyone sends me all these screenshots, and then I pull it into a little spreadsheet I have on my own. And then I write up a little summary like the one we're going to send you now. And, then the person that hosts the retreat with looks at it, and they say," Oh, cool, that makes sense," or they fight me really hard like Rod Rose. And then we'll go through every little thing. And then once it's final, I'll send the money.
+01:26:12 Brandon A.
+How do you have time to right now? That's crazy! You do so much. I don't. 
+01:26:19 Brian Y.
+Know how do you think it works, Mister Navek?
+01:26:21 Nivay N.
+Yeah, it's a ballbreaker. Ballbreaker.
+01:26:26 Brandon A.
+If you guys see this screen, these are attendees that have paid, But I could do something similar with the actual receipts and then like the dollar total. Yeah,
+01:26:41 Brian Y.
+So this is kind of like, so you can imagine now I posted a retreat for like twenty people. And I am like dead tired. And then the next, the next uh like morning, the very next morning, the person who hosted the retreat was like," Can I get paid? Like do we get all the receipts?" And I am like," I just need a second to gather receipts. Like just give me till tomorrow," you know. So, The easier and faster I can send them like a little summary like this. You know it just after the retreat, you are just you are already cleaning everything up. You are already dead exhausted, and then you have to still go through all this stuff.
+01:27:12 Brandon A.
+And That doesn't sound very relaxing. Does it?
+01:27:17 Brandon A.
+Individual payments. So, there can be up to six co creators per ev. Ent. Am I reading that right?
+01:27:28 Brian Y.
+Yeah, it would be really. Oh, wait, what do you?
+01:27:31 Brandon A.
+So I just see individual payments and I see six names with. Are those individual payments like Vic two fifty Angela two fifty? Oh oh no,
+01:27:42 Brian Y.
+That's those are guests.
+01:27:43 Brandon A.
+Oh, okay. So that would be yeah.
+01:27:45 Brian Y.
+This was a very small gathering we just had this past weekend. That would be like to. 
+01:27:49 Brandon A.
+The right of the screen, like that would be yeah, okay. And then yeah,
+01:27:53 Nivay N.
+Those are all the guests.
+01:27:54 Brandon A.
+Yeah, expenses are okay. That's, that's what that would be replenishables baby bread. And then where do you store the receipts at Google Drive or something? Yes, on my phone. Hey if it works. 
+01:28:13 Brian Y.
+Not exactly. Doesn't really work.
+01:28:16 Brandon A.
+Well, if it doesn't work, then I am going to make it work. Yeah, doesn't really work.
+01:28:21 Nivay N.
+Yeah, More than likely what I am seeing is like a Google Drive for accounting that these would deposit into like based on that actual that weekend and event. Yeah, Now t here is also like this, this one's kind of weird, but he and I have a unique relationship out hereum but you know, if I go on and get stuff, then not. That's non retreat related. Like if I go buy propane, then I'm just sending him a WhatsApp link. And so there's money being exchanged between the two of us, but you know that could look kind of weird in anyone's eyes. So I don't know if there is an event that we can create or something where it's just where I upload all my expenses there directly.
+01:29:02 Brandon A.
+So you're saying like expenses not related to the retreat?
+01:29:06 Nivay N.
+Yeah, yeah, exactly. Like Apple Pay only.
+01:29:08 Brian Y.
+I am gonna drop off, cause my phone's getting close to dying and I don't have a wallet. Cause it's lost. So I've got to pay with my phone.
+01:29:15 Nivay N.
+Yeah, sounds good brother. But. 
+01:29:18 Brian Y.
+As soon as I am back in my car, which will probably be ten minutes, I'll see if y'all are still talking or not.
+01:29:22 Brandon A.
+Okay, okay cool. You. 
+01:29:24 Brian Y.
+Had a suggestion you said use Apple Pay?
+01:29:26 Nivay N.
+Um just asking this is like Occam's Razor right? My mind would just go if it's not business or if it's not event related.
+01:29:35 Brandon A.
+And it's just between you two. I would just like pay him, right?
+01:29:39 Nivay N.
+Yeah, well, not not exactly between him and I. It's like between him and I and the forest. So like there's from like forest funds to me, Uh that he's reimbursing me, right. So I'm purchasing something for the for i'm purchasing stuff for the forest. Rightum right that he's reimbursing me for, but he's doing it. Yeah,
+01:29:58 Brandon A.
+That you you got to know we can. We can make like aum like a separate extract product. Like a, page or like event, whatever you want to call it. Yeah. And like you know internal operating operating expenses or something.
+01:30:13 Nivay N.
+Yeah, operating expenses.
+01:30:15 Brandon A.
+Yeah yeah yeah for sure. Okay,
+01:30:21 Brandon A.
+I like this I'm getting a lot of ideas. 
+01:30:24 Nivay N.
+Getting excited. Soum the part that uh I'm a little uh unsure of just yet is now that we have a co uh. Facilitator, someone who's coming on the land hosting event with us. Um, he's paying them through Venmo probably right. Uh oh, Are you saying that we could actually make the payment to them like their profit share through this?
+01:30:48 Brandon A.
+Well, this will be connected to Stripe. So, if you I would assume that he would, why is he doing Venmo, which it shouldn't even have to be through the company like I don't think.
+01:30:58 Nivay N.
+Yeahum I'm sure it's the the company's Venmo. But I don't know if Stripe has a payment option. I don't. I know we can receive income, but we couldn't figure out if we can send payments to anyone. Oh, yeah,
+01:31:13 Brandon A.
+That's something that I could look into.
+01:31:16 Nivay N.
+We thought we we thought we looked into it earlier and we got a a roadblock, but we could be wrong. We might have just not found it in the right spot.
+01:31:28 Nivay N.
+Sorry Google Google Yes. 
+01:31:38 Brandon A.
+Oh. Okay, yeah. So. If you can go stripe to stripe, you can pay, but obviously. Yeah,
+01:31:50 Nivay N.
+Nobody's not everyone has correct right. 
+01:31:52 Brandon A.
+Want to have a strike account.
+01:31:55 Nivay N.
+Got it, so it's us to manually do a Venmo, but it's all calculated basically. You've got a calculator that has done everything for them.
+01:32:04 Brandon A.
+Yeah so. Remind me what is what is who what is he paying on Venmo.
+01:32:10 Nivay N.
+So yeah, um, how are you good? I I don't like to over explain either. So you tell me if am if you feel like got it. So we we have a co creator. This is a third party that's coming and hosting a retreat with us like we did this weekend. So the co creator there was Sean Nagadas, I bought groceries, and he bought groceries, And so now you have income from all the guests and you've got these shared expenses. We also have like rolling expenses that are, Consistent. So, for example, if you look at that text message I sent you. Let's go there. So, um emerging from winter is the name of the retreat. Individual payments, those are all the guests that actually paid. And so the gross revenue there was twelve eighty. Uh, you have your stripe fees, uh net revenue after stripe, then you have expenses replenishables. Um those are that's a set um nine dollars.
+01:33:05 Nivay N.
+Per retreat, uh, per person, but because this was a one day, it was four fifty per person. So that includes utilities: propane, um, propane water soaps et cetera. Then you've got um these bakery breads groceries air plus cacao. Those four items were actually split between Sean and I like he and I both had these expenses from Publix. Um so you got your total expenses your final net and uh Sean's, Sean, who was this guest, gets fifty percent of that net. Yeah.
+01:33:39 Brandon A.
+Sean and he's the one that split the groceries with you, right? Okay.
+01:33:42 Nivay N.
+Correct. Correct. He had earplugs and cacao, and I think he was adding to the expense list.
+01:33:47 Brandon A.
+So I am assuming what Vala does currently is he just deposits the funds from Stripe into a business account that's linked to Venmo and then pays it out like that? That's correct. Okay, I'll I'll have to do some. I mean, if that works, which obviously I guess that's what you guys have been doing. Yeah. Um, but I'm sure there's like a better way. Like in research and look.
+01:34:15 Nivay N.
+Yeah, Honestly, like now that you're saying it as long as we have that ability to do the calculator and then the co creator can see how we did their calculation. So he's not manuallytyping this up every time, because then it's just a single like open the Venmo app, send that person a Venmo. See you later, right? That's not.
+01:34:33 Brandon A.
+And they can go back and look if they want to.
+01:34:35 Nivay N.
+Yeah, they can go back and look. And, then we'll also need this is this happens. But in rare cases, we'll probably need the ability to go back and recalculate someone will be like, oh, shit. I forgot this receipt.
+01:34:47 Brandon A.
+So that would be like a reconciliation that brings me back to my accounting days.
+01:34:52 Nivay N.
+Yeah yeah,
+01:34:53 Brandon A.
+So I am going to build I am going to add a new table for expenses. Um well, like. I am thinking like accounts receivable.
+01:35:05 Nivay N.
+Yeah, yeah,
+01:35:06 Brandon A.
+I am now. I am digging back to my accounting class, which I hated.
+01:35:10 Nivay N.
+But yeah, me too, bro. The accounting class was terrible. I never did well. And. So what makes this tricky is and the reason why you need that reconciliation is because if Sean forgot the cacao receipt, right and we already sent him the money, it's not like you just send him forty five dollars, right? That's not how the model works. Because that needs to go into the total expenses and then gets split, so in actuality, he might actually owe us money for the forty five for the cacao.
+01:35:42 Brandon A.
+Depending on other expenses and how much you pay,
+01:35:45 Nivay N.
+Right? Exactly. Exactly. Formula.
+01:35:49 Nivay N.
+Yeah, exactly. Gotcha.
+01:35:52 Brandon A.
+Yeah okay, so I'm thinking I'm gonna be adding a few more tables for sure, which is like not it's not a huge huge lift at all. U m and then I'll do some research to see like what the the best way to to do the reconciliations, because that I think would be the trickiest part. But it can be done, I'm sure.
+01:36:17 Nivay N.
+Yeah, yeah, I'm sure too. Well, It might just be like a edit, you know, edit sheet from scratch, and we just recalculate the whole thing. You know figure out the difference. Yeah that sounds ugly.
+01:36:28 Brandon A.
+Yeah, Yeah, I was telling him anything with my name on it. I like to i do one hundred and twenty percent.
+01:36:36 Nivay N.
+Appreciate that. Appreciate that. And then. 
+01:36:46 Nivay N.
+Maybe Look at what you see what he's doing here like this was actually a this was actually a high ticket. Um event like two hundred fifty dollars, is pretty expensive for something that we do for a day. And. I mean, he's not making anything really, right? And that's not the goal. He's not trying to make a whole lot. Um, yeah, four hundred ninety six dollars for like all the work that we did. That's four days of work.
+01:37:08 Brandon A.
+Yeah, And so I mean, that's it's insane and I commend you guys, but yeah, definitely don't need. You need to be focused onum the guests. And like what you yeah, you guys know. Yeah but like I didn't even think about the, With like with. The system that we're gonna, that I'm building, that I've built to put in place, we're gonna have people like recovered registrations. So people that maybe wouldn't they would have dropped off or something now they can't because they already paid, so it's like recovered revenue. Uhhuh. And that's just you know looking at Yeahum.
+01:37:55 Nivay N.
+Here is another curve ball. How are you taking notes? Is this automatically listening to me and taking notes?
+01:38:00 Brandon A.
+Oh, yeah. Sorry. Do you consent?
+01:38:04 Nivay N.
+Yeah, I consent. So, well, this retreat here we'll use it as an example. If you go in and you'll see there is individual payments. You'll notice that a lady by the name of Liz only paid thirty dollars, She was on scholarship, basically. Uh, cause she's you know having some financial difficulties. And. So what he ended up doing was sending her a separate PayPal link that's linked to the business. And so she was outside, So the revenue from her didn't actually get added into um the Stripe. Uh link uh, because this was a PayPal link. Cause, it wasn't part of the, it was a separate type of it was separate dollar amount. So I don't know if. 
+01:38:51 Nivay N.
+Yeah, you know what I'm saying, right?
+01:38:52 Brandon A.
+Yeah. So did he manually calculate it?
+01:38:56 Nivay N.
+Yeah, He manually yeah manually sent her a PayPal link that wasn't related to this event. And then we had to remember who it was, how much she paid. And then look for that payment in PayPal and then add it into this text message and calculate everything.
+01:39:13 Brandon A.
+Yes, I'm still thinking. So we can just use, Stripe still, and we could have like um. A special link, I think Stripe is just like a product, so like yeah, if you're a student, you'll get like a. Student rate and it will be a separate link than what everybody else gets. They'll have to pay taxes still. Uh huh. Open America and then yeah, they they could just check something like, or maybe it'll be an internal thing because.
+01:39:47 Brandon A.
+We don't want people just saying like, I'm a student. I'm a student. Right, right, right. So, it'll be a private link internally that we can send out, and we will have a database of who is on the scholarship because that yeah did have. And does that does that make sense? Does that kind of make sense Yeah.
+01:40:05 Nivay N.
+So would that scholarship link be native to that uh event? Or is it a universal scholarship link. 
+01:40:12 Brandon A.
+So I'm thinking I'm thinking the scholarship? Piece would be tied to the attendee, and thenum. And then the attendee would be attending that event, so then it would be event specific as well.
+01:40:28 Nivay N.
+Right. Yeah.
+01:40:30 Brandon A.
+And then I'm I was what was I thinking, uh. And then I had a question aroundum membership because I read I think I've read on the site that members get like discounted rates.
+01:40:43 Nivay N.
+Yeah, yeah.
+01:40:44 Brandon A.
+And so it would be the same. Kind of deal, right We'd have like a field. Like you know, is this person a member. Like have they paid the membership fees or dues. And then if they have, if if yes, then discount. Yeah. And then do you know is it like a flat discount or percentage?
+01:41:05 Nivay N.
+Orum so it's a percentage for some events. And then for example, community weekend that's just set. Fee so they just pay fifty dollars for the whole weekend. For the Friday Saturday, uh, and then Sunday, the forest therapy I can't remember. We'll have to check in with him to see if the forest therapy, uh is also included in that fifty dollars. Uh, for coming for the weekend.
+01:41:34 Brandon A.
+And that's the price for members right?
+01:41:36 Nivay N.
+Yes correct. 
+01:41:38 Brandon A.
+Correct coolum do you can I take a break like, I should get some sweet tea, and then my mom just said tacos are ready, so I am gonna grab a taco real quick.
+01:41:49 Nivay N.
+No, I mean I think we're at a good stopping point. Yeah,
+01:41:52 Brandon A.
+I mean yeah. I think so. I think i have a lot. No, i have a lot of A lot of good stuff. Um trying to think as soon as i As soon as we hang up, I'll have a billion questions.
+01:42:04 Nivay N.
+Yeah yeah oh oh be available but yeah things is a good stopping point. I could use a shower it's been. 

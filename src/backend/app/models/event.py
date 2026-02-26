@@ -3,10 +3,9 @@ import uuid
 from datetime import datetime, time
 
 from sqlalchemy import Boolean, DateTime, Enum, Integer, String, Text, Time
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, gen_uuid
+from app.models.base import JSONType, Base, TimestampMixin, gen_uuid
 
 
 class PricingModel(str, enum.Enum):
@@ -50,10 +49,10 @@ class Event(TimestampMixin, Base):
     max_member_discount_slots: Mapped[int] = mapped_column(Integer, default=3)
     day_of_sms_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     registration_fields: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True, default=dict
+        JSONType, nullable=True, default=dict
     )
     notification_templates: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True, default=dict
+        JSONType, nullable=True, default=dict
     )
     virtual_meeting_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[EventStatus] = mapped_column(

@@ -32,7 +32,7 @@ async def test_login_wrong_password(client, sample_user):
 async def test_me_with_valid_token(client, sample_user):
     """GET /auth/me with valid JWT returns user info."""
     token = create_access_token(
-        {"sub": sample_user.id, "email": sample_user.email, "role": sample_user.role.value}
+        {"sub": str(sample_user.id), "email": sample_user.email, "role": sample_user.role.value}
     )
     response = await client.get(
         "/api/v1/auth/me",

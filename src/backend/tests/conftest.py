@@ -6,7 +6,8 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.database import Base, get_db
+from app.database import get_db
+from app.models import Base
 from app.main import app
 from app.models import (
     AccommodationType,
@@ -22,8 +23,11 @@ from app.models import (
 )
 from app.services.auth_service import hash_password
 
-# In-memory SQLite for tests
-TEST_DATABASE_URL = "sqlite+aiosqlite://"
+# File-based SQLite for tests — ensures all sessions/connections share the same DB
+# (in-memory SQLite with multiple connections each get isolated DBs)
+import tempfile, os as _os
+_tmp_db = _os.path.join(tempfile.gettempdir(), "jlf_test.db")
+TEST_DATABASE_URL = f"sqlite+aiosqlite:///{_tmp_db}"
 
 engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 TestSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -31,7 +35,12 @@ TestSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_com
 
 async def override_get_db():
     async with TestSessionLocal() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 app.dependency_overrides[get_db] = override_get_db
@@ -69,7 +78,7 @@ async def client():
 async def sample_event(db_session: AsyncSession) -> Event:
     """Create a standard paid event."""
     event = Event(
-        id=str(uuid.uuid4()),
+        id=uuid.uuid4(),
         name="Emerging from Winter Retreat",
         slug="emerging-from-winter",
         description="A weekend retreat at Just Love Forest",
@@ -92,7 +101,7 @@ async def sample_event(db_session: AsyncSession) -> Event:
 async def free_event(db_session: AsyncSession) -> Event:
     """Create a free event (e.g., Green Burial Tour)."""
     event = Event(
-        id=str(uuid.uuid4()),
+        id=uuid.uuid4(),
         name="Green Burial Tour",
         slug="green-burial-tour",
         description="Free guided tour",
@@ -112,7 +121,7 @@ async def free_event(db_session: AsyncSession) -> Event:
 async def full_event(db_session: AsyncSession) -> Event:
     """Create an event at full capacity."""
     event = Event(
-        id=str(uuid.uuid4()),
+        id=uuid.uuid4(),
         name="Full Retreat",
         slug="full-retreat",
         description="This event is full",
@@ -128,7 +137,7 @@ async def full_event(db_session: AsyncSession) -> Event:
 
     # Add one attendee to fill it
     attendee = Attendee(
-        id=str(uuid.uuid4()),
+        id=uuid.uuid4(),
         email="existing@example.com",
         first_name="Existing",
         last_name="Attendee",
@@ -137,7 +146,7 @@ async def full_event(db_session: AsyncSession) -> Event:
     await db_session.flush()
 
     registration = Registration(
-        id=str(uuid.uuid4()),
+        id=uuid.uuid4(),
         attendee_id=attendee.id,
         event_id=event.id,
         status=RegistrationStatus.complete,
@@ -154,7 +163,7 @@ async def full_event(db_session: AsyncSession) -> Event:
 async def sample_attendee(db_session: AsyncSession) -> Attendee:
     """Create a sample attendee."""
     attendee = Attendee(
-        id=str(uuid.uuid4()),
+        id=uuid.uuid4(),
         email="jane@example.com",
         first_name="Jane",
         last_name="Doe",
@@ -172,7 +181,7 @@ async def sample_registration(
 ) -> Registration:
     """Create a PENDING_PAYMENT registration."""
     registration = Registration(
-        id=str(uuid.uuid4()),
+        id=uuid.uuid4(),
         attendee_id=sample_attendee.id,
         event_id=sample_event.id,
         status=RegistrationStatus.pending_payment,
@@ -191,7 +200,7 @@ async def sample_registration(
 async def sample_user(db_session: AsyncSession) -> User:
     """Create a sample admin user."""
     user = User(
-        id=str(uuid.uuid4()),
+        id=uuid.uuid4(),
         email="admin@justloveforest.com",
         name="Admin User",
         role=UserRole.admin,

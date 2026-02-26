@@ -2,10 +2,9 @@ import enum
 import uuid
 
 from sqlalchemy import Boolean, Enum, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, gen_uuid
+from app.models.base import JSONType, Base, TimestampMixin, gen_uuid
 
 
 class FormType(str, enum.Enum):
@@ -29,7 +28,7 @@ class FormTemplate(TimestampMixin, Base):
     form_type: Mapped[FormType] = mapped_column(
         Enum(FormType, native_enum=False), index=True
     )
-    fields: Mapped[list | None] = mapped_column(JSONB, nullable=True, default=list)
+    fields: Mapped[list | None] = mapped_column(JSONType, nullable=True, default=list)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id"), nullable=True
