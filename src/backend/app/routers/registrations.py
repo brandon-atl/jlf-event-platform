@@ -104,7 +104,7 @@ async def list_registrations(
     status_filter: str | None = Query(None, alias="status"),
     search: str | None = Query(None),
     page: int = Query(1, ge=1),
-    per_page: int = Query(25, ge=1, le=100),
+    per_page: int = Query(25, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
