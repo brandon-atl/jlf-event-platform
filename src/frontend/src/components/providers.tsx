@@ -70,6 +70,7 @@ export function Providers({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
+    disableDemo(); // Clear demo mode flag — real user login overrides demo
     const res = await authApi.login(email, password);
     // Token is already stored by auth.login() in api.ts
     setToken(res.access_token);
