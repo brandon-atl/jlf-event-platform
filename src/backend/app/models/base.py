@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, JSON
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -18,6 +19,12 @@ class TimestampMixin:
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+
+# JSON column type that works in both SQLite (tests) and Postgres (prod)
+# - SQLite: JSON
+# - Postgres: JSONB
+JSONType = JSON().with_variant(JSONB(), "postgresql")
 
 
 def gen_uuid() -> uuid.UUID:

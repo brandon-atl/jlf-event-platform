@@ -34,6 +34,9 @@ async def _compute_event_stats(db: AsyncSession, event: Event) -> EventStats:
             .filter(Registration.status == RegistrationStatus.pending_payment)
             .label("pending_payment"),
             func.count(Registration.id)
+            .filter(Registration.status == RegistrationStatus.cash_pending)
+            .label("cash_pending"),
+            func.count(Registration.id)
             .filter(Registration.status == RegistrationStatus.cancelled)
             .label("cancelled"),
             func.count(Registration.id)
@@ -52,12 +55,15 @@ async def _compute_event_stats(db: AsyncSession, event: Event) -> EventStats:
     )
     row = result.one()
 
-    # Accommodation breakdown (only COMPLETE registrations)
+    # Accommodation breakdown (COMPLETE + CASH_PENDING registrations)
     acc_result = await db.execute(
         select(Registration.accommodation_type, func.count(Registration.id))
         .where(
             Registration.event_id == event.id,
-            Registration.status == RegistrationStatus.complete,
+            Registration.status.in_([
+                RegistrationStatus.complete,
+                RegistrationStatus.cash_pending,
+            ]),
             Registration.accommodation_type.is_not(None),
         )
         .group_by(Registration.accommodation_type)
@@ -66,12 +72,13 @@ async def _compute_event_stats(db: AsyncSession, event: Event) -> EventStats:
 
     spots_remaining = None
     if event.capacity is not None:
-        spots_remaining = max(0, event.capacity - row.complete)
+        spots_remaining = max(0, event.capacity - row.complete - row.cash_pending)
 
     return EventStats(
         total_registrations=row.total,
         complete=row.complete,
         pending_payment=row.pending_payment,
+        cash_pending=row.cash_pending,
         cancelled=row.cancelled,
         refunded=row.refunded,
         expired=row.expired,
@@ -119,8 +126,10 @@ def _event_to_response(event: Event, stats: EventStats | None = None) -> EventRe
         capacity=event.capacity,
         meeting_point_a=event.meeting_point_a,
         meeting_point_b=event.meeting_point_b,
-        reminder_delay_minutes=event.reminder_delay_minutes,
-        auto_expire_hours=event.auto_expire_hours,
+        location_text=event.location_text,
+        zoom_link=event.zoom_link,
+        allow_cash_payment=event.allow_cash_payment,
+        max_member_discount_slots=event.max_member_discount_slots,
         day_of_sms_time=str(event.day_of_sms_time) if event.day_of_sms_time else None,
         registration_fields=event.registration_fields,
         notification_templates=event.notification_templates,
@@ -345,8 +354,10 @@ async def duplicate_event(
             virtual_meeting_url=source_event.virtual_meeting_url,
             notification_templates=source_event.notification_templates,
             registration_fields=source_event.registration_fields,
-            reminder_delay_minutes=source_event.reminder_delay_minutes,
-            auto_expire_hours=source_event.auto_expire_hours,
+            location_text=source_event.location_text,
+            zoom_link=source_event.zoom_link,
+            allow_cash_payment=source_event.allow_cash_payment,
+            max_member_discount_slots=source_event.max_member_discount_slots,
         )
         db.add(candidate)
         try:

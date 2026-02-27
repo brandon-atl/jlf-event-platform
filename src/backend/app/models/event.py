@@ -2,17 +2,17 @@ import enum
 import uuid
 from datetime import datetime, time
 
-from sqlalchemy import DateTime, Enum, Integer, String, Text, Time
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Boolean, DateTime, Enum, Integer, String, Text, Time
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base, TimestampMixin, gen_uuid
+from app.models.base import JSONType, Base, TimestampMixin, gen_uuid
 
 
 class PricingModel(str, enum.Enum):
     fixed = "fixed"
     donation = "donation"
     free = "free"
+    composite = "composite"
 
 
 class EventStatus(str, enum.Enum):
@@ -43,14 +43,16 @@ class Event(TimestampMixin, Base):
     capacity: Mapped[int | None] = mapped_column(Integer, nullable=True)
     meeting_point_a: Mapped[str | None] = mapped_column(Text, nullable=True)
     meeting_point_b: Mapped[str | None] = mapped_column(Text, nullable=True)
-    reminder_delay_minutes: Mapped[int] = mapped_column(Integer, default=60)
-    auto_expire_hours: Mapped[int] = mapped_column(Integer, default=24)
+    location_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    zoom_link: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    allow_cash_payment: Mapped[bool] = mapped_column(Boolean, default=False)
+    max_member_discount_slots: Mapped[int] = mapped_column(Integer, default=3)
     day_of_sms_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     registration_fields: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True, default=dict
+        JSONType, nullable=True, default=dict
     )
     notification_templates: Mapped[dict | None] = mapped_column(
-        JSONB, nullable=True, default=dict
+        JSONType, nullable=True, default=dict
     )
     virtual_meeting_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[EventStatus] = mapped_column(
@@ -58,3 +60,4 @@ class Event(TimestampMixin, Base):
     )
 
     registrations = relationship("Registration", back_populates="event", lazy="selectin")
+    form_links = relationship("EventFormLink", back_populates="event", lazy="selectin")

@@ -55,6 +55,7 @@ from app.models.attendee import Attendee
 from app.models.event import Event, EventStatus
 from app.models.registration import (
     AccommodationType,
+    PaymentMethod,
     Registration,
     RegistrationSource,
     RegistrationStatus,
@@ -79,6 +80,7 @@ async def get_event_info(event_slug: str, db: AsyncSession = Depends(get_db)):
             Registration.event_id == event.id,
             Registration.status.in_([
                 RegistrationStatus.pending_payment,
+                RegistrationStatus.cash_pending,
                 RegistrationStatus.complete,
             ]),
         )
@@ -156,6 +158,7 @@ async def create_registration(
             Registration.event_id == event.id,
             Registration.status.in_([
                 RegistrationStatus.pending_payment,
+                RegistrationStatus.cash_pending,
                 RegistrationStatus.complete,
             ]),
         )
@@ -178,17 +181,47 @@ async def create_registration(
         except ValueError:
             raise HTTPException(status_code=422, detail="Invalid accommodation type")
 
+    # Resolve payment method
+    try:
+        payment_method = PaymentMethod(data.payment_method)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid payment_method")
+
+    # Cash payment requires event to allow it
+    if payment_method == PaymentMethod.cash and not event.allow_cash_payment:
+        raise HTTPException(
+            status_code=422,
+            detail="This event does not accept cash payments",
+        )
+
+    # Free payment method only allowed for free events
+    if payment_method == PaymentMethod.free and event.pricing_model.value != "free":
+        raise HTTPException(
+            status_code=422,
+            detail="Free payment method is only allowed for free events",
+        )
+
     # Sanitize intake_data (arbitrary JSON from user input)
     try:
         safe_intake = sanitize_intake_data(data.intake_data)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+    # Determine initial status based on payment method and pricing model
+    is_free_event = event.pricing_model.value == "free"
+    if payment_method == PaymentMethod.cash:
+        initial_status = RegistrationStatus.cash_pending
+    elif is_free_event or payment_method == PaymentMethod.free:
+        initial_status = RegistrationStatus.complete
+    else:
+        initial_status = RegistrationStatus.pending_payment
+
     # Create registration
     registration = Registration(
         attendee_id=attendee.id,
         event_id=event.id,
-        status=RegistrationStatus.pending_payment,
+        status=initial_status,
+        payment_method=payment_method,
         accommodation_type=accommodation,
         dietary_restrictions=data.dietary_restrictions,
         intake_data=safe_intake,
@@ -198,21 +231,42 @@ async def create_registration(
     db.add(registration)
     await db.flush()
 
-    # Create Stripe Checkout session
+    # Route by payment method
+    checkout_url = None
+
+    if initial_status == RegistrationStatus.complete:
+        # Free event — confirm immediately
+        registration.attendee = attendee
+        registration.event = event
+        await db.commit()
+        background_tasks.add_task(send_confirmation_email, registration, event)
+        return RegistrationResponse(
+            registration_id=registration.id,
+            checkout_url=None,
+            status=registration.status.value,
+            message="You're registered! Check your email for confirmation.",
+        )
+
+    if initial_status == RegistrationStatus.cash_pending:
+        # Cash — no Stripe, registered immediately
+        registration.attendee = attendee
+        registration.event = event
+        await db.commit()
+        background_tasks.add_task(send_confirmation_email, registration, event)
+        return RegistrationResponse(
+            registration_id=registration.id,
+            checkout_url=None,
+            status=registration.status.value,
+            message="Registration received. Please bring payment to the event.",
+        )
+
+    # Stripe / scholarship — create Checkout session
+    registration.attendee = attendee
+    registration.event = event
     checkout_url = await create_checkout_session(
         registration, event, custom_amount_cents=data.donation_amount_cents
     )
-
-    if not checkout_url and event.pricing_model.value == "free":
-        registration.status = RegistrationStatus.complete
-
-        # Ensure relationships are set to avoid async lazy-load issues
-        registration.attendee = attendee
-        registration.event = event
-
-        # Persist first, then fire email in background so failures never block the response
-        await db.commit()
-        background_tasks.add_task(send_confirmation_email, registration, event)
+    await db.commit()
 
     return RegistrationResponse(
         registration_id=registration.id,

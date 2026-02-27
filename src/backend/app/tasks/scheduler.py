@@ -3,11 +3,6 @@ import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from .day_of_sms import send_day_of_notifications
-from .reminders import (
-    check_expired_registrations,
-    check_pending_reminders,
-    send_escalation_reminders,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -18,28 +13,11 @@ def start_scheduler() -> None:
     """Initialize and start the background task scheduler.
 
     Called during FastAPI app lifespan startup.
+
+    NOTE: Payment-chase jobs (check_pending_reminders, check_expired_registrations,
+    send_escalation_reminders) were removed in v4 per ADR-016. PENDING_PAYMENT is
+    now transient — no auto-expire or reminder timers needed.
     """
-    scheduler.add_job(
-        check_pending_reminders,
-        "interval",
-        minutes=15,
-        id="check_pending_reminders",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        check_expired_registrations,
-        "interval",
-        minutes=15,
-        id="check_expired_registrations",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        send_escalation_reminders,
-        "interval",
-        minutes=15,
-        id="send_escalation_reminders",
-        replace_existing=True,
-    )
     scheduler.add_job(
         send_day_of_notifications,
         "interval",
@@ -49,7 +27,7 @@ def start_scheduler() -> None:
     )
 
     scheduler.start()
-    logger.info("Background scheduler started with 4 periodic jobs")
+    logger.info("Background scheduler started with 1 periodic job")
 
 
 def stop_scheduler() -> None:

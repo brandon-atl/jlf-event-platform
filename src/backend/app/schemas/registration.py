@@ -14,12 +14,14 @@ class RegistrationCreate(BaseModel):
     waiver_accepted: bool
     intake_data: dict | None = None
     donation_amount_cents: int | None = None  # pay-what-you-want amount
+    payment_method: str = "stripe"  # stripe | cash | scholarship | free
 
 
 class RegistrationResponse(BaseModel):
     registration_id: UUID
     checkout_url: str | None = None
     status: str
+    message: str | None = None
 
     model_config = {"from_attributes": True}
 
