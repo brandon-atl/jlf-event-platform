@@ -35,7 +35,7 @@ class MessageTemplate(TimestampMixin, Base):
     )
     subject: Mapped[str | None] = mapped_column(String(500), nullable=True)
     body: Mapped[str] = mapped_column(Text)
-    variables: Mapped[list | None] = mapped_column(JSONType, nullable=True, default=list)
+    variables: Mapped[list] = mapped_column(JSONType, nullable=False, default=list)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id"), nullable=True

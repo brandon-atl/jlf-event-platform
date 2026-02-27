@@ -98,7 +98,7 @@ async def send_event_reminders() -> int:
                         NotificationLog.template_id == template_id,
                     )
                 )
-                if existing.scalar_one_or_none():
+                if existing.first():
                     continue
 
                 attendee = reg.attendee
@@ -133,7 +133,7 @@ async def send_event_reminders() -> int:
                             NotificationLog.template_id == sms_template_id,
                         )
                     )
-                    if existing_sms.scalar_one_or_none():
+                    if existing_sms.first():
                         continue
 
                     event_date_str = event.event_date.strftime("%B %d, %Y")

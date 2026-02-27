@@ -122,8 +122,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Delete rows where stripe_event_id is NULL (Twilio webhooks) before making non-nullable
-    op.execute("DELETE FROM webhooks_raw WHERE stripe_event_id IS NULL")
+    # Safety: remove Twilio-originated rows (no stripe_event_id) before restoring NOT NULL.
+    # batch_alter_table ensures SQLite compatibility for the column change.
+    op.execute("DELETE FROM webhooks_raw WHERE stripe_event_id IS NULL OR stripe_event_id = ''")
     with op.batch_alter_table("webhooks_raw") as batch_op:
         batch_op.alter_column("stripe_event_id", existing_type=sa.String(255), nullable=False)
         batch_op.drop_column("twilio_sid")

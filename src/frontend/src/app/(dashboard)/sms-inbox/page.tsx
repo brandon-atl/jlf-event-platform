@@ -136,7 +136,6 @@ export default function SmsInboxPage() {
   const textMain = isDark ? darkColors.textPrimary : colors.forest;
   const textSub = isDark ? darkColors.textSecondary : "#6b7280";
   const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
-  const hoverBg = isDark ? darkColors.surfaceHover : "#f9fafb";
   const c = isDark ? darkColors : colors;
 
   // Load conversations
@@ -206,7 +205,7 @@ export default function SmsInboxPage() {
     replyMutation.mutate(replyText.trim());
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendReply();
@@ -350,16 +349,12 @@ export default function SmsInboxPage() {
                 <button
                   key={conv.attendee_phone}
                   onClick={() => setSelectedPhone(conv.attendee_phone)}
-                  className="w-full text-left px-4 py-3 border-b transition-colors"
+                  className={`w-full text-left px-4 py-3 border-b transition-colors ${
+                    !isSelected ? "hover:bg-gray-50 dark:hover:bg-gray-800" : ""
+                  }`}
                   style={{
                     borderColor,
-                    background: isSelected ? (isDark ? darkColors.surfaceHover : "#f0fdf4") : "transparent",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) e.currentTarget.style.background = hoverBg;
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) e.currentTarget.style.background = "transparent";
+                    background: isSelected ? (isDark ? darkColors.surfaceHover : "#f0fdf4") : undefined,
                   }}
                 >
                   <div className="flex items-start gap-3">

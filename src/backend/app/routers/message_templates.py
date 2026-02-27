@@ -42,14 +42,6 @@ def _to_response(t: MessageTemplate) -> MessageTemplateResponse:
     )
 
 
-def render_template(text: str, variables: dict[str, str]) -> str:
-    """Replace {{variable}} placeholders with values.
-
-    Delegates to shared utility for consistency.
-    """
-    return render_template_text(text, variables)
-
-
 @router.get("", response_model=list[MessageTemplateResponse])
 async def list_message_templates(
     category: str | None = Query(None),
@@ -144,16 +136,18 @@ async def update_message_template(
         if hasattr(old_values[key], "value"):
             old_values[key] = old_values[key].value
 
-        if key == "category" and value is not None:
-            try:
-                value = TemplateCategory(value)
-            except ValueError:
-                raise HTTPException(status_code=422, detail="Invalid category")
-        elif key == "channel" and value is not None:
-            try:
-                value = TemplateChannel(value)
-            except ValueError:
-                raise HTTPException(status_code=422, detail="Invalid channel")
+        if key == "category":
+            if value is not None:
+                try:
+                    value = TemplateCategory(value)
+                except ValueError:
+                    raise HTTPException(status_code=422, detail="Invalid category")
+        elif key == "channel":
+            if value is not None:
+                try:
+                    value = TemplateChannel(value)
+                except ValueError:
+                    raise HTTPException(status_code=422, detail="Invalid channel")
 
         setattr(template, key, value)
 
@@ -225,8 +219,8 @@ async def preview_message_template(
     }
     sample.update(data.sample_data)
 
-    rendered_body = render_template(template.body, sample)
-    rendered_subject = render_template(template.subject, sample) if template.subject else None
+    rendered_body = render_template_text(template.body, sample)
+    rendered_subject = render_template_text(template.subject, sample) if template.subject else None
 
     return TemplatePreviewResponse(
         rendered_subject=rendered_subject,

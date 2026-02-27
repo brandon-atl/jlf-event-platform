@@ -384,6 +384,8 @@ export const messageTemplates = {
     }),
   delete: (id: string) =>
     request<void>(`/message-templates/${id}`, { method: "DELETE" }),
+  /** Server-side template preview — UI currently renders locally, but this
+   *  endpoint is available for future use (e.g., preview with live DB data). */
   preview: (id: string, sampleData?: Record<string, string>) =>
     request<MessageTemplatePreview>(`/message-templates/${id}/preview`, {
       method: "POST",

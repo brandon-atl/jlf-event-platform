@@ -132,7 +132,8 @@ export default function BulkMessagingPage() {
           channel: data.channel,
         });
       }
-      return notifications.sendBulk(selectedEventId!, data);
+      if (!selectedEventId) throw new Error("No event selected");
+      return notifications.sendBulk(selectedEventId, data);
     },
     onSuccess: (data) => {
       setResult({ sent_count: data.sent_count, failed_count: data.failed_count });

@@ -201,7 +201,8 @@ export default function AttendeesPage({
     },
   });
 
-  // For cancel_requested filter, we fetch all and filter client-side by notes
+  // For cancel_requested filter, we fetch all statuses and filter client-side by notes.
+  // TODO: Add a backend endpoint for cancel requests to avoid large client-side fetch.
   const apiStatusFilter = statusFilter === "cancel_requested" ? undefined : statusFilter;
 
   const { data, isLoading } = useQuery({
@@ -788,7 +789,12 @@ export default function AttendeesPage({
                     onClick={(e) => {
                       e.stopPropagation();
                       if (confirm(`Approve cancellation for ${name}? This will set their status to cancelled.`)) {
-                        updateMutation.mutate({ id: a.id, status: "cancelled" });
+                        const cleanedNotes = (a.notes || "")
+                          .replace(/\[CANCEL REQUEST\][^\n]*/g, "")
+                          .trim();
+                        registrations.update(a.id, { notes: cleanedNotes || undefined }).then(() => {
+                          updateMutation.mutate({ id: a.id, status: "cancelled" });
+                        });
                       }
                     }}
                   >

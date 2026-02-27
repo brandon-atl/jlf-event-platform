@@ -132,14 +132,6 @@ async def get_notification_log(
     ]
 
 
-def _render_template_text(text: str, variables: dict[str, str]) -> str:
-    """Replace {{variable}} placeholders with values.
-
-    Delegates to shared utility for consistency.
-    """
-    return render_template_text(text, variables)
-
-
 def _build_attendee_variables(registration: Registration, event: Event) -> dict[str, str]:
     """Build template variable dict for an attendee/registration."""
     from app.config import settings
@@ -218,7 +210,7 @@ async def send_bulk_notification(
 
     sent_count = 0
     failed_count = 0
-    skipped_count = 0
+    skipped = 0
 
     for reg in registrations:
         attendee = reg.attendee
@@ -231,13 +223,12 @@ async def send_bulk_notification(
 
         # Render message
         if template:
-            body_text = _render_template_text(template.body, variables)
-            subject_text = _render_template_text(template.subject, variables) if template.subject else None
+            body_text = render_template_text(template.body, variables)
+            subject_text = render_template_text(template.subject, variables) if template.subject else None
         else:
-            body_text = _render_template_text(data.custom_message, variables)
-            subject_text = _render_template_text(data.subject, variables) if data.subject else f"Message from Just Love Forest"
+            body_text = render_template_text(data.custom_message, variables)
+            subject_text = render_template_text(data.subject, variables) if data.subject else f"Message from Just Love Forest"
 
-        template_id_str = str(data.template_id) if data.template_id else "bulk_custom"
         content_hash = hashlib.sha256(body_text.encode()).hexdigest()[:64]
 
         # Idempotency: check if this registration already received this bulk send
@@ -248,8 +239,8 @@ async def send_bulk_notification(
                 NotificationLog.template_id == bulk_template_key,
             )
         )
-        if existing_log.scalar_one_or_none():
-            skipped_count += 1
+        if existing_log.first():
+            skipped += 1
             continue
         success = False
 
@@ -296,9 +287,11 @@ async def send_bulk_notification(
         else:
             failed_count += 1
 
+    await db.commit()
+
     logger.info(
-        "Bulk notification for event %s (channel=%s): %d sent, %d failed",
-        event_id, data.channel, sent_count, failed_count,
+        "Bulk notification for event %s (channel=%s): %d sent, %d failed, %d skipped",
+        event_id, data.channel, sent_count, failed_count, skipped,
     )
 
     return BulkNotificationResponse(

@@ -19,6 +19,10 @@ def normalize_phone(phone: str | None) -> str | None:
     if not digits:
         return None
 
+    # Validate minimum length (at least 10 digits for US numbers)
+    if len(digits) < 10:
+        return None
+
     # If 10 digits, assume US number — add country code
     if len(digits) == 10:
         return f"+1{digits}"
@@ -39,4 +43,4 @@ def render_template_text(text: str, variables: dict[str, str]) -> str:
     def replacer(match):
         key = match.group(1).strip()
         return variables.get(key, match.group(0))
-    return re.sub(r"\{\{(\w+)\}\}", replacer, text)
+    return re.sub(r"\{\{([\w.]+)\}\}", replacer, text)
