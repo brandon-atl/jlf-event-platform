@@ -1,18 +1,46 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { FileText, Bell, MapPin, Video, Eye, X } from "lucide-react";
+import {
+  FileText,
+  Bell,
+  MapPin,
+  Video,
+  Eye,
+  X,
+  Plus,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  Banknote,
+  Loader2,
+} from "lucide-react";
 import { toast } from "sonner";
 
-import { events as eventsApi, type EventCreate, type EventResponse } from "@/lib/api";
+import {
+  events as eventsApi,
+  eventFormLinks,
+  formTemplates as formTemplatesApi,
+  type EventCreate,
+  type EventResponse,
+  type EventFormLinkResponse,
+  type FormTemplateResponse,
+} from "@/lib/api";
 import { colors, darkColors } from "@/lib/theme";
 import { isDemoMode, DEMO_EVENTS } from "@/lib/demo-data";
 import { useDarkMode } from "@/hooks/use-dark-mode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatCents } from "@/lib/format";
 
 interface EventConfigForm {
@@ -29,6 +57,247 @@ interface EventConfigForm {
   auto_expire_hours: string;
 }
 
+// ── Linked Forms Section ────────────────────────
+function LinkedFormsSection({ eventId, isDark }: { eventId: string; isDark: boolean }) {
+  const queryClient = useQueryClient();
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+
+  const cardBg = isDark ? darkColors.surface : "#ffffff";
+  const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
+  const textMain = isDark ? darkColors.textPrimary : colors.forest;
+  const textSub = isDark ? darkColors.textSecondary : "#6b7280";
+  const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
+
+  const { data: links = [], isLoading } = useQuery({
+    queryKey: ["event-form-links", eventId],
+    queryFn: () => {
+      if (isDemoMode()) return Promise.resolve([]);
+      return eventFormLinks.list(eventId);
+    },
+  });
+
+  const { data: allTemplates } = useQuery({
+    queryKey: ["form-templates-all"],
+    queryFn: () => {
+      if (isDemoMode()) return Promise.resolve({ data: [], meta: { total: 0, page: 1, per_page: 100 } });
+      return formTemplatesApi.list({ per_page: 100 });
+    },
+  });
+
+  const linkedIds = new Set(links.map((l: EventFormLinkResponse) => l.form_template_id));
+  const availableTemplates = (allTemplates?.data || []).filter(
+    (t: FormTemplateResponse) => !linkedIds.has(t.id)
+  );
+
+  const linkMutation = useMutation({
+    mutationFn: (templateId: string) =>
+      eventFormLinks.create(eventId, {
+        form_template_id: templateId,
+        sort_order: links.length,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-form-links", eventId] });
+      toast.success("Form linked to event");
+      setAddDialogOpen(false);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to link form"),
+  });
+
+  const unlinkMutation = useMutation({
+    mutationFn: (linkId: string) => eventFormLinks.delete(eventId, linkId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-form-links", eventId] });
+      toast.success("Form unlinked");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to unlink form"),
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: ({ linkId, sortOrder }: { linkId: string; sortOrder: number }) =>
+      eventFormLinks.update(eventId, linkId, { sort_order: sortOrder }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-form-links", eventId] });
+    },
+  });
+
+  const toggleWaiverMutation = useMutation({
+    mutationFn: ({ linkId, isWaiver }: { linkId: string; isWaiver: boolean }) =>
+      eventFormLinks.update(eventId, linkId, { is_waiver: isWaiver }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["event-form-links", eventId] });
+      toast.success("Updated");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update"),
+  });
+
+  const handleMoveUp = async (index: number) => {
+    if (index <= 0) return;
+    const sorted = [...links].sort((a, b) => a.sort_order - b.sort_order);
+    const current = sorted[index];
+    const above = sorted[index - 1];
+    try {
+      await reorderMutation.mutateAsync({ linkId: current.id, sortOrder: above.sort_order });
+      await reorderMutation.mutateAsync({ linkId: above.id, sortOrder: current.sort_order });
+    } catch {
+      toast.error("Failed to reorder forms");
+    }
+  };
+
+  const handleMoveDown = async (index: number) => {
+    const sorted = [...links].sort((a, b) => a.sort_order - b.sort_order);
+    if (index >= sorted.length - 1) return;
+    const current = sorted[index];
+    const below = sorted[index + 1];
+    try {
+      await reorderMutation.mutateAsync({ linkId: current.id, sortOrder: below.sort_order });
+      await reorderMutation.mutateAsync({ linkId: below.id, sortOrder: current.sort_order });
+    } catch {
+      toast.error("Failed to reorder forms");
+    }
+  };
+
+  const sortedLinks = [...links].sort((a, b) => a.sort_order - b.sort_order);
+
+  return (
+    <div className="max-w-3xl mt-6 space-y-4">
+      <div className="rounded-2xl border p-6 shadow-sm space-y-5" style={{ background: cardBg, borderColor }}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: textSub }}>
+            <FileText size={16} />
+            Linked Intake Forms
+          </h3>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-lg text-xs"
+            style={isDark ? { borderColor, color: textSub } : {}}
+            onClick={() => setAddDialogOpen(true)}
+          >
+            <Plus size={14} />
+            Add Form
+          </Button>
+        </div>
+
+        {isLoading && (
+          <div className="space-y-3">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: isDark ? darkColors.surfaceHover : "#f3f4f6" }} />
+            ))}
+          </div>
+        )}
+
+        {!isLoading && sortedLinks.length === 0 && (
+          <p className="text-sm text-center py-6" style={{ color: textMuted }}>
+            No forms linked yet. Add intake forms that registrants will fill out.
+          </p>
+        )}
+
+        {!isLoading && sortedLinks.length > 0 && (
+          <div className="space-y-2">
+            {sortedLinks.map((link, idx) => (
+              <div
+                key={link.id}
+                className="flex items-center gap-3 rounded-xl border px-4 py-3"
+                style={{ borderColor, background: isDark ? darkColors.surfaceElevated : "#fafafa" }}
+              >
+                <div className="flex flex-col gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => handleMoveUp(idx)}
+                    disabled={idx === 0}
+                    className="p-0.5 disabled:opacity-30 transition"
+                  >
+                    <ChevronUp size={12} style={{ color: textMuted }} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMoveDown(idx)}
+                    disabled={idx === sortedLinks.length - 1}
+                    className="p-0.5 disabled:opacity-30 transition"
+                  >
+                    <ChevronDown size={12} style={{ color: textMuted }} />
+                  </button>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: textMain }}>
+                    {link.form_template.name}
+                  </p>
+                  <p className="text-[11px]" style={{ color: textMuted }}>
+                    {link.form_template.form_type} &middot; {link.form_template.fields.length} fields
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <Checkbox
+                      id={`waiver-${link.id}`}
+                      checked={link.is_waiver}
+                      onCheckedChange={(checked) =>
+                        toggleWaiverMutation.mutate({ linkId: link.id, isWaiver: checked === true })
+                      }
+                    />
+                    <Label htmlFor={`waiver-${link.id}`} className="text-[11px] cursor-pointer" style={{ color: textMuted }}>
+                      Waiver
+                    </Label>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Unlink "${link.form_template.name}" from this event?`)) {
+                        unlinkMutation.mutate(link.id);
+                      }
+                    }}
+                    className="p-1.5 rounded-lg transition hover:bg-red-50"
+                    title="Unlink"
+                  >
+                    <Trash2 size={13} className="text-red-400" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add Form Dialog */}
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent style={{ background: cardBg, borderColor }}>
+          <DialogHeader>
+            <DialogTitle style={{ color: textMain, fontFamily: "var(--font-dm-serif), serif" }}>
+              Link a Form Template
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            {availableTemplates.length === 0 && (
+              <p className="text-sm text-center py-6" style={{ color: textMuted }}>
+                All templates are already linked, or no templates exist yet.
+              </p>
+            )}
+            {availableTemplates.map((t: FormTemplateResponse) => (
+              <button
+                key={t.id}
+                onClick={() => linkMutation.mutate(t.id)}
+                disabled={linkMutation.isPending}
+                className="w-full text-left rounded-xl border px-4 py-3 transition hover:shadow-sm"
+                style={{
+                  borderColor,
+                  background: isDark ? darkColors.surfaceElevated : "#fafafa",
+                }}
+              >
+                <p className="text-sm font-semibold" style={{ color: textMain }}>{t.name}</p>
+                <p className="text-[11px]" style={{ color: textMuted }}>
+                  {t.form_type} &middot; {t.fields.length} fields
+                  {t.description && ` — ${t.description}`}
+                </p>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 export default function SettingsPage({
   params,
 }: {
@@ -38,6 +307,7 @@ export default function SettingsPage({
   const queryClient = useQueryClient();
   const { isDark } = useDarkMode();
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [allowCash, setAllowCash] = useState(false);
 
   const cardBg = isDark ? darkColors.surface : "#ffffff";
   const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
@@ -59,6 +329,15 @@ export default function SettingsPage({
       return eventsApi.get(eventId);
     },
   });
+
+  // Sync allowCash from loaded event data
+  useEffect(() => {
+    if (event) {
+      setAllowCash(
+        "allow_cash_payment" in event ? (event as EventResponse & { allow_cash_payment?: boolean }).allow_cash_payment === true : false
+      );
+    }
+  }, [event]);
 
   const { register, handleSubmit } = useForm<EventConfigForm>();
 
@@ -346,6 +625,32 @@ export default function SettingsPage({
         </div>
       </div>
 
+      {/* Cash Payment Toggle */}
+      <div className="rounded-2xl border p-6 shadow-sm space-y-5" style={{ background: cardBg, borderColor }}>
+        <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: textSub }}>
+          <Banknote size={16} />
+          Payment Options
+        </h3>
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id="allow_cash"
+            checked={allowCash}
+            onCheckedChange={(checked) => {
+              setAllowCash(checked === true);
+              updateMutation.mutate({ allow_cash_payment: checked === true } as Partial<EventCreate>);
+            }}
+          />
+          <div>
+            <Label htmlFor="allow_cash" className="text-sm font-medium cursor-pointer" style={{ color: textMain }}>
+              Allow cash payments
+            </Label>
+            <p className="text-xs" style={{ color: textMuted }}>
+              Registrants can select &ldquo;I&apos;ll pay in person&rdquo; instead of Stripe checkout
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Save / Delete */}
       <div className="flex items-center justify-between pt-2">
         <button
@@ -370,6 +675,9 @@ export default function SettingsPage({
         </Button>
       </div>
     </form>
+
+    {/* Linked Forms Section — outside the main form */}
+    <LinkedFormsSection eventId={eventId} isDark={isDark} />
 
     {/* C6: Registration Form Preview Modal */}
     {previewOpen && (
