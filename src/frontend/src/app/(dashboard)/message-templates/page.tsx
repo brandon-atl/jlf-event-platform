@@ -228,7 +228,7 @@ function MessageTemplateDialog({
       return;
     }
     const variables = AVAILABLE_VARIABLES
-      .filter((v) => body.includes(`{{${v.name}}}`) || (subject && subject.includes(`{{${v.name}}}`)))
+      .filter((v) => body.includes(`{{${v.name}}}`) || (channel !== "sms" && subject && subject.includes(`{{${v.name}}}`)))
       .map((v) => v.name);
 
     const data: MessageTemplateCreate = {
@@ -257,7 +257,7 @@ function MessageTemplateDialog({
       rendered = rendered.split(`{{${key}}}`).join(value);
     }
     let renderedSubject: string | null = null;
-    if (subject) {
+    if (channel !== "sms" && subject) {
       renderedSubject = subject;
       for (const [key, value] of Object.entries(PREVIEW_SAMPLE_DATA)) {
         renderedSubject = renderedSubject.split(`{{${key}}}`).join(value);

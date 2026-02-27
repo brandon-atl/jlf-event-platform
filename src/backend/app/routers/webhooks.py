@@ -4,7 +4,6 @@ import logging
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urljoin
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
