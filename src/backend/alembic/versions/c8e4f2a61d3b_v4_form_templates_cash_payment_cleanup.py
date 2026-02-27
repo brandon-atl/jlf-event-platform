@@ -129,9 +129,8 @@ def upgrade() -> None:
     # ------------------------------------------------------------------ #
     # UPDATE CHECK constraint: pricing_model (add 'composite')             #
     # ------------------------------------------------------------------ #
+    op.execute("ALTER TABLE events DROP CONSTRAINT IF EXISTS ck_events_pricing_model")
     with op.batch_alter_table("events") as batch_op:
-        # Drop old constraint and create new one with 'composite' added
-        batch_op.drop_constraint("ck_events_pricing_model", type_="check")
         batch_op.create_check_constraint(
             "ck_events_pricing_model",
             sa.column("pricing_model").in_(["fixed", "donation", "free", "composite"]),
@@ -175,8 +174,8 @@ def upgrade() -> None:
     # ------------------------------------------------------------------ #
 
     # registrations.status: add 'cash_pending'
+    op.execute("ALTER TABLE registrations DROP CONSTRAINT IF EXISTS ck_registrations_status")
     with op.batch_alter_table("registrations") as batch_op:
-        batch_op.drop_constraint("ck_registrations_status", type_="check")
         batch_op.create_check_constraint(
             "ck_registrations_status",
             sa.column("status").in_([
@@ -186,8 +185,8 @@ def upgrade() -> None:
         )
 
     # registrations.accommodation_type: update to new values
+    op.execute("ALTER TABLE registrations DROP CONSTRAINT IF EXISTS ck_registrations_accommodation_type")
     with op.batch_alter_table("registrations") as batch_op:
-        batch_op.drop_constraint("ck_registrations_accommodation_type", type_="check")
         batch_op.create_check_constraint(
             "ck_registrations_accommodation_type",
             sa.column("accommodation_type").in_([
@@ -196,8 +195,8 @@ def upgrade() -> None:
         )
 
     # registrations.source: add 'group'
+    op.execute("ALTER TABLE registrations DROP CONSTRAINT IF EXISTS ck_registrations_source")
     with op.batch_alter_table("registrations") as batch_op:
-        batch_op.drop_constraint("ck_registrations_source", type_="check")
         batch_op.create_check_constraint(
             "ck_registrations_source",
             sa.column("source").in_([
@@ -237,8 +236,8 @@ def downgrade() -> None:
         batch_op.drop_column("payment_method")
 
     # Restore CHECK constraints to original values
+    op.execute("ALTER TABLE registrations DROP CONSTRAINT IF EXISTS ck_registrations_status")
     with op.batch_alter_table("registrations") as batch_op:
-        batch_op.drop_constraint("ck_registrations_status", type_="check")
         batch_op.create_check_constraint(
             "ck_registrations_status",
             sa.column("status").in_([
