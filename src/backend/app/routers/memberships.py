@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,7 +10,7 @@ from app.database import get_db
 from app.models.attendee import Attendee
 from app.models.audit import AuditLog
 from app.models.membership import Membership
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.memberships import (
     MembershipCreate,
     MembershipResponse,
@@ -19,6 +19,15 @@ from app.schemas.memberships import (
 from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/memberships", tags=["memberships"])
+
+
+def require_admin(user: User = Depends(get_current_user)) -> User:
+    if user.role != UserRole.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return user
 
 
 def _to_response(m: Membership) -> MembershipResponse:
@@ -42,7 +51,7 @@ def _to_response(m: Membership) -> MembershipResponse:
 @router.get("", response_model=list[MembershipResponse])
 async def list_memberships(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
 ):
     """List all memberships with attendee info."""
     result = await db.execute(
@@ -56,7 +65,7 @@ async def list_memberships(
 async def create_membership(
     body: MembershipCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
 ):
     """Create a membership for an attendee."""
     # Check attendee exists
@@ -115,7 +124,7 @@ async def update_membership(
     membership_id: UUID,
     body: MembershipUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
 ):
     """Update a membership."""
     result = await db.execute(
@@ -149,7 +158,9 @@ async def update_membership(
         attendee = att_result.scalar_one_or_none()
         if attendee:
             attendee.is_member = body.is_active
-            if not body.is_active:
+            if body.is_active:
+                attendee.membership_id = membership.id
+            else:
                 attendee.membership_id = None
 
     if new_values:
@@ -173,7 +184,7 @@ async def update_membership(
 async def deactivate_membership(
     membership_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
 ):
     """Deactivate a membership."""
     result = await db.execute(

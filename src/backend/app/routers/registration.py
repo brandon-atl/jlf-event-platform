@@ -1,5 +1,6 @@
 """Public registration endpoints — no auth required."""
 
+import logging
 import uuid as uuid_mod
 from datetime import datetime, timezone
 from uuid import UUID
@@ -11,24 +12,26 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.limiter import limiter  # shared app-level limiter
 
+logger = logging.getLogger(__name__)
+
 
 def sanitize_intake_data(data: dict | None, max_size_kb: int = 10) -> dict:
     """Sanitize intake_data JSON to prevent abuse.
-    
+
     - Removes keys starting with _ or $
     - Truncates string values to 2000 chars
     - Limits nesting depth to 2
     - Rejects if serialized size > max_size_kb
     """
     import json
-    
+
     if data is None:
         return {}
-    
+
     def _sanitize(obj: object, depth: int = 0) -> object:
         if depth > 2:
             return "[truncated]"  # Too deep — explicit sentinel instead of null
-        
+
         if isinstance(obj, dict):
             return {
                 k: _sanitize(v, depth + 1)
@@ -43,15 +46,17 @@ def sanitize_intake_data(data: dict | None, max_size_kb: int = 10) -> dict:
             return obj
         else:
             return str(obj)[:500]  # Convert unknown types to string
-    
+
     sanitized = _sanitize(data)
-    
+
     # Check size using compact JSON (no extra whitespace) for accurate byte count
     serialized = json.dumps(sanitized, separators=(",", ":"))
     if len(serialized) > max_size_kb * 1024:
         raise ValueError(f"intake_data exceeds {max_size_kb}KB limit")
-    
+
     return sanitized
+
+
 from app.models.attendee import Attendee
 from app.models.event import Event, EventStatus
 from app.models.registration import (
@@ -197,12 +202,14 @@ async def create_registration(
     except ValueError:
         raise HTTPException(status_code=422, detail="Invalid payment_method")
 
-    # Scholarship code handling
+    # BUG 2: Scholarship code handling with row-level lock to prevent race conditions
     scholarship_link = None
     scholarship_amount = None
     if data.scholarship_code:
         sl_result = await db.execute(
-            select(ScholarshipLink).where(ScholarshipLink.code == data.scholarship_code)
+            select(ScholarshipLink)
+            .where(ScholarshipLink.code == data.scholarship_code)
+            .with_for_update()
         )
         scholarship_link = sl_result.scalar_one_or_none()
         if not scholarship_link or scholarship_link.uses >= scholarship_link.max_uses:
@@ -352,9 +359,11 @@ async def create_group_registration(
     """Multi-guest registration — one payer, multiple attendees."""
     import stripe
 
-    # Look up event
+    # Look up event — BUG 3: lock event row to prevent capacity overbooking
     result = await db.execute(
-        select(Event).where(Event.slug == event_slug, Event.status == EventStatus.active)
+        select(Event)
+        .where(Event.slug == event_slug, Event.status == EventStatus.active)
+        .with_for_update()
     )
     event = result.scalar_one_or_none()
     if not event:
@@ -365,6 +374,13 @@ async def create_group_registration(
 
     if len(data.guests) > 10:
         raise HTTPException(status_code=422, detail="Maximum 10 guests per group")
+
+    # MINOR 2: Reject group registration for donation-priced events
+    if event.pricing_model.value == "donation" and len(data.guests) > 1:
+        raise HTTPException(
+            status_code=422,
+            detail="Group registration is not available for donation-priced events",
+        )
 
     # Check capacity for ALL guests at once
     if event.capacity:
@@ -392,16 +408,25 @@ async def create_group_registration(
     except ValueError:
         raise HTTPException(status_code=422, detail="Invalid payment_method")
 
-    # Scholarship code handling
+    # BUG 2: Scholarship code handling with row-level lock
     scholarship_link = None
     scholarship_amount = None
     if data.scholarship_code:
         sl_result = await db.execute(
-            select(ScholarshipLink).where(ScholarshipLink.code == data.scholarship_code)
+            select(ScholarshipLink)
+            .where(ScholarshipLink.code == data.scholarship_code)
+            .with_for_update()
         )
         scholarship_link = sl_result.scalar_one_or_none()
-        if not scholarship_link or scholarship_link.uses >= scholarship_link.max_uses:
+        if not scholarship_link:
             raise HTTPException(status_code=422, detail="Invalid or fully redeemed scholarship code")
+        # BUG 1: Pre-check uses + guest count against max_uses
+        if scholarship_link.uses + len(data.guests) > scholarship_link.max_uses:
+            remaining = scholarship_link.max_uses - scholarship_link.uses
+            raise HTTPException(
+                status_code=422,
+                detail=f"Scholarship code does not have enough remaining uses. {remaining} use(s) left.",
+            )
         if scholarship_link.event_id != event.id:
             raise HTTPException(status_code=422, detail="This scholarship code is not valid for this event")
         payment_method = PaymentMethod.scholarship
@@ -432,10 +457,25 @@ async def create_group_registration(
     if len(guest_emails) != len(set(guest_emails)):
         raise HTTPException(status_code=422, detail="Duplicate email addresses in guest list")
 
-    # Process each guest
+    # BUG 5: Count existing member discount slots using member_discount_applied column
+    member_discount_count = 0
+    existing_member_regs = await db.execute(
+        select(func.count(Registration.id)).where(
+            Registration.event_id == event.id,
+            Registration.status.in_([
+                RegistrationStatus.pending_payment,
+                RegistrationStatus.cash_pending,
+                RegistrationStatus.complete,
+            ]),
+            Registration.member_discount_applied == True,  # noqa: E712
+        )
+    )
+    member_discount_count = existing_member_regs.scalar() or 0
+
+    # ARCH 2: Keep ORM registration objects to avoid N+1 re-queries
+    registration_objects = []
     registrations_created = []
     total_amount_cents = 0
-    member_discount_count = 0
 
     for guest in data.guests:
         # Validate waiver
@@ -494,45 +534,26 @@ async def create_group_registration(
 
         # Calculate per-guest price
         guest_price = 0
+        discount_applied = False
         if scholarship_amount:
             guest_price = scholarship_amount
         elif event.fixed_price_cents:
             guest_price = event.fixed_price_cents
-            # Check member discount
+            # BUG 5: Check member discount using member_discount_applied count
             if attendee.is_member and payment_method != PaymentMethod.scholarship:
-                # Check member discount slot availability
                 if member_discount_count < event.max_member_discount_slots:
-                    # Count existing member discounts for this event
-                    if member_discount_count == 0:
-                        existing_member_regs = await db.execute(
-                            select(func.count(Registration.id))
-                            .join(Attendee, Registration.attendee_id == Attendee.id)
-                            .where(
-                                Registration.event_id == event.id,
-                                Registration.status.in_([
-                                    RegistrationStatus.pending_payment,
-                                    RegistrationStatus.cash_pending,
-                                    RegistrationStatus.complete,
-                                ]),
-                                Attendee.is_member == True,  # noqa: E712
+                    if attendee.membership_id:
+                        mem_result = await db.execute(
+                            select(Membership).where(
+                                Membership.id == attendee.membership_id,
+                                Membership.is_active == True,  # noqa: E712
                             )
                         )
-                        existing_member_count = existing_member_regs.scalar() or 0
-                        member_discount_count = existing_member_count
-
-                    if member_discount_count < event.max_member_discount_slots:
-                        # Load the membership to get discount
-                        if attendee.membership_id:
-                            mem_result = await db.execute(
-                                select(Membership).where(
-                                    Membership.id == attendee.membership_id,
-                                    Membership.is_active == True,  # noqa: E712
-                                )
-                            )
-                            membership = mem_result.scalar_one_or_none()
-                            if membership:
-                                guest_price = max(0, guest_price - membership.discount_value_cents)
-                                member_discount_count += 1
+                        membership = mem_result.scalar_one_or_none()
+                        if membership:
+                            guest_price = max(0, guest_price - membership.discount_value_cents)
+                            member_discount_count += 1
+                            discount_applied = True
 
         total_amount_cents += guest_price
 
@@ -549,10 +570,14 @@ async def create_group_registration(
             waiver_accepted_at=datetime.now(timezone.utc),
             source=RegistrationSource.group,
             group_id=group_id,
+            member_discount_applied=discount_applied,
         )
+        registration.attendee = attendee
+        registration.event = event
         db.add(registration)
         await db.flush()
 
+        registration_objects.append(registration)
         registrations_created.append(
             GroupRegistrationItem(
                 registration_id=registration.id,
@@ -560,13 +585,16 @@ async def create_group_registration(
             )
         )
 
-    # Increment scholarship uses
+    # BUG 1: Increment scholarship uses by guest count (not 1)
     if scholarship_link:
-        scholarship_link.uses += 1
+        scholarship_link.uses += len(data.guests)
 
     # Route by payment method
     if initial_status == RegistrationStatus.complete:
         await db.commit()
+        # BUG 4: Send confirmation emails for each guest
+        for reg in registration_objects:
+            background_tasks.add_task(send_confirmation_email, reg, event)
         return GroupRegistrationResponse(
             group_id=group_id,
             registrations=registrations_created,
@@ -576,6 +604,9 @@ async def create_group_registration(
 
     if initial_status == RegistrationStatus.cash_pending:
         await db.commit()
+        # BUG 4: Send confirmation emails for each guest
+        for reg in registration_objects:
+            background_tasks.add_task(send_confirmation_email, reg, event)
         return GroupRegistrationResponse(
             group_id=group_id,
             registrations=registrations_created,
@@ -586,13 +617,12 @@ async def create_group_registration(
     # Stripe / scholarship — create single Checkout session for group total
     if total_amount_cents <= 0:
         # Edge case: all discounts made it free
-        for reg_item in registrations_created:
-            reg_result = await db.execute(
-                select(Registration).where(Registration.id == reg_item.registration_id)
-            )
-            reg = reg_result.scalar_one()
+        for reg in registration_objects:
             reg.status = RegistrationStatus.complete
         await db.commit()
+        # BUG 4: Send confirmation emails
+        for reg in registration_objects:
+            background_tasks.add_task(send_confirmation_email, reg, event)
         return GroupRegistrationResponse(
             group_id=group_id,
             registrations=registrations_created,
@@ -600,15 +630,11 @@ async def create_group_registration(
             message="You're registered! Check your email for confirmation.",
         )
 
-    # Build Stripe Checkout with combined line items
+    # ARCH 2: Build Stripe Checkout line items from in-memory objects (no N+1 queries)
     from app.config import settings
 
     line_items = []
-    for reg_item in registrations_created:
-        reg_result = await db.execute(
-            select(Registration).where(Registration.id == reg_item.registration_id)
-        )
-        reg = reg_result.scalar_one()
+    for reg, reg_item in zip(registration_objects, registrations_created):
         amount = reg.payment_amount_cents or event.fixed_price_cents or 0
         if amount > 0:
             line_items.append({
@@ -624,13 +650,11 @@ async def create_group_registration(
 
     if not line_items:
         # Everything is free after discounts
-        for reg_item in registrations_created:
-            reg_result = await db.execute(
-                select(Registration).where(Registration.id == reg_item.registration_id)
-            )
-            reg = reg_result.scalar_one()
+        for reg in registration_objects:
             reg.status = RegistrationStatus.complete
         await db.commit()
+        for reg in registration_objects:
+            background_tasks.add_task(send_confirmation_email, reg, event)
         return GroupRegistrationResponse(
             group_id=group_id,
             registrations=registrations_created,
@@ -638,6 +662,7 @@ async def create_group_registration(
             message="You're registered! Check your email for confirmation.",
         )
 
+    # ARCH 3: Catch stripe.error.StripeError specifically, sanitize message
     try:
         session = stripe.checkout.Session.create(
             mode="payment",
@@ -656,15 +681,12 @@ async def create_group_registration(
             line_items=line_items,
         )
         checkout_url = session.url
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create checkout session: {e}")
+    except stripe.error.StripeError as e:
+        logger.error("Stripe checkout creation failed: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail="Payment provider error. Please try again.")
 
-    # Store checkout session ID on all registrations
-    for reg_item in registrations_created:
-        reg_result = await db.execute(
-            select(Registration).where(Registration.id == reg_item.registration_id)
-        )
-        reg = reg_result.scalar_one()
+    # ARCH 2: Store checkout session ID directly on in-memory objects
+    for reg in registration_objects:
         reg.stripe_checkout_session_id = session.id
 
     await db.commit()

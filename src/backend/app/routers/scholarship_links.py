@@ -2,14 +2,14 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.audit import AuditLog
 from app.models.scholarship_link import ScholarshipLink
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.scholarship_links import (
     ScholarshipLinkCreate,
     ScholarshipLinkResponse,
@@ -18,6 +18,15 @@ from app.schemas.scholarship_links import (
 from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/scholarship-links", tags=["scholarship-links"])
+
+
+def require_admin(user: User = Depends(get_current_user)) -> User:
+    if user.role != UserRole.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
+        )
+    return user
 
 
 def _to_response(link: ScholarshipLink) -> ScholarshipLinkResponse:
@@ -40,7 +49,7 @@ def _to_response(link: ScholarshipLink) -> ScholarshipLinkResponse:
 async def list_scholarship_links(
     event_id: UUID | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
 ):
     """List all scholarship links, optionally filtered by event."""
     query = select(ScholarshipLink)
@@ -56,7 +65,7 @@ async def list_scholarship_links(
 async def create_scholarship_link(
     body: ScholarshipLinkCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
 ):
     """Create a new scholarship link."""
     # Check code uniqueness
@@ -101,7 +110,7 @@ async def create_scholarship_link(
 async def deactivate_scholarship_link(
     link_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
 ):
     """Deactivate a scholarship link by setting max_uses = uses."""
     result = await db.execute(

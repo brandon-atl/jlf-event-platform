@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
@@ -39,7 +40,7 @@ class PayerData(BaseModel):
 class GroupRegistrationCreate(BaseModel):
     payer: PayerData
     guests: list[GuestData]
-    payment_method: str = "stripe"  # stripe | cash | scholarship | free
+    payment_method: Literal["stripe", "cash", "free"] = "stripe"
     scholarship_code: str | None = None
     donation_amount_cents: int | None = None
 
