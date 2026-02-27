@@ -1,3 +1,4 @@
+import html
 import logging
 
 import resend
@@ -176,9 +177,9 @@ async def send_branded_email(to: str, subject: str, body_text: str) -> bool:
 
     body_text is plain text — it will be wrapped in the branded HTML template.
     """
-    # Convert plain text body to simple HTML paragraphs
+    # Convert plain text body to simple HTML paragraphs (escape user content)
     body_html = "".join(
-        f'<p style="margin:0 0 12px;color:#444;font-size:15px;line-height:1.6;">{line}</p>'
+        f'<p style="margin:0 0 12px;color:#444;font-size:15px;line-height:1.6;">{html.escape(line)}</p>'
         for line in body_text.split("\n")
         if line.strip()
     )
@@ -203,14 +204,19 @@ async def send_admin_cancel_notification(
 ) -> bool:
     """Send cancellation request notification to admin."""
     attendee = registration.attendee
+    safe_reason = html.escape(reason) if reason else "No reason provided"
+    safe_first = html.escape(attendee.first_name)
+    safe_last = html.escape(attendee.last_name)
+    safe_email = html.escape(attendee.email)
+    safe_event = html.escape(event.name)
     body = f"""\
 <h2 style="margin:0 0 16px;color:#1a3a2a;font-size:20px;">Cancellation Request</h2>
 <p style="margin:0 0 12px;color:#444;font-size:15px;line-height:1.6;">
-  <strong>{attendee.first_name} {attendee.last_name}</strong> ({attendee.email})
-  has requested to cancel their registration for <strong>{event.name}</strong>.
+  <strong>{safe_first} {safe_last}</strong> ({safe_email})
+  has requested to cancel their registration for <strong>{safe_event}</strong>.
 </p>
 <p style="margin:0 0 12px;color:#444;font-size:15px;line-height:1.6;">
-  Reason: {reason or 'No reason provided'}
+  Reason: {safe_reason}
 </p>
 <p style="margin:0;color:#888;font-size:13px;">
   This is a request only — the registration has not been cancelled automatically.
@@ -238,18 +244,20 @@ async def send_event_reminder_email(
     """Send event reminder email (1 day or 7 day before)."""
     attendee = registration.attendee
     event_date_str = event.event_date.strftime("%B %d, %Y")
-    meeting_point = event.meeting_point_a or "See event details for directions"
+    meeting_point = html.escape(event.meeting_point_a or "See event details for directions")
     cancel_url = f"{settings.app_url}/register/{event.slug}/cancel?reg={registration.id}"
+    safe_name = html.escape(event.name)
+    safe_first = html.escape(attendee.first_name)
 
     if reminder_type == "1d":
         subject = f"Reminder: {event.name} is tomorrow!"
-        intro = f"just a friendly reminder that <strong>{event.name}</strong> is tomorrow, {event_date_str}!"
+        intro = f"just a friendly reminder that <strong>{safe_name}</strong> is tomorrow, {event_date_str}!"
     else:
         subject = f"{event.name} is coming up on {event_date_str}!"
-        intro = f"<strong>{event.name}</strong> is coming up on {event_date_str}!"
+        intro = f"<strong>{safe_name}</strong> is coming up on {event_date_str}!"
 
     body = f"""\
-<h2 style="margin:0 0 16px;color:#1a3a2a;font-size:20px;">Hi {attendee.first_name},</h2>
+<h2 style="margin:0 0 16px;color:#1a3a2a;font-size:20px;">Hi {safe_first},</h2>
 <p style="margin:0 0 20px;color:#444;font-size:15px;line-height:1.6;">
   {intro} We're looking forward to seeing you at Just Love Forest.
 </p>

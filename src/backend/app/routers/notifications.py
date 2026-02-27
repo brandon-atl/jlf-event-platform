@@ -2,7 +2,6 @@
 
 import hashlib
 import logging
-import re
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -25,6 +24,7 @@ from app.schemas.sms_conversations import BulkNotificationRequest, BulkNotificat
 from app.services.auth_service import get_current_operator
 from app.services.email_service import send_branded_email
 from app.services.sms_service import send_sms
+from app.utils import render_template_text
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ async def send_event_sms(
 
     sent_count = 0
     failed_count = 0
-    content_hash = hashlib.sha256(data.message.encode()).hexdigest()
+    content_hash = hashlib.sha256(data.message.encode()).hexdigest()[:64]
 
     for reg in registrations:
         attendee = reg.attendee
@@ -133,11 +133,11 @@ async def get_notification_log(
 
 
 def _render_template_text(text: str, variables: dict[str, str]) -> str:
-    """Replace {{variable}} placeholders with values."""
-    def replacer(match):
-        key = match.group(1).strip()
-        return variables.get(key, match.group(0))
-    return re.sub(r"\{\{(\w+)\}\}", replacer, text)
+    """Replace {{variable}} placeholders with values.
+
+    Delegates to shared utility for consistency.
+    """
+    return render_template_text(text, variables)
 
 
 def _build_attendee_variables(registration: Registration, event: Event) -> dict[str, str]:
@@ -197,6 +197,13 @@ async def send_bulk_notification(
     if not template and not data.custom_message:
         raise HTTPException(status_code=422, detail="Either template_id or custom_message is required")
 
+    # Generate idempotency key from request data if not provided
+    if data.idempotency_key:
+        idempotency_key = data.idempotency_key
+    else:
+        key_source = f"{event_id}:{data.channel}:{data.template_id or ''}:{data.custom_message or ''}"
+        idempotency_key = hashlib.sha256(key_source.encode()).hexdigest()[:32]
+
     # Get registrations
     result = await db.execute(
         select(Registration).where(
@@ -211,6 +218,7 @@ async def send_bulk_notification(
 
     sent_count = 0
     failed_count = 0
+    skipped_count = 0
 
     for reg in registrations:
         attendee = reg.attendee
@@ -230,7 +238,19 @@ async def send_bulk_notification(
             subject_text = _render_template_text(data.subject, variables) if data.subject else f"Message from Just Love Forest"
 
         template_id_str = str(data.template_id) if data.template_id else "bulk_custom"
-        content_hash = hashlib.sha256(body_text.encode()).hexdigest()
+        content_hash = hashlib.sha256(body_text.encode()).hexdigest()[:64]
+
+        # Idempotency: check if this registration already received this bulk send
+        bulk_template_key = f"bulk:{idempotency_key}"
+        existing_log = await db.execute(
+            select(NotificationLog).where(
+                NotificationLog.registration_id == reg.id,
+                NotificationLog.template_id == bulk_template_key,
+            )
+        )
+        if existing_log.scalar_one_or_none():
+            skipped_count += 1
+            continue
         success = False
 
         # Send SMS
@@ -239,7 +259,7 @@ async def send_bulk_notification(
             db.add(NotificationLog(
                 registration_id=reg.id,
                 channel=NotificationChannel.sms,
-                template_id=template_id_str,
+                template_id=bulk_template_key,
                 content_hash=content_hash,
                 status=NotificationStatus.sent if sms_success else NotificationStatus.failed,
             ))
@@ -264,7 +284,7 @@ async def send_bulk_notification(
             db.add(NotificationLog(
                 registration_id=reg.id,
                 channel=NotificationChannel.email,
-                template_id=template_id_str,
+                template_id=bulk_template_key,
                 content_hash=content_hash,
                 status=NotificationStatus.sent if email_success else NotificationStatus.failed,
             ))

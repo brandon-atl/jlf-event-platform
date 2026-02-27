@@ -13,10 +13,14 @@ from app.models import (
     Event,
     EventStatus,
     PricingModel,
+    Registration,
+    RegistrationSource,
+    RegistrationStatus,
     User,
     UserRole,
 )
 from app.models.sub_event import SubEvent, SubEventPricingModel
+from app.models.registration_sub_event import RegistrationSubEvent
 from app.services.auth_service import hash_password
 
 pytestmark = pytest.mark.asyncio
@@ -27,13 +31,13 @@ pytestmark = pytest.mark.asyncio
 
 @pytest_asyncio.fixture
 async def admin_user(db_session: AsyncSession) -> User:
-    """Create an admin user and return (user, auth headers)."""
+    """Create an admin user for sub-event tests."""
     user = User(
         id=uuid.uuid4(),
         email="admin@justloveforest.com",
-        name="Admin",
+        name="Admin User",
         role=UserRole.admin,
-        password_hash=hash_password("testpass123"),
+        password_hash=hash_password("testpassword123"),
     )
     db_session.add(user)
     await db_session.commit()
@@ -46,10 +50,11 @@ async def auth_headers(client, admin_user) -> dict:
     """Login as admin and return auth headers."""
     resp = await client.post(
         "/api/v1/auth/login",
-        json={"email": "admin@justloveforest.com", "password": "testpass123"},
+        json={"email": "admin@justloveforest.com", "password": "testpassword123"},
     )
-    token = resp.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+    data = resp.json()
+    assert "access_token" in data, f"Login failed: {data}"
+    return {"Authorization": f"Bearer {data['access_token']}"}
 
 
 @pytest_asyncio.fixture
@@ -325,3 +330,125 @@ async def test_event_info_includes_sub_events(client, composite_with_subs):
     # Verify sort order
     names = [se["name"] for se in data["sub_events"]]
     assert names == ["Friday Night", "Saturday Day", "Saturday Night Fire Circle"]
+
+
+# ── Sub-Event Capacity Enforcement Tests ─────────
+
+
+@pytest_asyncio.fixture
+async def capped_composite(db_session: AsyncSession) -> tuple[Event, SubEvent]:
+    """Create a composite event with a capacity-limited sub-event (capacity=1)."""
+    event = Event(
+        id=uuid.uuid4(),
+        name="Capped Weekend",
+        slug="capped-weekend",
+        description="Capacity test",
+        event_date=datetime(2026, 5, 1, 13, 0, tzinfo=timezone.utc),
+        event_type="community_weekend",
+        pricing_model=PricingModel.composite,
+        capacity=30,
+        status=EventStatus.active,
+        allow_cash_payment=True,
+    )
+    db_session.add(event)
+    await db_session.flush()
+
+    # Required sub-event with capacity=1
+    se = SubEvent(
+        parent_event_id=event.id,
+        name="Limited Workshop",
+        pricing_model=SubEventPricingModel.free,
+        capacity=1,
+        sort_order=0,
+        is_required=True,
+    )
+    db_session.add(se)
+    await db_session.commit()
+    await db_session.refresh(event)
+    await db_session.refresh(se)
+    return event, se
+
+
+async def test_sub_event_capacity_enforced(client, capped_composite):
+    """Registration rejected when sub-event is at capacity."""
+    event, se = capped_composite
+
+    # First registration (cash) — should succeed
+    resp1 = await client.post(
+        f"/api/v1/register/{event.slug}",
+        json={
+            "first_name": "First",
+            "last_name": "Person",
+            "email": "first@example.com",
+            "waiver_accepted": True,
+            "selected_sub_event_ids": [str(se.id)],
+            "payment_method": "cash",
+        },
+    )
+    assert resp1.status_code == 201
+
+    # Second registration — should fail (capacity=1, already full)
+    resp2 = await client.post(
+        f"/api/v1/register/{event.slug}",
+        json={
+            "first_name": "Second",
+            "last_name": "Person",
+            "email": "second@example.com",
+            "waiver_accepted": True,
+            "selected_sub_event_ids": [str(se.id)],
+            "payment_method": "cash",
+        },
+    )
+    assert resp2.status_code == 409
+    assert "full" in resp2.json()["detail"].lower()
+
+
+async def test_sub_event_capacity_group_registration(client, capped_composite, db_session: AsyncSession):
+    """Group registration correctly counts against sub-event capacity."""
+    event, se = capped_composite
+
+    # Increase capacity to 2 for this test
+    se.capacity = 2
+    db_session.add(se)
+    await db_session.commit()
+
+    # Register 2 guests (group) — fills capacity
+    resp1 = await client.post(
+        f"/api/v1/register/{event.slug}",
+        json={
+            "first_name": "GroupA",
+            "last_name": "One",
+            "email": "groupa@example.com",
+            "waiver_accepted": True,
+            "selected_sub_event_ids": [str(se.id)],
+            "payment_method": "cash",
+        },
+    )
+    assert resp1.status_code == 201
+
+    resp2 = await client.post(
+        f"/api/v1/register/{event.slug}",
+        json={
+            "first_name": "GroupA",
+            "last_name": "Two",
+            "email": "groupa2@example.com",
+            "waiver_accepted": True,
+            "selected_sub_event_ids": [str(se.id)],
+            "payment_method": "cash",
+        },
+    )
+    assert resp2.status_code == 201
+
+    # Third registration — should fail (capacity=2, 2 already registered)
+    resp3 = await client.post(
+        f"/api/v1/register/{event.slug}",
+        json={
+            "first_name": "Extra",
+            "last_name": "Person",
+            "email": "extra@example.com",
+            "waiver_accepted": True,
+            "selected_sub_event_ids": [str(se.id)],
+            "payment_method": "cash",
+        },
+    )
+    assert resp3.status_code == 409

@@ -56,21 +56,25 @@ async def list_conversations(
     )
     rows = result.all()
 
+    # Batch-resolve attendee names to avoid N+1 queries
+    phones = [row[0].attendee_phone for row in rows]
+    phone_to_name: dict[str, str] = {}
+    if phones:
+        attendee_result = await db.execute(
+            select(Attendee.phone, Attendee.first_name, Attendee.last_name)
+            .where(Attendee.phone.in_(phones))
+        )
+        for att in attendee_result:
+            phone_to_name[att.phone] = f"{att.first_name} {att.last_name}"
+
     summaries = []
     for row in rows:
         conv = row[0]
         count = row[1]
 
-        # Try to find attendee name from phone
-        attendee_result = await db.execute(
-            select(Attendee).where(Attendee.phone == conv.attendee_phone).limit(1)
-        )
-        attendee = attendee_result.scalar_one_or_none()
-        name = f"{attendee.first_name} {attendee.last_name}" if attendee else None
-
         summaries.append(SMSConversationSummary(
             attendee_phone=conv.attendee_phone,
-            attendee_name=name,
+            attendee_name=phone_to_name.get(conv.attendee_phone),
             last_message=conv.body,
             last_message_at=conv.created_at,
             message_count=count,

@@ -48,10 +48,14 @@ async def send_event_reminders() -> int:
 
         for event in events:
             event_date = event.event_date
+            if event_date is None:
+                continue
             if event_date.tzinfo is None:
                 event_date = event_date.replace(tzinfo=timezone.utc)
 
-            days_until = (event_date.date() - now.date()).days
+            # Normalize to UTC for consistent date comparison
+            event_date_utc = event_date.astimezone(timezone.utc)
+            days_until = (event_date_utc.date() - now.date()).days
 
             if days_until == 1:
                 reminder_type = "1d"
@@ -120,8 +124,18 @@ async def send_event_reminders() -> int:
                     if email_success:
                         sent_count += 1
 
-                # Send SMS
+                # Send SMS (with idempotency check)
+                sms_template_id = f"{template_id}_sms"
                 if attendee.phone:
+                    existing_sms = await db.execute(
+                        select(NotificationLog).where(
+                            NotificationLog.registration_id == reg.id,
+                            NotificationLog.template_id == sms_template_id,
+                        )
+                    )
+                    if existing_sms.scalar_one_or_none():
+                        continue
+
                     event_date_str = event.event_date.strftime("%B %d, %Y")
                     if reminder_type == "1d":
                         sms_body = (

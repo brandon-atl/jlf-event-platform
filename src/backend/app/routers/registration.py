@@ -129,13 +129,15 @@ async def _calculate_composite_price(
                 detail=f"Required sub-event '{se.name}' must be selected",
             )
 
-    # Enforce sub-event capacity (Issue 2)
+    # Enforce sub-event capacity — count distinct registrations per sub-event.
+    # Each guest in a group has their own Registration + RegistrationSubEvent row,
+    # so counting distinct registration_ids correctly reflects headcount.
     capped_ids = [se.id for se in selected if se.capacity is not None]
     if capped_ids:
         counts_result = await db.execute(
             select(
                 RegistrationSubEvent.sub_event_id,
-                func.count(RegistrationSubEvent.id).label("count"),
+                func.count(func.distinct(RegistrationSubEvent.registration_id)).label("count"),
             )
             .join(Registration, Registration.id == RegistrationSubEvent.registration_id)
             .where(

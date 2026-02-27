@@ -57,6 +57,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_index("ix_registration_sub_events_sub_event_id", table_name="registration_sub_events")
+    op.drop_index("ix_registration_sub_events_registration_id", table_name="registration_sub_events")
     op.drop_table("registration_sub_events")
     op.drop_table("sub_events")
     op.drop_column("events", "recurrence_rule")

@@ -76,7 +76,7 @@ async def create_composite_checkout_session(
     event: Event,
     selected_sub_events: list[SubEvent],
     scholarship_amount: int | None = None,
-) -> stripe.checkout.Session:
+) -> stripe.checkout.Session | None:
     """Create a Stripe Checkout Session for a composite event with multiple line items.
 
     Returns the Stripe Session object (caller uses .url and .id).

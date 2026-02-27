@@ -75,7 +75,7 @@ def upgrade() -> None:
             "channel": "both",
             "subject": "Reminder: {{event_name}} is tomorrow!",
             "body": "Hi {{first_name}}, just a friendly reminder that {{event_name}} is tomorrow, {{event_date}}! We're looking forward to seeing you at Just Love Forest. Your meeting point: {{meeting_point}}. If you need to cancel, visit: {{cancel_url}}",
-            "variables": '["first_name", "event_name", "event_date", "meeting_point", "cancel_url"]',
+            "variables": ["first_name", "event_name", "event_date", "meeting_point", "cancel_url"],
             "is_default": True,
         },
         {
@@ -85,7 +85,7 @@ def upgrade() -> None:
             "channel": "both",
             "subject": "{{event_name}} is coming up on {{event_date}}!",
             "body": "Hi {{first_name}}, {{event_name}} is coming up on {{event_date}}! We're excited to welcome you to Just Love Forest. If you have any questions, feel free to reach out. If you need to cancel, visit: {{cancel_url}}",
-            "variables": '["first_name", "event_name", "event_date", "cancel_url"]',
+            "variables": ["first_name", "event_name", "event_date", "cancel_url"],
             "is_default": True,
         },
         {
@@ -95,7 +95,7 @@ def upgrade() -> None:
             "channel": "sms",
             "subject": None,
             "body": "Hi {{first_name}}! Today is the day — {{event_name}}. Your meeting point: {{meeting_point}}. See you soon!",
-            "variables": '["first_name", "event_name", "meeting_point"]',
+            "variables": ["first_name", "event_name", "meeting_point"],
             "is_default": True,
         },
         {
@@ -105,7 +105,7 @@ def upgrade() -> None:
             "channel": "both",
             "subject": "Thank you for joining {{event_name}}!",
             "body": "Thank you for joining us at {{event_name}}, {{first_name}}! We hope you had a wonderful experience at Just Love Forest. We'd love to see you again soon.",
-            "variables": '["first_name", "event_name"]',
+            "variables": ["first_name", "event_name"],
             "is_default": True,
         },
         {
@@ -115,13 +115,15 @@ def upgrade() -> None:
             "channel": "email",
             "subject": "Cancellation request received for {{event_name}}",
             "body": "Hi {{first_name}}, we received your cancellation request for {{event_name}} on {{event_date}}. Our team will review your request and follow up shortly. If you have any questions, please don't hesitate to reach out.",
-            "variables": '["first_name", "event_name", "event_date"]',
+            "variables": ["first_name", "event_name", "event_date"],
             "is_default": True,
         },
     ])
 
 
 def downgrade() -> None:
+    # Delete rows where stripe_event_id is NULL (Twilio webhooks) before making non-nullable
+    op.execute("DELETE FROM webhooks_raw WHERE stripe_event_id IS NULL")
     with op.batch_alter_table("webhooks_raw") as batch_op:
         batch_op.alter_column("stripe_event_id", existing_type=sa.String(255), nullable=False)
         batch_op.drop_column("twilio_sid")

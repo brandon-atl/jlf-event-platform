@@ -4,11 +4,13 @@ import logging
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urljoin
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.models.attendee import Attendee
 from app.models.audit import AuditLog
@@ -17,6 +19,7 @@ from app.models.sms_conversation import SmsConversation, SmsDirection
 from app.models.webhook import WebhookRaw
 from app.services.email_service import send_confirmation_email
 from app.services.stripe_service import verify_webhook
+from app.utils import normalize_phone
 
 logger = logging.getLogger(__name__)
 
@@ -276,9 +279,11 @@ def parse_eta(body: str, now: datetime | None = None) -> datetime | None:
             elif ampm == "am" and hour == 12:
                 hour = 0
         else:
-            # No am/pm — assume PM for hours 1-7, AM for 8-11
+            # No am/pm — assume PM for hours 1-7, keep 8-11 as AM,
+            # and 12 as noon (PM) since events are daytime
             if 1 <= hour <= 7:
                 hour += 12
+            # hour 8-11 stays as-is (AM); hour 12 stays as 12 (noon/PM)
 
         if 0 <= hour <= 23 and 0 <= minute <= 59:
             eta = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
@@ -303,6 +308,18 @@ async def twilio_inbound_webhook(request: Request, db: AsyncSession = Depends(ge
     # Twilio sends form-encoded data
     form_data = await request.form()
     form_dict = dict(form_data)
+
+    # Validate Twilio signature if auth token is configured
+    if settings.twilio_auth_token:
+        from twilio.request_validator import RequestValidator
+        validator = RequestValidator(settings.twilio_auth_token)
+        signature = request.headers.get("X-Twilio-Signature", "")
+        url = str(request.url)
+        if not validator.validate(url, form_dict, signature):
+            logger.warning("Twilio signature validation failed")
+            raise HTTPException(status_code=403, detail="Invalid Twilio signature")
+    else:
+        logger.warning("TWILIO_AUTH_TOKEN not configured — skipping signature validation")
 
     # Validate expected fields
     from_phone = form_dict.get("From")
@@ -332,9 +349,14 @@ async def twilio_inbound_webhook(request: Request, db: AsyncSession = Depends(ge
     db.add(webhook_record)
     await db.flush()
 
-    # Find attendee by phone number
+    # Normalize phone for consistent matching
+    normalized_phone = normalize_phone(from_phone) or from_phone
+
+    # Find attendee by phone number (try normalized first, fall back to raw)
     attendee_result = await db.execute(
-        select(Attendee).where(Attendee.phone == from_phone).limit(1)
+        select(Attendee).where(
+            Attendee.phone.in_([normalized_phone, from_phone])
+        ).limit(1)
     )
     attendee = attendee_result.scalar_one_or_none()
 
