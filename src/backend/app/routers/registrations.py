@@ -58,7 +58,7 @@ async def _audit_log(
 
 
 def _reg_to_response(reg: Registration) -> RegistrationResponse:
-    from ..schemas.registrations import AttendeeInfo
+    from ..schemas.registrations import AttendeeInfo, SubEventSelectionInfo
 
     attendee_info = None
     if reg.attendee:
@@ -69,6 +69,19 @@ def _reg_to_response(reg: Registration) -> RegistrationResponse:
             last_name=reg.attendee.last_name,
             phone=reg.attendee.phone,
         )
+
+    # Build sub-event selections if present
+    sub_event_selections = None
+    if hasattr(reg, "sub_event_selections") and reg.sub_event_selections:
+        sub_event_selections = [
+            SubEventSelectionInfo(
+                sub_event_id=sel.sub_event_id,
+                sub_event_name=sel.sub_event.name if sel.sub_event else None,
+                payment_amount_cents=sel.payment_amount_cents,
+            )
+            for sel in reg.sub_event_selections
+        ]
+
     return RegistrationResponse(
         id=reg.id,
         attendee_id=reg.attendee_id,
@@ -85,7 +98,10 @@ def _reg_to_response(reg: Registration) -> RegistrationResponse:
         intake_data=reg.intake_data,
         waiver_accepted_at=reg.waiver_accepted_at,
         source=reg.source.value if hasattr(reg.source, "value") else reg.source,
+        checked_in_at=reg.checked_in_at,
+        checked_in_by=reg.checked_in_by,
         notes=reg.notes,
+        sub_event_selections=sub_event_selections,
         created_at=reg.created_at,
         updated_at=reg.updated_at,
         attendee=attendee_info,

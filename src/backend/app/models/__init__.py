@@ -8,6 +8,8 @@ from app.models.registration import (
     RegistrationSource,
     RegistrationStatus,
 )
+from app.models.sub_event import SubEvent, SubEventPricingModel
+from app.models.registration_sub_event import RegistrationSubEvent
 from app.models.co_creator import CoCreator, EventCoCreator
 from app.models.notification import NotificationChannel, NotificationLog, NotificationStatus
 from app.models.webhook import WebhookRaw
@@ -29,6 +31,9 @@ __all__ = [
     "AccommodationType",
     "PaymentMethod",
     "RegistrationSource",
+    "SubEvent",
+    "SubEventPricingModel",
+    "RegistrationSubEvent",
     "CoCreator",
     "EventCoCreator",
     "NotificationLog",

@@ -90,3 +90,4 @@ class Registration(TimestampMixin, Base):
 
     attendee = relationship("Attendee", back_populates="registrations", lazy="selectin")
     event = relationship("Event", back_populates="registrations", lazy="selectin")
+    sub_event_selections = relationship("RegistrationSubEvent", back_populates="registration", lazy="selectin")

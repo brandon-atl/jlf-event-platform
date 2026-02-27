@@ -29,6 +29,8 @@ class EventCreate(BaseModel):
     registration_fields: dict[str, Any] | None = None
     notification_templates: dict[str, Any] | None = None
     virtual_meeting_url: str | None = None
+    is_recurring: bool = False
+    recurrence_rule: str | None = None
     status: str = "draft"
 
 
@@ -54,6 +56,8 @@ class EventUpdate(BaseModel):
     registration_fields: dict[str, Any] | None = None
     notification_templates: dict[str, Any] | None = None
     virtual_meeting_url: str | None = None
+    is_recurring: bool | None = None
+    recurrence_rule: str | None = None
     status: str | None = None
 
 
@@ -68,6 +72,20 @@ class EventStats(BaseModel):
     total_revenue_cents: int = 0
     spots_remaining: int | None = None
     accommodation_breakdown: dict[str, int] = {}
+
+
+class SubEventBrief(BaseModel):
+    id: UUID
+    name: str
+    description: str | None = None
+    pricing_model: str
+    fixed_price_cents: int | None = None
+    min_donation_cents: int | None = None
+    capacity: int | None = None
+    sort_order: int = 0
+    is_required: bool = False
+
+    model_config = {"from_attributes": True}
 
 
 class EventResponse(BaseModel):
@@ -93,6 +111,9 @@ class EventResponse(BaseModel):
     registration_fields: dict[str, Any] | None = None
     notification_templates: dict[str, Any] | None = None
     virtual_meeting_url: str | None = None
+    is_recurring: bool = False
+    recurrence_rule: str | None = None
+    sub_events: list[SubEventBrief] | None = None
     status: str
     created_at: datetime
     updated_at: datetime

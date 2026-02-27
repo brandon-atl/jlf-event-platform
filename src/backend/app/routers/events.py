@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..models import AuditLog, Event, EventStatus, Registration, RegistrationStatus
-from ..schemas.events import EventCreate, EventResponse, EventStats, EventUpdate
+from ..schemas.events import EventCreate, EventResponse, EventStats, EventUpdate, SubEventBrief
 from ..schemas.common import PaginatedResponse, PaginationMeta
 from ..services.auth_service import get_current_user
 from ..models import User
@@ -111,6 +111,24 @@ async def _audit_log(
 
 
 def _event_to_response(event: Event, stats: EventStats | None = None) -> EventResponse:
+    # Build sub_events list if this is a composite event
+    sub_events = None
+    if hasattr(event, "sub_events") and event.sub_events:
+        sub_events = [
+            SubEventBrief(
+                id=se.id,
+                name=se.name,
+                description=se.description,
+                pricing_model=se.pricing_model.value if hasattr(se.pricing_model, "value") else se.pricing_model,
+                fixed_price_cents=se.fixed_price_cents,
+                min_donation_cents=se.min_donation_cents,
+                capacity=se.capacity,
+                sort_order=se.sort_order,
+                is_required=se.is_required,
+            )
+            for se in event.sub_events
+        ]
+
     return EventResponse(
         id=event.id,
         name=event.name,
@@ -133,6 +151,9 @@ def _event_to_response(event: Event, stats: EventStats | None = None) -> EventRe
         day_of_sms_time=str(event.day_of_sms_time) if event.day_of_sms_time else None,
         registration_fields=event.registration_fields,
         notification_templates=event.notification_templates,
+        is_recurring=event.is_recurring,
+        recurrence_rule=event.recurrence_rule,
+        sub_events=sub_events,
         status=event.status.value if hasattr(event.status, "value") else event.status,
         created_at=event.created_at,
         updated_at=event.updated_at,
@@ -358,6 +379,8 @@ async def duplicate_event(
             zoom_link=source_event.zoom_link,
             allow_cash_payment=source_event.allow_cash_payment,
             max_member_discount_slots=source_event.max_member_discount_slots,
+            is_recurring=source_event.is_recurring,
+            recurrence_rule=source_event.recurrence_rule,
         )
         db.add(candidate)
         try:

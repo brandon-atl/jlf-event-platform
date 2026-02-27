@@ -17,6 +17,14 @@ class AttendeeInfo(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class SubEventSelectionInfo(BaseModel):
+    sub_event_id: UUID
+    sub_event_name: str | None = None
+    payment_amount_cents: int | None = None
+
+    model_config = {"from_attributes": True}
+
+
 class RegistrationResponse(BaseModel):
     id: UUID
     attendee_id: UUID
@@ -32,6 +40,7 @@ class RegistrationResponse(BaseModel):
     notes: str | None = None
     checked_in_at: datetime | None = None
     checked_in_by: str | None = None
+    sub_event_selections: list[SubEventSelectionInfo] | None = None
     created_at: datetime
     updated_at: datetime
     attendee: AttendeeInfo | None = None

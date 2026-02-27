@@ -73,7 +73,7 @@ function transformEvent(raw: BackendEventResponse): EventResponse {
     event_date: raw.event_date,
     event_end_date: raw.event_end_date,
     event_type: raw.event_type,
-    pricing_model: raw.pricing_model as "fixed" | "donation" | "free",
+    pricing_model: raw.pricing_model as "fixed" | "donation" | "free" | "composite",
     fixed_price_cents: raw.fixed_price_cents,
     min_donation_cents: raw.min_donation_cents,
     capacity: raw.capacity,
@@ -87,6 +87,9 @@ function transformEvent(raw: BackendEventResponse): EventResponse {
     status: raw.status as EventResponse["status"],
     created_at: raw.created_at,
     updated_at: raw.updated_at,
+    is_recurring: raw.is_recurring,
+    recurrence_rule: raw.recurrence_rule,
+    sub_events: raw.sub_events,
     // Flatten stats
     total_registrations: stats?.total_registrations ?? 0,
     complete_count: stats?.complete ?? 0,
@@ -237,6 +240,42 @@ export const events = {
     });
     return transformEvent(raw);
   },
+};
+
+// ── Sub-Events ─────────────────────────────────
+export interface SubEventCreate {
+  name: string;
+  description?: string;
+  pricing_model: "fixed" | "donation" | "free";
+  fixed_price_cents?: number;
+  min_donation_cents?: number;
+  capacity?: number;
+  sort_order?: number;
+  is_required?: boolean;
+}
+
+export interface SubEventResponse extends SubEventCreate {
+  id: string;
+  parent_event_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const subEvents = {
+  list: (eventId: string) =>
+    request<SubEventResponse[]>(`/events/${eventId}/sub-events`),
+  create: (eventId: string, data: SubEventCreate) =>
+    request<SubEventResponse>(`/events/${eventId}/sub-events`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (eventId: string, subEventId: string, data: Partial<SubEventCreate>) =>
+    request<SubEventResponse>(`/events/${eventId}/sub-events/${subEventId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (eventId: string, subEventId: string) =>
+    request<void>(`/events/${eventId}/sub-events/${subEventId}`, { method: "DELETE" }),
 };
 
 // ── Registrations ───────────────────────────────
@@ -500,6 +539,9 @@ interface BackendEventResponse {
   registration_fields?: Record<string, unknown>;
   notification_templates?: Record<string, unknown>;
   virtual_meeting_url?: string;
+  is_recurring?: boolean;
+  recurrence_rule?: string;
+  sub_events?: SubEventPublicInfo[];
   status: string;
   created_at: string;
   updated_at: string;
@@ -507,6 +549,7 @@ interface BackendEventResponse {
     total_registrations: number;
     complete: number;
     pending_payment: number;
+    cash_pending: number;
     cancelled: number;
     refunded: number;
     expired: number;
@@ -586,7 +629,7 @@ export interface EventResponse {
   event_date: string;
   event_end_date?: string;
   event_type: string;
-  pricing_model: "fixed" | "donation" | "free";
+  pricing_model: "fixed" | "donation" | "free" | "composite";
   fixed_price_cents?: number;
   min_donation_cents?: number;
   capacity?: number;
@@ -597,6 +640,9 @@ export interface EventResponse {
   registration_fields?: Record<string, unknown>;
   notification_templates?: Record<string, unknown>;
   virtual_meeting_url?: string;
+  is_recurring?: boolean;
+  recurrence_rule?: string;
+  sub_events?: SubEventPublicInfo[];
   status: "draft" | "active" | "completed" | "cancelled";
   created_at: string;
   updated_at: string;
@@ -614,7 +660,7 @@ export interface EventCreate {
   event_date: string;
   event_end_date?: string;
   event_type?: string;
-  pricing_model?: "fixed" | "donation" | "free";
+  pricing_model?: "fixed" | "donation" | "free" | "composite";
   fixed_price_cents?: number;
   min_donation_cents?: number;
   capacity?: number;
@@ -624,6 +670,8 @@ export interface EventCreate {
   notification_templates?: Record<string, unknown>;
   reminder_delay_minutes?: number;
   auto_expire_hours?: number;
+  is_recurring?: boolean;
+  recurrence_rule?: string;
   status?: "draft" | "active" | "completed" | "cancelled";
 }
 
@@ -692,6 +740,7 @@ export interface RegistrationCreate {
   donation_amount_cents?: number;
   payment_method?: "stripe" | "cash";
   scholarship_code?: string;
+  selected_sub_event_ids?: string[];
 }
 
 export interface GuestData {
@@ -703,6 +752,7 @@ export interface GuestData {
   waiver_accepted: boolean;
   accommodation_type?: string;
   dietary_restrictions?: string;
+  selected_sub_event_ids?: string[];
 }
 
 export interface GroupRegistrationCreate {
@@ -726,6 +776,18 @@ export interface GroupRegistrationResponse {
   message?: string;
 }
 
+export interface SubEventPublicInfo {
+  id: string;
+  name: string;
+  description?: string;
+  pricing_model: "fixed" | "donation" | "free";
+  fixed_price_cents?: number;
+  min_donation_cents?: number;
+  capacity?: number;
+  sort_order: number;
+  is_required: boolean;
+}
+
 export interface EventPublicInfo {
   name: string;
   slug: string;
@@ -733,7 +795,7 @@ export interface EventPublicInfo {
   event_date: string;
   event_end_date?: string;
   event_type: string;
-  pricing_model: "fixed" | "donation" | "free";
+  pricing_model: "fixed" | "donation" | "free" | "composite";
   fixed_price_cents?: number;
   min_donation_cents?: number;
   capacity?: number;
@@ -741,6 +803,9 @@ export interface EventPublicInfo {
   registration_fields?: Record<string, unknown>;
   meeting_point_a?: string;
   allow_cash_payment?: boolean;
+  is_recurring?: boolean;
+  recurrence_rule?: string;
+  sub_events?: SubEventPublicInfo[];
   linked_forms?: EventFormLinkResponse[];
 }
 
