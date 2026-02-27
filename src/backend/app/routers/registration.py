@@ -79,6 +79,8 @@ from app.schemas.registration import (
     RegistrationResponse,
     SubEventInfo,
 )
+from app.models.audit import AuditLog
+from app.schemas.sms_conversations import CancelRequest
 from app.services.email_service import send_confirmation_email
 from app.services.stripe_service import create_checkout_session, create_composite_checkout_session
 
@@ -900,3 +902,65 @@ async def create_group_registration(
         checkout_url=checkout_url,
         status="pending_payment",
     )
+
+
+@router.post("/{event_slug}/cancel-request")
+async def cancel_request(
+    event_slug: str,
+    data: CancelRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Submit a cancellation request (does NOT auto-cancel).
+
+    Stores reason in registration notes, creates audit log entry,
+    and sends notification to admin.
+    """
+    # Verify event exists
+    result = await db.execute(select(Event).where(Event.slug == event_slug))
+    event = result.scalar_one_or_none()
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Verify registration exists
+    result = await db.execute(
+        select(Registration).where(
+            Registration.id == data.registration_id,
+            Registration.event_id == event.id,
+        )
+    )
+    registration = result.scalar_one_or_none()
+    if not registration:
+        raise HTTPException(status_code=404, detail="Registration not found")
+
+    # Verify email matches
+    attendee = registration.attendee
+    if not attendee or attendee.email.lower() != data.email.lower():
+        raise HTTPException(status_code=403, detail="Email does not match registration")
+
+    # Append reason to notes
+    cancel_note = f"[CANCEL REQUEST] {data.reason or 'No reason provided'}"
+    if registration.notes:
+        registration.notes = f"{registration.notes}\n{cancel_note}"
+    else:
+        registration.notes = cancel_note
+
+    # Audit log
+    db.add(AuditLog(
+        entity_type="registration",
+        entity_id=registration.id,
+        action="cancel_request",
+        actor=attendee.email,
+        new_value={"reason": data.reason},
+    ))
+    await db.flush()
+
+    # Send notification email to admin (best-effort, non-blocking)
+    try:
+        from app.services.email_service import send_admin_cancel_notification
+        await send_admin_cancel_notification(registration, event, data.reason)
+    except Exception:
+        logger.exception("Failed to send admin cancel notification")
+
+    return {
+        "message": "Your cancellation request has been received. Our team will review it and follow up.",
+    }

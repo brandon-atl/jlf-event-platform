@@ -171,6 +171,113 @@ async def send_reminder_email(registration: Registration, event: Event) -> bool:
         return False
 
 
+async def send_branded_email(to: str, subject: str, body_text: str) -> bool:
+    """Send a branded email with the JLF template wrapper.
+
+    body_text is plain text — it will be wrapped in the branded HTML template.
+    """
+    # Convert plain text body to simple HTML paragraphs
+    body_html = "".join(
+        f'<p style="margin:0 0 12px;color:#444;font-size:15px;line-height:1.6;">{line}</p>'
+        for line in body_text.split("\n")
+        if line.strip()
+    )
+
+    try:
+        resend.Emails.send(
+            {
+                "from": FROM_EMAIL,
+                "to": [to],
+                "subject": subject,
+                "html": _base_template(body_html),
+            }
+        )
+        return True
+    except Exception:
+        logger.exception("Failed to send branded email to %s", to)
+        return False
+
+
+async def send_admin_cancel_notification(
+    registration: Registration, event: Event, reason: str | None
+) -> bool:
+    """Send cancellation request notification to admin."""
+    attendee = registration.attendee
+    body = f"""\
+<h2 style="margin:0 0 16px;color:#1a3a2a;font-size:20px;">Cancellation Request</h2>
+<p style="margin:0 0 12px;color:#444;font-size:15px;line-height:1.6;">
+  <strong>{attendee.first_name} {attendee.last_name}</strong> ({attendee.email})
+  has requested to cancel their registration for <strong>{event.name}</strong>.
+</p>
+<p style="margin:0 0 12px;color:#444;font-size:15px;line-height:1.6;">
+  Reason: {reason or 'No reason provided'}
+</p>
+<p style="margin:0;color:#888;font-size:13px;">
+  This is a request only — the registration has not been cancelled automatically.
+  Please review and take action in the admin dashboard.
+</p>"""
+
+    try:
+        resend.Emails.send(
+            {
+                "from": FROM_EMAIL,
+                "to": [settings.from_email],  # Send to the configured admin email
+                "subject": f"Cancel request: {attendee.first_name} {attendee.last_name} — {event.name}",
+                "html": _base_template(body),
+            }
+        )
+        return True
+    except Exception:
+        logger.exception("Failed to send admin cancel notification")
+        return False
+
+
+async def send_event_reminder_email(
+    registration: Registration, event: Event, reminder_type: str = "1d"
+) -> bool:
+    """Send event reminder email (1 day or 7 day before)."""
+    attendee = registration.attendee
+    event_date_str = event.event_date.strftime("%B %d, %Y")
+    meeting_point = event.meeting_point_a or "See event details for directions"
+    cancel_url = f"{settings.app_url}/register/{event.slug}/cancel?reg={registration.id}"
+
+    if reminder_type == "1d":
+        subject = f"Reminder: {event.name} is tomorrow!"
+        intro = f"just a friendly reminder that <strong>{event.name}</strong> is tomorrow, {event_date_str}!"
+    else:
+        subject = f"{event.name} is coming up on {event_date_str}!"
+        intro = f"<strong>{event.name}</strong> is coming up on {event_date_str}!"
+
+    body = f"""\
+<h2 style="margin:0 0 16px;color:#1a3a2a;font-size:20px;">Hi {attendee.first_name},</h2>
+<p style="margin:0 0 20px;color:#444;font-size:15px;line-height:1.6;">
+  {intro} We're looking forward to seeing you at Just Love Forest.
+</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+       style="background-color:#f4f9f5;border-radius:8px;margin-bottom:24px;">
+<tr><td style="padding:20px 24px;">
+  <p style="margin:0 0 4px;color:#444;font-size:14px;">Meeting Point: {meeting_point}</p>
+</td></tr>
+</table>
+<p style="margin:0;color:#888;font-size:13px;">
+  Need to cancel? <a href="{cancel_url}" style="color:#2d5a3d;">Submit a cancellation request</a>
+</p>"""
+
+    try:
+        resend.Emails.send(
+            {
+                "from": FROM_EMAIL,
+                "to": [attendee.email],
+                "subject": subject,
+                "html": _base_template(body),
+            }
+        )
+        return True
+    except Exception:
+        logger.exception("Failed to send reminder email to %s", attendee.email)
+        return False
+
+
 async def send_escalation_email(registration: Registration, event: Event) -> bool:
     """Send an urgent escalation reminder — registration is about to expire."""
     attendee = registration.attendee

@@ -1,16 +1,19 @@
-"""Stripe webhook router — idempotent event processing."""
+"""Webhook routers — Stripe + Twilio inbound SMS, idempotent event processing."""
 
 import logging
+import re
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.attendee import Attendee
 from app.models.audit import AuditLog
 from app.models.registration import Registration, RegistrationStatus
+from app.models.sms_conversation import SmsConversation, SmsDirection
 from app.models.webhook import WebhookRaw
 from app.services.email_service import send_confirmation_email
 from app.services.stripe_service import verify_webhook
@@ -227,4 +230,169 @@ async def _handle_charge_refunded(event: dict, webhook: WebhookRaw, db: AsyncSes
         payment_intent_id,
         amount_refunded,
         amount_total,
+    )
+
+
+# --- ETA Parsing ---
+
+# Patterns: "ETA 3pm", "ETA 3:30pm", "ETA 15:00", "arriving at 3pm",
+# "arriving around 3:30", "be there by 4", "be there by 4pm",
+# "ill be there around 5", "on my way, about 30 min"
+_TIME_PATTERN = re.compile(
+    r"(?:eta|arriving\s+(?:at|around)|be\s+there\s+(?:by|around)|ill?\s+be\s+there\s+(?:at|around|by))\s+"
+    r"(\d{1,2})(?::(\d{2}))?\s*(am|pm)?",
+    re.IGNORECASE,
+)
+
+_MINUTES_PATTERN = re.compile(
+    r"(?:on\s+my\s+way|omw)[\s,]*(?:about|around|approx(?:imately)?)?\s*(\d+)\s*min(?:ute)?s?",
+    re.IGNORECASE,
+)
+
+
+def parse_eta(body: str, now: datetime | None = None) -> datetime | None:
+    """Parse ETA from SMS body. Returns a datetime or None if no ETA detected."""
+    if now is None:
+        now = datetime.now(timezone.utc)
+
+    # Check for "X minutes" pattern first
+    minutes_match = _MINUTES_PATTERN.search(body)
+    if minutes_match:
+        minutes = int(minutes_match.group(1))
+        if 0 < minutes <= 480:  # sanity: max 8 hours
+            return now + timedelta(minutes=minutes)
+
+    # Check for absolute time pattern
+    time_match = _TIME_PATTERN.search(body)
+    if time_match:
+        hour = int(time_match.group(1))
+        minute = int(time_match.group(2)) if time_match.group(2) else 0
+        ampm = time_match.group(3)
+
+        if ampm:
+            ampm = ampm.lower()
+            if ampm == "pm" and hour != 12:
+                hour += 12
+            elif ampm == "am" and hour == 12:
+                hour = 0
+        else:
+            # No am/pm — assume PM for hours 1-7, AM for 8-11
+            if 1 <= hour <= 7:
+                hour += 12
+
+        if 0 <= hour <= 23 and 0 <= minute <= 59:
+            eta = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            # If the time is in the past, assume tomorrow
+            if eta < now:
+                eta += timedelta(days=1)
+            return eta
+
+    return None
+
+
+# --- Twilio Inbound Webhook ---
+
+
+@router.post("/twilio/inbound", status_code=200)
+async def twilio_inbound_webhook(request: Request, db: AsyncSession = Depends(get_db)):
+    """Receive inbound SMS from Twilio.
+
+    Stores raw payload, creates conversation record, parses ETA if present.
+    Returns TwiML empty <Response/>.
+    """
+    # Twilio sends form-encoded data
+    form_data = await request.form()
+    form_dict = dict(form_data)
+
+    # Validate expected fields
+    from_phone = form_dict.get("From")
+    body = form_dict.get("Body", "")
+    twilio_sid = form_dict.get("MessageSid")
+
+    if not from_phone:
+        logger.warning("Twilio inbound webhook missing 'From' field")
+        raise HTTPException(status_code=400, detail="Missing 'From' field")
+
+    # Idempotency: check if we've already processed this SID
+    if twilio_sid:
+        existing = await db.execute(
+            select(WebhookRaw).where(WebhookRaw.twilio_sid == twilio_sid)
+        )
+        if existing.scalar_one_or_none():
+            logger.info("Duplicate Twilio webhook SID %s — skipping", twilio_sid)
+            return _twiml_response()
+
+    # Store raw webhook
+    webhook_record = WebhookRaw(
+        source="twilio",
+        twilio_sid=twilio_sid,
+        event_type="sms.inbound",
+        payload_json=form_dict,
+    )
+    db.add(webhook_record)
+    await db.flush()
+
+    # Find attendee by phone number
+    attendee_result = await db.execute(
+        select(Attendee).where(Attendee.phone == from_phone).limit(1)
+    )
+    attendee = attendee_result.scalar_one_or_none()
+
+    # Find most recent active registration for this phone
+    registration_id = None
+    if attendee:
+        reg_result = await db.execute(
+            select(Registration)
+            .where(
+                Registration.attendee_id == attendee.id,
+                Registration.status.in_([
+                    RegistrationStatus.complete,
+                    RegistrationStatus.cash_pending,
+                ]),
+            )
+            .order_by(Registration.created_at.desc())
+            .limit(1)
+        )
+        reg = reg_result.scalar_one_or_none()
+        if reg:
+            registration_id = reg.id
+
+    # Store in sms_conversations
+    conversation = SmsConversation(
+        registration_id=registration_id,
+        attendee_phone=from_phone,
+        direction=SmsDirection.inbound,
+        body=body,
+        twilio_sid=twilio_sid,
+    )
+    db.add(conversation)
+
+    # Parse ETA from message body
+    eta = parse_eta(body)
+    if eta and registration_id:
+        result = await db.execute(
+            select(Registration).where(Registration.id == registration_id)
+        )
+        registration = result.scalar_one_or_none()
+        if registration:
+            registration.estimated_arrival = eta
+            logger.info(
+                "Updated ETA for registration %s to %s from SMS",
+                registration_id,
+                eta.isoformat(),
+            )
+
+    # Mark webhook as processed
+    webhook_record.processed_at = datetime.now(timezone.utc)
+    await db.flush()
+
+    return _twiml_response()
+
+
+def _twiml_response():
+    """Return empty TwiML response."""
+    from fastapi.responses import Response
+    return Response(
+        content="<?xml version='1.0' encoding='UTF-8'?><Response/>",
+        media_type="application/xml",
     )

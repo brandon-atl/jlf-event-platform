@@ -3,6 +3,7 @@ import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from .day_of_sms import send_day_of_notifications
+from .reminders import send_event_reminders
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +27,18 @@ def start_scheduler() -> None:
         replace_existing=True,
     )
 
+    # Event reminders: 1-day and 7-day before event (runs daily at 9am UTC)
+    scheduler.add_job(
+        send_event_reminders,
+        "cron",
+        hour=9,
+        minute=0,
+        id="send_event_reminders",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("Background scheduler started with 1 periodic job")
+    logger.info("Background scheduler started with 2 periodic jobs")
 
 
 def stop_scheduler() -> None:

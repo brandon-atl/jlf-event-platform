@@ -19,6 +19,8 @@ from app.models.form_template import FormTemplate, FormType
 from app.models.event_form_link import EventFormLink
 from app.models.membership import Membership
 from app.models.scholarship_link import ScholarshipLink
+from app.models.message_template import MessageTemplate, TemplateCategory, TemplateChannel
+from app.models.sms_conversation import SmsConversation, SmsDirection
 
 __all__ = [
     "Base",
@@ -48,4 +50,9 @@ __all__ = [
     "EventFormLink",
     "Membership",
     "ScholarshipLink",
+    "MessageTemplate",
+    "TemplateCategory",
+    "TemplateChannel",
+    "SmsConversation",
+    "SmsDirection",
 ]
