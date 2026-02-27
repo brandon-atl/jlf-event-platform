@@ -57,6 +57,14 @@ class OverviewDashboard(BaseModel):
     upcoming_events: list[UpcomingEvent] = []
 
 
+class SubEventHeadcount(BaseModel):
+    sub_event_id: str
+    sub_event_name: str
+    count: int = 0
+
+    model_config = {"from_attributes": True}
+
+
 class EventDashboard(BaseModel):
     event_id: UUID
     event_name: str
@@ -66,3 +74,4 @@ class EventDashboard(BaseModel):
     revenue: RevenueStats
     spots_remaining: int | None = None
     capacity: int | None = None
+    sub_event_headcounts: list[SubEventHeadcount] | None = None

@@ -17,6 +17,7 @@ class RegistrationCreate(BaseModel):
     donation_amount_cents: int | None = None  # pay-what-you-want amount
     payment_method: str = "stripe"  # stripe | cash | scholarship | free
     scholarship_code: str | None = None
+    selected_sub_event_ids: list[str] | None = None  # for composite events
 
 
 class GuestData(BaseModel):
@@ -28,6 +29,7 @@ class GuestData(BaseModel):
     waiver_accepted: bool
     accommodation_type: str | None = None
     dietary_restrictions: str | None = None
+    selected_sub_event_ids: list[str] | None = None  # for composite events
 
 
 class PayerData(BaseModel):
@@ -84,6 +86,20 @@ class RegistrationDetail(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class SubEventInfo(BaseModel):
+    id: UUID
+    name: str
+    description: str | None = None
+    pricing_model: str
+    fixed_price_cents: int | None = None
+    min_donation_cents: int | None = None
+    capacity: int | None = None
+    sort_order: int = 0
+    is_required: bool = False
+
+    model_config = {"from_attributes": True}
+
+
 class EventInfo(BaseModel):
     name: str
     slug: str
@@ -97,5 +113,9 @@ class EventInfo(BaseModel):
     spots_remaining: int | None = None
     registration_fields: dict | None = None
     description: str | None = None
+    allow_cash_payment: bool = False
+    is_recurring: bool = False
+    recurrence_rule: str | None = None
+    sub_events: list[SubEventInfo] | None = None
 
     model_config = {"from_attributes": True}

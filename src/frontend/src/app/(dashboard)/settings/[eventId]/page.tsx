@@ -16,6 +16,7 @@ import {
   Trash2,
   Banknote,
   Loader2,
+  Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,10 +24,13 @@ import {
   events as eventsApi,
   eventFormLinks,
   formTemplates as formTemplatesApi,
+  subEvents as subEventsApi,
   type EventCreate,
   type EventResponse,
   type EventFormLinkResponse,
   type FormTemplateResponse,
+  type SubEventCreate,
+  type SubEventResponse,
 } from "@/lib/api";
 import { colors, darkColors } from "@/lib/theme";
 import { isDemoMode, DEMO_EVENTS } from "@/lib/demo-data";
@@ -47,7 +51,7 @@ interface EventConfigForm {
   name: string;
   event_date: string;
   event_end_date: string;
-  pricing_model: "fixed" | "donation" | "free";
+  pricing_model: "fixed" | "donation" | "free" | "composite";
   fixed_price_cents: string;
   status: "draft" | "active" | "completed" | "cancelled";
   meeting_point_a: string;
@@ -298,6 +302,183 @@ function LinkedFormsSection({ eventId, isDark }: { eventId: string; isDark: bool
   );
 }
 
+// ── Sub-Events Section ────────────────────────
+function SubEventsSection({ eventId, isDark }: { eventId: string; isDark: boolean }) {
+  const queryClient = useQueryClient();
+  const [addOpen, setAddOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPricing, setNewPricing] = useState<"fixed" | "donation" | "free">("fixed");
+  const [newPrice, setNewPrice] = useState("");
+  const [newRequired, setNewRequired] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const cardBg = isDark ? darkColors.surface : "#ffffff";
+  const borderColor = isDark ? darkColors.surfaceBorder : "#f3f4f6";
+  const textMain = isDark ? darkColors.textPrimary : colors.forest;
+  const textSub = isDark ? darkColors.textSecondary : "#6b7280";
+  const textMuted = isDark ? darkColors.textMuted : "#9ca3af";
+
+  const { data: subs = [], isLoading } = useQuery({
+    queryKey: ["sub-events", eventId],
+    queryFn: () => {
+      if (isDemoMode()) return Promise.resolve([]);
+      return subEventsApi.list(eventId);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (subId: string) => subEventsApi.delete(eventId, subId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sub-events", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      toast.success("Sub-event removed");
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to remove sub-event"),
+  });
+
+  const handleAdd = async () => {
+    if (!newName.trim()) return;
+    setSaving(true);
+    try {
+      const data: SubEventCreate = {
+        name: newName.trim(),
+        pricing_model: newPricing,
+        fixed_price_cents: newPricing === "fixed" && newPrice ? Math.round(parseFloat(newPrice) * 100) : undefined,
+        sort_order: subs.length,
+        is_required: newRequired,
+      };
+      await subEventsApi.create(eventId, data);
+      queryClient.invalidateQueries({ queryKey: ["sub-events", eventId] });
+      queryClient.invalidateQueries({ queryKey: ["event", eventId] });
+      toast.success("Sub-event added");
+      setNewName("");
+      setNewPrice("");
+      setNewRequired(false);
+      setAddOpen(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add sub-event");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const sorted = [...subs].sort((a: SubEventResponse, b: SubEventResponse) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+  return (
+    <div className="max-w-3xl mt-6 space-y-4">
+      <div className="rounded-2xl border p-6 shadow-sm space-y-5" style={{ background: cardBg, borderColor }}>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: textSub }}>
+            <Calendar size={16} />
+            Sub-Events (Composite Pricing)
+          </h3>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-lg text-xs"
+            style={isDark ? { borderColor, color: textSub } : {}}
+            onClick={() => setAddOpen(true)}
+          >
+            <Plus size={14} />
+            Add Sub-Event
+          </Button>
+        </div>
+
+        {isLoading && (
+          <div className="space-y-3">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: isDark ? darkColors.surfaceHover : "#f3f4f6" }} />
+            ))}
+          </div>
+        )}
+
+        {!isLoading && sorted.length === 0 && (
+          <p className="text-sm text-center py-6" style={{ color: textMuted }}>
+            No sub-events yet. Set pricing model to &ldquo;Composite&rdquo; and add sub-events for component-based pricing.
+          </p>
+        )}
+
+        {!isLoading && sorted.length > 0 && (
+          <div className="space-y-2">
+            {sorted.map((se: SubEventResponse) => (
+              <div
+                key={se.id}
+                className="flex items-center gap-3 rounded-xl border px-4 py-3"
+                style={{ borderColor, background: isDark ? darkColors.surfaceElevated : "#fafafa" }}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: textMain }}>
+                    {se.name}
+                    {se.is_required && (
+                      <span className="ml-2 text-[10px] font-normal px-1.5 py-0.5 rounded-full" style={{ background: isDark ? `${darkColors.canopy}20` : `${colors.canopy}15`, color: isDark ? darkColors.canopy : colors.canopy }}>
+                        Required
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-[11px]" style={{ color: textMuted }}>
+                    {se.pricing_model === "fixed" && se.fixed_price_cents ? formatCents(se.fixed_price_cents) : se.pricing_model === "donation" ? "Donation" : "Free"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`Remove "${se.name}"?`)) {
+                      deleteMutation.mutate(se.id);
+                    }
+                  }}
+                  className="p-1.5 rounded-lg transition hover:bg-red-50"
+                  title="Remove"
+                >
+                  <Trash2 size={13} className="text-red-400" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add Sub-Event Dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent style={{ background: cardBg, borderColor }}>
+          <DialogHeader>
+            <DialogTitle style={{ color: textMain, fontFamily: "var(--font-dm-serif), serif" }}>
+              Add Sub-Event
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted }}>Name</Label>
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="e.g., Saturday Night Fire Circle" className="mt-1 rounded-xl" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted }}>Pricing</Label>
+              <select value={newPricing} onChange={(e) => setNewPricing(e.target.value as "fixed" | "donation" | "free")} className="w-full mt-1 p-2.5 border rounded-xl text-sm">
+                <option value="fixed">Fixed Price</option>
+                <option value="donation">Donation</option>
+                <option value="free">Free</option>
+              </select>
+            </div>
+            {newPricing === "fixed" && (
+              <div>
+                <Label className="text-xs font-semibold uppercase tracking-wider" style={{ color: textMuted }}>Price ($)</Label>
+                <Input type="number" step="0.01" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} placeholder="50.00" className="mt-1 rounded-xl" />
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Checkbox checked={newRequired} onCheckedChange={(c) => setNewRequired(c === true)} />
+              <Label className="text-sm cursor-pointer" style={{ color: textMain }}>Required (auto-selected for all registrants)</Label>
+            </div>
+            <Button onClick={handleAdd} disabled={saving || !newName.trim()} className="w-full rounded-xl text-white" style={{ background: isDark ? darkColors.canopy : colors.canopy }}>
+              {saving ? <Loader2 className="animate-spin" size={16} /> : "Add Sub-Event"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 export default function SettingsPage({
   params,
 }: {
@@ -495,6 +676,7 @@ export default function SettingsPage({
               <option value="donation">Pay-What-You-Want (Donation)</option>
               <option value="fixed">Fixed Price</option>
               <option value="free">Free</option>
+              <option value="composite">Composite (Sub-Events)</option>
             </select>
           </div>
           <div>
@@ -678,6 +860,11 @@ export default function SettingsPage({
 
     {/* Linked Forms Section — outside the main form */}
     <LinkedFormsSection eventId={eventId} isDark={isDark} />
+
+    {/* Sub-Events Section — for composite pricing */}
+    {event.pricing_model === "composite" && (
+      <SubEventsSection eventId={eventId} isDark={isDark} />
+    )}
 
     {/* C6: Registration Form Preview Modal */}
     {previewOpen && (

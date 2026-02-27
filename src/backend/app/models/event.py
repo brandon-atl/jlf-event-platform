@@ -54,6 +54,8 @@ class Event(TimestampMixin, Base):
     notification_templates: Mapped[dict | None] = mapped_column(
         JSONType, nullable=True, default=dict
     )
+    is_recurring: Mapped[bool] = mapped_column(Boolean, default=False)
+    recurrence_rule: Mapped[str | None] = mapped_column(String(255), nullable=True)
     virtual_meeting_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[EventStatus] = mapped_column(
         Enum(EventStatus, native_enum=False), default=EventStatus.draft
@@ -61,3 +63,4 @@ class Event(TimestampMixin, Base):
 
     registrations = relationship("Registration", back_populates="event", lazy="selectin")
     form_links = relationship("EventFormLink", back_populates="event", lazy="selectin")
+    sub_events = relationship("SubEvent", back_populates="parent_event", lazy="selectin", order_by="SubEvent.sort_order")

@@ -497,6 +497,17 @@ export function RegistrationForm({
   const [scholarshipValidating, setScholarshipValidating] = useState(false);
   const [scholarshipError, setScholarshipError] = useState<string | null>(null);
 
+  // Sub-event selection state (for composite events)
+  const [selectedSubEvents, setSelectedSubEvents] = useState<Set<string>>(() => {
+    const required = new Set<string>();
+    if (event.sub_events) {
+      for (const se of event.sub_events) {
+        if (se.is_required) required.add(se.id);
+      }
+    }
+    return required;
+  });
+
   // Multi-guest state
   const [guests, setGuests] = useState<GuestFormState[]>([createEmptyGuest()]);
 
@@ -643,6 +654,7 @@ export function RegistrationForm({
       waiver_accepted: true,
       accommodation_type: g.accommodation_type || undefined,
       dietary_restrictions: g.dietary_restrictions || undefined,
+      selected_sub_event_ids: event.pricing_model === "composite" ? Array.from(selectedSubEvents) : undefined,
     }));
 
     const selectedMethod =
@@ -750,6 +762,7 @@ export function RegistrationForm({
         intake_data: Object.keys(dynamicData).length > 0 ? dynamicData : undefined,
         payment_method: isFreeEvent ? undefined : selectedMethod,
         scholarship_code: scholarshipValidation?.valid ? scholarshipCode.trim() : undefined,
+        selected_sub_event_ids: event.pricing_model === "composite" ? Array.from(selectedSubEvents) : undefined,
       });
 
       if (result.checkout_url) {
@@ -770,19 +783,32 @@ export function RegistrationForm({
     ? `${formatDateShort(event.event_date)} – ${formatDateShort(event.event_end_date)}`
     : formatDateLong(event.event_date);
 
+  // Composite event: calculate total from selected sub-events
+  const compositeTotal = event.pricing_model === "composite" && event.sub_events
+    ? event.sub_events
+        .filter((se) => selectedSubEvents.has(se.id))
+        .reduce((sum, se) => sum + (se.pricing_model === "fixed" ? (se.fixed_price_cents || 0) : 0), 0)
+    : 0;
+
   // Effective per-guest price (scholarship overrides event price)
   const effectivePrice = scholarshipValidation?.valid && scholarshipValidation.scholarship_price_cents != null
     ? scholarshipValidation.scholarship_price_cents
-    : event.fixed_price_cents;
+    : event.pricing_model === "composite"
+      ? compositeTotal
+      : event.fixed_price_cents;
 
   const priceDisplay =
     event.pricing_model === "free"
       ? "Free"
       : event.pricing_model === "donation"
         ? "Pay what you can"
-        : effectivePrice
-          ? formatCents(effectivePrice)
-          : "Free";
+        : event.pricing_model === "composite"
+          ? selectedSubEvents.size > 0
+            ? formatCents(compositeTotal)
+            : "Select activities"
+          : effectivePrice
+            ? formatCents(effectivePrice)
+            : "Free";
 
   // Calculate total for multi-guest
   const totalPrice =
@@ -1035,6 +1061,95 @@ export function RegistrationForm({
                 </div>
               </div>
             </div>
+
+            {/* Sub-event selection for composite events */}
+            {event.pricing_model === "composite" && event.sub_events && event.sub_events.length > 0 && (
+              <>
+                <Separator />
+                <div>
+                  <h2
+                    className="mb-4 text-lg font-bold"
+                    style={{ color: "#1a3a2a", fontFamily: "'DM Serif Display', serif" }}
+                  >
+                    Select Activities
+                  </h2>
+                  <div className="space-y-3">
+                    {event.sub_events.map((se) => {
+                      const isSelected = selectedSubEvents.has(se.id);
+                      const priceLabel =
+                        se.pricing_model === "free"
+                          ? "Free"
+                          : se.pricing_model === "donation"
+                            ? se.min_donation_cents
+                              ? `Donation (min ${formatCents(se.min_donation_cents)})`
+                              : "Donation"
+                            : se.fixed_price_cents
+                              ? formatCents(se.fixed_price_cents)
+                              : "Free";
+                      return (
+                        <label
+                          key={se.id}
+                          className={`flex items-start gap-3 rounded-xl border-2 p-4 transition-all cursor-pointer ${
+                            isSelected ? "shadow-sm" : ""
+                          }`}
+                          style={{
+                            borderColor: isSelected ? "#2d5a3d" : "#e5e7eb",
+                            background: isSelected ? "#2d5a3d08" : "transparent",
+                            opacity: se.is_required ? 1 : undefined,
+                          }}
+                        >
+                          <Checkbox
+                            checked={isSelected}
+                            disabled={se.is_required}
+                            onCheckedChange={(checked) => {
+                              if (se.is_required) return;
+                              setSelectedSubEvents((prev) => {
+                                const next = new Set(prev);
+                                if (checked) next.add(se.id);
+                                else next.delete(se.id);
+                                return next;
+                              });
+                            }}
+                            className="mt-0.5"
+                            style={
+                              isSelected
+                                ? ({ background: "#2d5a3d", borderColor: "#2d5a3d" } as React.CSSProperties)
+                                : undefined
+                            }
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-semibold" style={{ color: "#1a3a2a" }}>
+                                {se.name}
+                                {se.is_required && (
+                                  <span className="ml-2 text-xs font-normal text-gray-400">(Required)</span>
+                                )}
+                              </span>
+                              <span className="text-sm font-medium whitespace-nowrap" style={{ color: "#2d5a3d" }}>
+                                {priceLabel}
+                              </span>
+                            </div>
+                            {se.description && (
+                              <p className="text-xs text-gray-500 mt-1">{se.description}</p>
+                            )}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {compositeTotal > 0 && (
+                    <div className="mt-4 flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3">
+                      <span className="text-sm font-medium text-gray-600">
+                        Selected total{isMultiGuest ? " (per guest)" : ""}
+                      </span>
+                      <span className="text-lg font-bold" style={{ color: "#1a3a2a" }}>
+                        {formatCents(compositeTotal)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Single-guest: show donation, forms, waivers inline */}
             {!isMultiGuest && (

@@ -68,6 +68,8 @@ from app.models.registration import (
 )
 from app.models.membership import Membership
 from app.models.scholarship_link import ScholarshipLink
+from app.models.sub_event import SubEvent
+from app.models.registration_sub_event import RegistrationSubEvent
 from app.schemas.registration import (
     EventInfo,
     GroupRegistrationCreate,
@@ -75,11 +77,80 @@ from app.schemas.registration import (
     GroupRegistrationResponse,
     RegistrationCreate,
     RegistrationResponse,
+    SubEventInfo,
 )
 from app.services.email_service import send_confirmation_email
 from app.services.stripe_service import create_checkout_session
 
 router = APIRouter(prefix="/register", tags=["registration"])
+
+
+async def _calculate_composite_price(
+    db: AsyncSession,
+    event: Event,
+    selected_sub_event_ids: list[str],
+) -> tuple[list[SubEvent], int]:
+    """Validate sub-event selections and calculate total price for a composite event.
+
+    Returns (selected_sub_events, total_price_cents).
+    """
+    if not selected_sub_event_ids:
+        raise HTTPException(status_code=422, detail="At least one sub-event must be selected for composite events")
+
+    # Fetch sub-events for this event
+    result = await db.execute(
+        select(SubEvent)
+        .where(SubEvent.parent_event_id == event.id)
+        .order_by(SubEvent.sort_order)
+    )
+    all_sub_events = result.scalars().all()
+    sub_event_map = {str(se.id): se for se in all_sub_events}
+
+    # Validate all selected IDs exist and belong to this event
+    selected = []
+    for sid in selected_sub_event_ids:
+        se = sub_event_map.get(sid)
+        if not se:
+            raise HTTPException(status_code=422, detail=f"Sub-event {sid} not found for this event")
+        selected.append(se)
+
+    # Validate all required sub-events are included
+    selected_ids_set = set(selected_sub_event_ids)
+    for se in all_sub_events:
+        if se.is_required and str(se.id) not in selected_ids_set:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Required sub-event '{se.name}' must be selected",
+            )
+
+    # Calculate total price
+    total = 0
+    for se in selected:
+        pm = se.pricing_model.value if hasattr(se.pricing_model, "value") else se.pricing_model
+        if pm == "fixed" and se.fixed_price_cents:
+            total += se.fixed_price_cents
+        # donation and free sub-events contribute 0 to the required total
+
+    return selected, total
+
+
+async def _create_registration_sub_events(
+    db: AsyncSession,
+    registration_id,
+    selected_sub_events: list[SubEvent],
+) -> None:
+    """Create registration_sub_events rows for a composite registration."""
+    for se in selected_sub_events:
+        pm = se.pricing_model.value if hasattr(se.pricing_model, "value") else se.pricing_model
+        amount = None
+        if pm == "fixed" and se.fixed_price_cents:
+            amount = se.fixed_price_cents
+        rse = RegistrationSubEvent(
+            registration_id=registration_id,
+            sub_event_id=se.id,
+            payment_amount_cents=amount,
+        )
+        db.add(rse)
 
 
 @router.get("/{event_slug}/info", response_model=dict)
@@ -103,19 +174,42 @@ async def get_event_info(event_slug: str, db: AsyncSession = Depends(get_db)):
     reg_count = reg_count_result.scalar() or 0
     spots_remaining = (event.capacity - reg_count) if event.capacity else None
 
+    # Build sub_events for composite events
+    sub_events_info = None
+    pm = event.pricing_model.value if hasattr(event.pricing_model, "value") else event.pricing_model
+    if pm == "composite" and hasattr(event, "sub_events") and event.sub_events:
+        sub_events_info = [
+            SubEventInfo(
+                id=se.id,
+                name=se.name,
+                description=se.description,
+                pricing_model=se.pricing_model.value if hasattr(se.pricing_model, "value") else se.pricing_model,
+                fixed_price_cents=se.fixed_price_cents,
+                min_donation_cents=se.min_donation_cents,
+                capacity=se.capacity,
+                sort_order=se.sort_order,
+                is_required=se.is_required,
+            )
+            for se in sorted(event.sub_events, key=lambda s: s.sort_order)
+        ]
+
     info = EventInfo(
         name=event.name,
         slug=event.slug,
         event_date=event.event_date,
         event_end_date=event.event_end_date,
         event_type=event.event_type,
-        pricing_model=event.pricing_model.value,
+        pricing_model=pm,
         fixed_price_cents=event.fixed_price_cents,
         min_donation_cents=event.min_donation_cents,
         capacity=event.capacity,
         spots_remaining=spots_remaining,
         registration_fields=event.registration_fields,
         description=event.description,
+        allow_cash_payment=event.allow_cash_payment,
+        is_recurring=event.is_recurring,
+        recurrence_rule=event.recurrence_rule,
+        sub_events=sub_events_info,
     )
     return {"event": info.model_dump(mode="json")}
 
@@ -239,11 +333,26 @@ async def create_registration(
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+    # Handle composite event pricing
+    is_composite = event.pricing_model.value == "composite"
+    selected_sub_events = []
+    composite_total = 0
+
+    if is_composite:
+        selected_sub_events, composite_total = await _calculate_composite_price(
+            db, event, data.selected_sub_event_ids or []
+        )
+        # For scholarship on composite, use scholarship amount instead
+        if scholarship_amount:
+            composite_total = scholarship_amount
+
     # Determine initial status based on payment method and pricing model
     is_free_event = event.pricing_model.value == "free"
     if payment_method == PaymentMethod.cash:
         initial_status = RegistrationStatus.cash_pending
     elif is_free_event or payment_method == PaymentMethod.free:
+        initial_status = RegistrationStatus.complete
+    elif is_composite and composite_total == 0:
         initial_status = RegistrationStatus.complete
     else:
         initial_status = RegistrationStatus.pending_payment
@@ -254,6 +363,7 @@ async def create_registration(
         event_id=event.id,
         status=initial_status,
         payment_method=payment_method,
+        payment_amount_cents=composite_total if is_composite else None,
         accommodation_type=accommodation,
         dietary_restrictions=data.dietary_restrictions,
         intake_data=safe_intake,
@@ -262,6 +372,10 @@ async def create_registration(
     )
     db.add(registration)
     await db.flush()
+
+    # Create registration_sub_events for composite
+    if is_composite and selected_sub_events:
+        await _create_registration_sub_events(db, registration.id, selected_sub_events)
 
     # Increment scholarship uses
     if scholarship_link:
@@ -299,6 +413,87 @@ async def create_registration(
     # Stripe / scholarship — create Checkout session
     registration.attendee = attendee
     registration.event = event
+
+    if is_composite and selected_sub_events:
+        # Multi-line-item Checkout for composite events
+        import stripe
+        from app.config import settings
+
+        line_items = []
+        for se in selected_sub_events:
+            pm = se.pricing_model.value if hasattr(se.pricing_model, "value") else se.pricing_model
+            amount = 0
+            if scholarship_amount:
+                # Distribute scholarship evenly? No — flat $30 total
+                # For scholarship, use a single line item below
+                continue
+            elif pm == "fixed" and se.fixed_price_cents:
+                amount = se.fixed_price_cents
+            if amount > 0:
+                line_items.append({
+                    "price_data": {
+                        "currency": "usd",
+                        "unit_amount": amount,
+                        "product_data": {
+                            "name": f"{event.name} — {se.name}",
+                        },
+                    },
+                    "quantity": 1,
+                })
+
+        # If scholarship, use single line item
+        if scholarship_amount:
+            line_items = [{
+                "price_data": {
+                    "currency": "usd",
+                    "unit_amount": scholarship_amount,
+                    "product_data": {
+                        "name": f"{event.name} (Scholarship)",
+                    },
+                },
+                "quantity": 1,
+            }]
+
+        if not line_items:
+            # All sub-events are free/donation
+            registration.status = RegistrationStatus.complete
+            await db.commit()
+            background_tasks.add_task(send_confirmation_email, registration, event)
+            return RegistrationResponse(
+                registration_id=registration.id,
+                checkout_url=None,
+                status="complete",
+                message="You're registered! Check your email for confirmation.",
+            )
+
+        try:
+            session = stripe.checkout.Session.create(
+                mode="payment",
+                client_reference_id=str(registration.id),
+                customer_email=data.email,
+                success_url=f"{settings.app_url}/register/{event.slug}/success?session_id={{CHECKOUT_SESSION_ID}}",
+                cancel_url=f"{settings.app_url}/register/{event.slug}/cancelled",
+                metadata={
+                    "registration_id": str(registration.id),
+                    "event_id": str(event.id),
+                    "event_slug": event.slug,
+                },
+                line_items=line_items,
+            )
+            checkout_url = session.url
+            registration.stripe_checkout_session_id = session.id
+        except stripe.error.StripeError as e:
+            logger.error("Stripe checkout creation failed: %s", e, exc_info=True)
+            raise HTTPException(status_code=500, detail="Payment provider error. Please try again.")
+
+        await db.commit()
+        return RegistrationResponse(
+            registration_id=registration.id,
+            checkout_url=checkout_url,
+            status=registration.status.value,
+        )
+
+    # Standard (non-composite) Stripe/scholarship checkout
     checkout_url = await create_checkout_session(
         registration,
         event,
@@ -532,14 +727,30 @@ async def create_group_registration(
         except ValueError as e:
             raise HTTPException(status_code=422, detail=str(e))
 
+        # Handle composite sub-event selection for this guest
+        guest_selected_sub_events = []
+        is_composite = event.pricing_model.value == "composite"
+        if is_composite and guest.selected_sub_event_ids:
+            guest_selected_sub_events, _ = await _calculate_composite_price(
+                db, event, guest.selected_sub_event_ids
+            )
+
         # Calculate per-guest price
         guest_price = 0
         discount_applied = False
         if scholarship_amount:
             guest_price = scholarship_amount
+        elif is_composite:
+            # Sum sub-event prices for this guest
+            for se in guest_selected_sub_events:
+                pm = se.pricing_model.value if hasattr(se.pricing_model, "value") else se.pricing_model
+                if pm == "fixed" and se.fixed_price_cents:
+                    guest_price += se.fixed_price_cents
         elif event.fixed_price_cents:
             guest_price = event.fixed_price_cents
-            # BUG 5: Check member discount using member_discount_applied count
+
+        # Member discount applies to the total (not per sub-event)
+        if guest_price > 0 and not scholarship_amount:
             if attendee.is_member and payment_method != PaymentMethod.scholarship:
                 if member_discount_count < event.max_member_discount_slots:
                     if attendee.membership_id:
@@ -576,6 +787,10 @@ async def create_group_registration(
         registration.event = event
         db.add(registration)
         await db.flush()
+
+        # Create sub-event selections for composite
+        if is_composite and guest_selected_sub_events:
+            await _create_registration_sub_events(db, registration.id, guest_selected_sub_events)
 
         registration_objects.append(registration)
         registrations_created.append(

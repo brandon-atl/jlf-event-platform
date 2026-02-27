@@ -5,7 +5,9 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
-from ..models import Event, EventStatus, Registration, RegistrationStatus, User
+from ..models import Event, EventStatus, PricingModel, Registration, RegistrationStatus, User
+from ..models.sub_event import SubEvent
+from ..models.registration_sub_event import RegistrationSubEvent
 from ..schemas.dashboard import (
     AccommodationBreakdown,
     DietarySummaryItem,
@@ -13,6 +15,7 @@ from ..schemas.dashboard import (
     HeadcountByStatus,
     OverviewDashboard,
     RevenueStats,
+    SubEventHeadcount,
     UpcomingEvent,
 )
 from ..services.auth_service import get_current_user
@@ -210,6 +213,40 @@ async def event_dashboard(
     if event.capacity is not None:
         spots_remaining = max(0, event.capacity - hc.complete)
 
+    # Sub-event headcounts for composite events
+    sub_event_headcounts = None
+    pm = event.pricing_model.value if hasattr(event.pricing_model, "value") else event.pricing_model
+    if pm == "composite":
+        # Get all sub-events for this event
+        se_result = await db.execute(
+            select(SubEvent)
+            .where(SubEvent.parent_event_id == event_id)
+            .order_by(SubEvent.sort_order)
+        )
+        sub_events = se_result.scalars().all()
+
+        sub_event_headcounts = []
+        for se in sub_events:
+            count_result = await db.execute(
+                select(func.count(RegistrationSubEvent.id))
+                .join(Registration, Registration.id == RegistrationSubEvent.registration_id)
+                .where(
+                    RegistrationSubEvent.sub_event_id == se.id,
+                    Registration.status.in_([
+                        RegistrationStatus.complete,
+                        RegistrationStatus.cash_pending,
+                    ]),
+                )
+            )
+            count = count_result.scalar() or 0
+            sub_event_headcounts.append(
+                SubEventHeadcount(
+                    sub_event_id=str(se.id),
+                    sub_event_name=se.name,
+                    count=count,
+                )
+            )
+
     return EventDashboard(
         event_id=event.id,
         event_name=event.name,
@@ -219,4 +256,5 @@ async def event_dashboard(
         revenue=revenue,
         spots_remaining=spots_remaining,
         capacity=event.capacity,
+        sub_event_headcounts=sub_event_headcounts,
     )
