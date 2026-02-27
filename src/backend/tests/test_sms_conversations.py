@@ -294,7 +294,8 @@ async def test_reply_to_conversation(
 ):
     headers = await _get_auth_headers(client, sample_user)
 
-    # Send a reply (will fail since Twilio is not configured, but should store)
+    # Reply is stored in conversation history regardless of Twilio delivery status.
+    # Without Twilio configured, send_sms returns False but the message record is still created.
     resp = await client.post(
         "/api/v1/sms/conversations/+14045559999/reply",
         json={"message": "Thanks for reaching out!"},
@@ -302,7 +303,10 @@ async def test_reply_to_conversation(
     )
     assert resp.status_code == 200
     data = resp.json()
+    # Message record is always created (even if SMS delivery fails)
     assert data["message_id"] is not None
+    # Without Twilio configured, delivery will fail
+    assert data["success"] is False
 
 
 async def test_conversation_not_found(client: AsyncClient, sample_user: User):
@@ -311,3 +315,29 @@ async def test_conversation_not_found(client: AsyncClient, sample_user: User):
         "/api/v1/sms/conversations/+10000000000", headers=headers
     )
     assert resp.status_code == 404
+
+
+async def test_twilio_inbound_idempotent_no_duplicate_conversation(
+    client: AsyncClient,
+    phone_attendee: Attendee,
+    active_registration: Registration,
+    db_session: AsyncSession,
+):
+    """Sending the same SID twice should only create one conversation record."""
+    data = {
+        "From": "+14045559999",
+        "Body": "Test duplicate",
+        "MessageSid": "SM_dup_conv_test",
+    }
+    await client.post("/api/v1/webhooks/twilio/inbound", data=data)
+    await client.post("/api/v1/webhooks/twilio/inbound", data=data)
+
+    # Verify only one conversation record exists for this SID
+    from tests.conftest import TestSessionLocal
+
+    async with TestSessionLocal() as fresh_db:
+        result = await fresh_db.execute(
+            select(SmsConversation).where(SmsConversation.twilio_sid == "SM_dup_conv_test")
+        )
+        conversations = result.scalars().all()
+        assert len(conversations) == 1

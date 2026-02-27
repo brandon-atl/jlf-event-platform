@@ -54,6 +54,7 @@ class BulkNotificationRequest(BaseModel):
     template_id: UUID | None = None
     custom_message: str | None = None
     subject: str | None = None
+    idempotency_key: str | None = None
 
 
 class BulkNotificationResponse(BaseModel):
