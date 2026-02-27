@@ -17,7 +17,7 @@ class RegistrationSubEvent(Base):
         ForeignKey("registrations.id"), nullable=False, index=True
     )
     sub_event_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("sub_events.id"), nullable=False
+        ForeignKey("sub_events.id"), nullable=False, index=True
     )
     payment_amount_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
 

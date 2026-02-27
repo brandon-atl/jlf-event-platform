@@ -987,6 +987,7 @@ export interface ScholarshipLinkCreate {
 export interface ScholarshipLinkValidation {
   valid: boolean;
   event_id?: string | null;
+  event_slug?: string | null;
   scholarship_price_cents?: number | null;
   remaining_uses?: number | null;
 }

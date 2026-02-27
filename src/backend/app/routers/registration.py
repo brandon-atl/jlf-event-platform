@@ -80,7 +80,7 @@ from app.schemas.registration import (
     SubEventInfo,
 )
 from app.services.email_service import send_confirmation_email
-from app.services.stripe_service import create_checkout_session
+from app.services.stripe_service import create_checkout_session, create_composite_checkout_session
 
 router = APIRouter(prefix="/register", tags=["registration"])
 
@@ -89,11 +89,15 @@ async def _calculate_composite_price(
     db: AsyncSession,
     event: Event,
     selected_sub_event_ids: list[str],
+    guest_count: int = 1,
 ) -> tuple[list[SubEvent], int]:
     """Validate sub-event selections and calculate total price for a composite event.
 
     Returns (selected_sub_events, total_price_cents).
     """
+    # Deduplicate selected IDs (Issue 4: prevent inflated totals + unique constraint errors)
+    selected_sub_event_ids = list(dict.fromkeys(selected_sub_event_ids))
+
     if not selected_sub_event_ids:
         raise HTTPException(status_code=422, detail="At least one sub-event must be selected for composite events")
 
@@ -122,6 +126,35 @@ async def _calculate_composite_price(
                 status_code=422,
                 detail=f"Required sub-event '{se.name}' must be selected",
             )
+
+    # Enforce sub-event capacity (Issue 2)
+    capped_ids = [se.id for se in selected if se.capacity is not None]
+    if capped_ids:
+        counts_result = await db.execute(
+            select(
+                RegistrationSubEvent.sub_event_id,
+                func.count(RegistrationSubEvent.id).label("count"),
+            )
+            .join(Registration, Registration.id == RegistrationSubEvent.registration_id)
+            .where(
+                RegistrationSubEvent.sub_event_id.in_(capped_ids),
+                Registration.status.in_([
+                    RegistrationStatus.complete,
+                    RegistrationStatus.cash_pending,
+                    RegistrationStatus.pending_payment,
+                ]),
+            )
+            .group_by(RegistrationSubEvent.sub_event_id)
+        )
+        counts_map = {row.sub_event_id: row.count for row in counts_result}
+        for se in selected:
+            if se.capacity is not None:
+                current = counts_map.get(se.id, 0)
+                if current + guest_count > se.capacity:
+                    raise HTTPException(
+                        status_code=409,
+                        detail=f"Sub-event '{se.name}' is full",
+                    )
 
     # Calculate total price
     total = 0
@@ -415,47 +448,19 @@ async def create_registration(
     registration.event = event
 
     if is_composite and selected_sub_events:
-        # Multi-line-item Checkout for composite events
+        # Multi-line-item Checkout for composite events (via service layer)
         import stripe
-        from app.config import settings
 
-        line_items = []
-        for se in selected_sub_events:
-            pm = se.pricing_model.value if hasattr(se.pricing_model, "value") else se.pricing_model
-            amount = 0
-            if scholarship_amount:
-                # Distribute scholarship evenly? No — flat $30 total
-                # For scholarship, use a single line item below
-                continue
-            elif pm == "fixed" and se.fixed_price_cents:
-                amount = se.fixed_price_cents
-            if amount > 0:
-                line_items.append({
-                    "price_data": {
-                        "currency": "usd",
-                        "unit_amount": amount,
-                        "product_data": {
-                            "name": f"{event.name} — {se.name}",
-                        },
-                    },
-                    "quantity": 1,
-                })
+        try:
+            session = await create_composite_checkout_session(
+                registration, event, selected_sub_events,
+                scholarship_amount=scholarship_amount,
+            )
+        except stripe.error.StripeError:
+            raise HTTPException(status_code=500, detail="Payment provider error. Please try again.")
 
-        # If scholarship, use single line item
-        if scholarship_amount:
-            line_items = [{
-                "price_data": {
-                    "currency": "usd",
-                    "unit_amount": scholarship_amount,
-                    "product_data": {
-                        "name": f"{event.name} (Scholarship)",
-                    },
-                },
-                "quantity": 1,
-            }]
-
-        if not line_items:
-            # All sub-events are free/donation
+        if session is None:
+            # All sub-events are free/donation — no Stripe needed
             registration.status = RegistrationStatus.complete
             await db.commit()
             background_tasks.add_task(send_confirmation_email, registration, event)
@@ -466,25 +471,8 @@ async def create_registration(
                 message="You're registered! Check your email for confirmation.",
             )
 
-        try:
-            session = stripe.checkout.Session.create(
-                mode="payment",
-                client_reference_id=str(registration.id),
-                customer_email=data.email,
-                success_url=f"{settings.app_url}/register/{event.slug}/success?session_id={{CHECKOUT_SESSION_ID}}",
-                cancel_url=f"{settings.app_url}/register/{event.slug}/cancelled",
-                metadata={
-                    "registration_id": str(registration.id),
-                    "event_id": str(event.id),
-                    "event_slug": event.slug,
-                },
-                line_items=line_items,
-            )
-            checkout_url = session.url
-            registration.stripe_checkout_session_id = session.id
-        except stripe.error.StripeError as e:
-            logger.error("Stripe checkout creation failed: %s", e, exc_info=True)
-            raise HTTPException(status_code=500, detail="Payment provider error. Please try again.")
+        checkout_url = session.url
+        registration.stripe_checkout_session_id = session.id
 
         await db.commit()
         return RegistrationResponse(

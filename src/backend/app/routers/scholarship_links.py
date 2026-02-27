@@ -153,6 +153,7 @@ async def validate_scholarship_code(
     return ScholarshipLinkValidation(
         valid=True,
         event_id=link.event_id,
+        event_slug=link.event.slug if link.event else None,
         scholarship_price_cents=link.scholarship_price_cents,
         remaining_uses=link.max_uses - link.uses,
     )
