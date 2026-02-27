@@ -7,8 +7,12 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.database import get_db
+from app.limiter import limiter
 from app.models import Base
 from app.main import app
+
+# Disable rate limiting for tests
+limiter.enabled = False
 from app.models import (
     AccommodationType,
     Attendee,
@@ -49,12 +53,15 @@ app.dependency_overrides[get_db] = override_get_db
 
 @pytest_asyncio.fixture(autouse=True)
 async def setup_database():
-    """Create all tables before each test, drop after."""
+    """Create all tables before each test, clean data after."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
+    # Delete all rows from all tables in reverse dependency order.
+    # Using DELETE instead of DROP/CREATE avoids SQLite connection locking issues.
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        for table in reversed(Base.metadata.sorted_tables):
+            await conn.execute(table.delete())
 
 
 def pytest_sessionfinish(session, exitstatus):
@@ -64,7 +71,7 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 @pytest_asyncio.fixture
-async def db_session():
+async def db_session(setup_database):
     """Provide a database session for direct DB manipulation in tests."""
     async with TestSessionLocal() as session:
         yield session

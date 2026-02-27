@@ -274,13 +274,17 @@ async def get_recurring_dates(
 
     from dateutil.rrule import rrulestr
 
+    # Ensure dtstart is timezone-aware for consistent rrule generation
+    dtstart = event.event_date
+    if dtstart and dtstart.tzinfo is None:
+        dtstart = dtstart.replace(tzinfo=UTC)
+
     try:
-        rule = rrulestr(event.recurrence_rule, dtstart=event.event_date)
+        rule = rrulestr(event.recurrence_rule, dtstart=dtstart)
     except (ValueError, TypeError) as e:
         raise HTTPException(status_code=422, detail=f"Invalid recurrence rule: {e}")
 
-    # Use naive UTC now to match rrule's naive datetimes (dtstart is typically naive)
-    now = datetime.now(UTC).replace(tzinfo=None)
+    now = datetime.now(UTC)
 
     # Generate upcoming dates using xafter for efficiency (avoids iterating past dates)
     occurrences = list(rule.xafter(now, count=count, inc=True))

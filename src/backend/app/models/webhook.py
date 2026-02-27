@@ -11,9 +11,11 @@ class WebhookRaw(Base):
     __tablename__ = "webhooks_raw"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=gen_uuid)
-    stripe_event_id: Mapped[str] = mapped_column(
-        String(255), unique=True, index=True
+    stripe_event_id: Mapped[str | None] = mapped_column(
+        String(255), unique=True, index=True, nullable=True
     )
+    source: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    twilio_sid: Mapped[str | None] = mapped_column(String(255), nullable=True)
     event_type: Mapped[str] = mapped_column(String(100))
     payload_json: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
     processed_at: Mapped[datetime | None] = mapped_column(
