@@ -69,44 +69,64 @@ export default function DayOfPage({
   const rosterCacheKey = ["registrations", eventId, "complete"];
 
   const checkInMutation = useMutation({
-    mutationFn: ({ regId }: { regId: string; }): Promise<RegistrationDetail> => {
+    mutationFn: ({ regId }: { regId: string }): Promise<RegistrationDetail> => {
       if (isDemoMode()) {
-        // Optimistically update the cached roster without hitting the real API
         const current = queryClient.getQueryData<RegistrationDetail[]>(rosterCacheKey) ?? [];
-        const updated = current.map((r) =>
-          r.id === regId
-            ? { ...r, checked_in_at: new Date().toISOString(), checked_in_by: "demo@justloveforest.com" }
-            : r
-        );
-        queryClient.setQueryData(rosterCacheKey, updated);
-        return Promise.resolve(updated.find((r) => r.id === regId)!);
+        const match = current.find((r) => r.id === regId);
+        return Promise.resolve({ ...match!, checked_in_at: new Date().toISOString(), checked_in_by: "demo@justloveforest.com" });
       }
       return registrationsApi.checkIn(eventId, regId);
     },
-    onSuccess: () => {
-      if (!isDemoMode()) queryClient.invalidateQueries({ queryKey: ["registrations", eventId] });
-      toast.success("Checked in ✓");
+    onMutate: async ({ regId }) => {
+      // Cancel in-flight refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: rosterCacheKey });
+      const previous = queryClient.getQueryData<RegistrationDetail[]>(rosterCacheKey);
+      queryClient.setQueryData<RegistrationDetail[]>(rosterCacheKey, (old) =>
+        (old ?? []).map((r) =>
+          r.id === regId
+            ? { ...r, checked_in_at: new Date().toISOString(), checked_in_by: "admin" }
+            : r
+        )
+      );
+      return { previous };
     },
-    onError: () => toast.error("Check-in failed"),
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(rosterCacheKey, context.previous);
+      toast.error("Check-in failed");
+    },
+    onSuccess: () => toast.success("Checked in ✓"),
+    onSettled: () => {
+      if (!isDemoMode()) queryClient.invalidateQueries({ queryKey: rosterCacheKey });
+    },
   });
 
   const undoCheckInMutation = useMutation({
-    mutationFn: ({ regId }: { regId: string; }): Promise<RegistrationDetail> => {
+    mutationFn: ({ regId }: { regId: string }): Promise<RegistrationDetail> => {
       if (isDemoMode()) {
         const current = queryClient.getQueryData<RegistrationDetail[]>(rosterCacheKey) ?? [];
-        const updated = current.map((r) =>
-          r.id === regId ? { ...r, checked_in_at: null, checked_in_by: null } : r
-        );
-        queryClient.setQueryData(rosterCacheKey, updated);
-        return Promise.resolve(updated.find((r) => r.id === regId)!);
+        const match = current.find((r) => r.id === regId);
+        return Promise.resolve({ ...match!, checked_in_at: null, checked_in_by: null });
       }
       return registrationsApi.undoCheckIn(eventId, regId);
     },
-    onSuccess: () => {
-      if (!isDemoMode()) queryClient.invalidateQueries({ queryKey: ["registrations", eventId] });
-      toast.success("Check-in undone");
+    onMutate: async ({ regId }) => {
+      await queryClient.cancelQueries({ queryKey: rosterCacheKey });
+      const previous = queryClient.getQueryData<RegistrationDetail[]>(rosterCacheKey);
+      queryClient.setQueryData<RegistrationDetail[]>(rosterCacheKey, (old) =>
+        (old ?? []).map((r) =>
+          r.id === regId ? { ...r, checked_in_at: null, checked_in_by: null } : r
+        )
+      );
+      return { previous };
     },
-    onError: () => toast.error("Failed to undo check-in"),
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(rosterCacheKey, context.previous);
+      toast.error("Failed to undo check-in");
+    },
+    onSuccess: () => toast.success("Check-in undone"),
+    onSettled: () => {
+      if (!isDemoMode()) queryClient.invalidateQueries({ queryKey: rosterCacheKey });
+    },
   });
 
   const { data: sheetRegs, isLoading: sheetLoading } = useQuery({
