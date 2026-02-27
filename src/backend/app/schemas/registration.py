@@ -15,6 +15,46 @@ class RegistrationCreate(BaseModel):
     intake_data: dict | None = None
     donation_amount_cents: int | None = None  # pay-what-you-want amount
     payment_method: str = "stripe"  # stripe | cash | scholarship | free
+    scholarship_code: str | None = None
+
+
+class GuestData(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone: str | None = None
+    intake_data: dict | None = None
+    waiver_accepted: bool
+    accommodation_type: str | None = None
+    dietary_restrictions: str | None = None
+
+
+class PayerData(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone: str | None = None
+
+
+class GroupRegistrationCreate(BaseModel):
+    payer: PayerData
+    guests: list[GuestData]
+    payment_method: str = "stripe"  # stripe | cash | scholarship | free
+    scholarship_code: str | None = None
+    donation_amount_cents: int | None = None
+
+
+class GroupRegistrationItem(BaseModel):
+    registration_id: UUID
+    attendee_name: str
+
+
+class GroupRegistrationResponse(BaseModel):
+    group_id: UUID
+    registrations: list[GroupRegistrationItem]
+    checkout_url: str | None = None
+    status: str
+    message: str | None = None
 
 
 class RegistrationResponse(BaseModel):

@@ -66,10 +66,12 @@ def create_app() -> FastAPI:
         dashboard,
         events,
         form_templates,
+        memberships,
         notifications,
         portal,
         registration,
         registrations,
+        scholarship_links,
         users,
         webhooks,
     )
@@ -87,6 +89,8 @@ def create_app() -> FastAPI:
     app.include_router(users.router, prefix="/api/v1")
     app.include_router(form_templates.router, prefix="/api/v1")
     app.include_router(form_templates.event_forms_router, prefix="/api/v1")
+    app.include_router(scholarship_links.router, prefix="/api/v1")
+    app.include_router(memberships.router, prefix="/api/v1")
 
     # Health check
     @app.get("/health")

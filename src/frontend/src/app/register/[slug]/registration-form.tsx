@@ -12,6 +12,9 @@ import {
   CheckCircle,
   Banknote,
   CreditCard,
+  UserPlus,
+  Minus,
+  Plus,
 } from "lucide-react";
 
 import {
@@ -19,6 +22,7 @@ import {
   type EventPublicInfo,
   type FormTemplateField,
   type EventFormLinkResponse,
+  type GuestData,
 } from "@/lib/api";
 import { formatCents, formatDateLong, formatDateShort } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
@@ -298,6 +302,179 @@ function WaiverSection({
   );
 }
 
+// ── Guest Form Section ──────────────────────────
+interface GuestFormState {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  dietary_restrictions: string;
+  accommodation_type: string;
+  dynamicData: Record<string, Record<string, unknown>>;
+  waiverAcceptances: Record<string, boolean>;
+  basicWaiverAccepted: boolean;
+}
+
+function createEmptyGuest(): GuestFormState {
+  return {
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    dietary_restrictions: "",
+    accommodation_type: "",
+    dynamicData: {},
+    waiverAcceptances: {},
+    basicWaiverAccepted: false,
+  };
+}
+
+function GuestSection({
+  index,
+  guest,
+  onChange,
+  event,
+  linkedForms,
+  isPayer,
+}: {
+  index: number;
+  guest: GuestFormState;
+  onChange: (g: GuestFormState) => void;
+  event: EventPublicInfo;
+  linkedForms: EventFormLinkResponse[];
+  isPayer: boolean;
+}) {
+  const regularForms = linkedForms.filter((l) => !l.is_waiver);
+  const waiverForms = linkedForms.filter((l) => l.is_waiver);
+  const hasFallbackWaiver = linkedForms.length === 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 mb-2">
+        <UserPlus size={16} style={{ color: "#2d5a3d" }} />
+        <h3
+          className="text-base font-bold"
+          style={{ color: "#1a3a2a", fontFamily: "'DM Serif Display', serif" }}
+        >
+          Guest {index + 1} {isPayer && "(You)"}
+        </h3>
+      </div>
+
+      {/* Name & contact */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>First name <span className="text-red-400">*</span></Label>
+          <Input
+            value={guest.first_name}
+            onChange={(e) => onChange({ ...guest, first_name: e.target.value })}
+            placeholder="Jane"
+            className="rounded-xl"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Last name <span className="text-red-400">*</span></Label>
+          <Input
+            value={guest.last_name}
+            onChange={(e) => onChange({ ...guest, last_name: e.target.value })}
+            placeholder="Doe"
+            className="rounded-xl"
+          />
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Email <span className="text-red-400">*</span></Label>
+          <Input
+            type="email"
+            value={guest.email}
+            onChange={(e) => onChange({ ...guest, email: e.target.value })}
+            placeholder="jane@example.com"
+            className="rounded-xl"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Phone</Label>
+          <Input
+            type="tel"
+            value={guest.phone}
+            onChange={(e) => onChange({ ...guest, phone: e.target.value })}
+            placeholder="+1 (404) 555-1234"
+            className="rounded-xl"
+          />
+        </div>
+      </div>
+
+      {/* Dynamic forms */}
+      {regularForms.map((link) => (
+        <div key={link.id} className="space-y-3">
+          <p className="text-sm font-semibold" style={{ color: "#1a3a2a" }}>
+            {link.form_template.name}
+          </p>
+          {link.form_template.fields.map((field) => (
+            <DynamicField
+              key={field.id}
+              field={field}
+              value={guest.dynamicData[link.form_template_id]?.[field.id]}
+              onChange={(val) => {
+                const newDynamic = {
+                  ...guest.dynamicData,
+                  [link.form_template_id]: {
+                    ...(guest.dynamicData[link.form_template_id] || {}),
+                    [field.id]: val,
+                  },
+                };
+                onChange({ ...guest, dynamicData: newDynamic });
+              }}
+              templateId={`g${index}_${link.form_template_id}`}
+            />
+          ))}
+        </div>
+      ))}
+
+      {/* Waivers */}
+      {waiverForms.map((link) => (
+        <WaiverSection
+          key={link.id}
+          link={link}
+          accepted={guest.waiverAcceptances[link.id] || false}
+          onAcceptChange={(v) =>
+            onChange({
+              ...guest,
+              waiverAcceptances: { ...guest.waiverAcceptances, [link.id]: v },
+            })
+          }
+        />
+      ))}
+
+      {hasFallbackWaiver && (
+        <div className="flex items-start gap-3">
+          <Checkbox
+            checked={guest.basicWaiverAccepted}
+            onCheckedChange={(checked) =>
+              onChange({ ...guest, basicWaiverAccepted: checked === true })
+            }
+            className="mt-0.5"
+            style={
+              guest.basicWaiverAccepted
+                ? ({ background: "#2d5a3d", borderColor: "#2d5a3d" } as React.CSSProperties)
+                : undefined
+            }
+          />
+          <div className="space-y-1">
+            <Label className="cursor-pointer leading-snug">
+              I accept the Visitor Agreement <span className="text-red-400">*</span>
+            </Label>
+            <p className="text-xs text-gray-400">
+              By checking this box, I agree to the Just Love Forest visitor agreement,
+              waiver of liability, and community guidelines.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function RegistrationForm({
   event,
   slug,
@@ -308,27 +485,29 @@ export function RegistrationForm({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [freeSuccess, setFreeSuccess] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"stripe" | "cash">("stripe");
+  const [guestCount, setGuestCount] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Dynamic form data: { template_id: { field_id: value } }
+  // Multi-guest state
+  const [guests, setGuests] = useState<GuestFormState[]>([createEmptyGuest()]);
+
+  // Dynamic form data for single-guest mode
   const [dynamicData, setDynamicData] = useState<Record<string, Record<string, unknown>>>({});
-  // Waiver acceptances: { link_id: boolean }
   const [waiverAcceptances, setWaiverAcceptances] = useState<Record<string, boolean>>({});
 
   const linkedForms = event.linked_forms || [];
   const regularForms = linkedForms.filter((l) => !l.is_waiver);
   const waiverForms = linkedForms.filter((l) => l.is_waiver);
   const hasLinkedForms = linkedForms.length > 0;
-
-  // Only show fallback waiver when there are NO linked forms at all
-  // (if forms exist but no waiver is linked, that's intentional)
   const hasFallbackWaiver = !hasLinkedForms;
+
+  const isMultiGuest = guestCount > 1;
 
   const {
     register: registerField,
     handleSubmit,
-    setValue,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<BaseFormData>({
     resolver: zodResolver(baseSchema),
     defaultValues: {
@@ -349,8 +528,119 @@ export function RegistrationForm({
     }));
   };
 
-  const onSubmit = async (data: BaseFormData) => {
+  // Handle guest count changes
+  function handleGuestCountChange(newCount: number) {
+    const clamped = Math.max(1, Math.min(10, newCount));
+    setGuestCount(clamped);
+    setGuests((prev) => {
+      if (clamped > prev.length) {
+        return [...prev, ...Array.from({ length: clamped - prev.length }, createEmptyGuest)];
+      }
+      return prev.slice(0, clamped);
+    });
+  }
+
+  // Update a specific guest
+  function updateGuest(index: number, guest: GuestFormState) {
+    setGuests((prev) => prev.map((g, i) => (i === index ? guest : g)));
+  }
+
+  // Validate dynamic fields for a guest
+  function validateGuestDynamic(guestData: GuestFormState): string | null {
+    for (const link of regularForms) {
+      const templateData = guestData.dynamicData[link.form_template_id] || {};
+      for (const field of link.form_template.fields) {
+        if (field.required) {
+          const val = templateData[field.id];
+          let isEmpty = false;
+          if (field.type === "checkbox") isEmpty = val !== true;
+          else if (field.type === "multi_select") isEmpty = !Array.isArray(val) || val.length === 0;
+          else if (val === undefined || val === null) isEmpty = true;
+          else if (typeof val === "string") isEmpty = !val.trim();
+          if (isEmpty) return `"${field.label}" is required in ${link.form_template.name}`;
+        }
+      }
+    }
+    for (const link of waiverForms) {
+      if (!guestData.waiverAcceptances[link.id]) {
+        return `Waiver "${link.form_template.name}" must be accepted`;
+      }
+    }
+    if (!hasLinkedForms && !guestData.basicWaiverAccepted) {
+      return "Visitor Agreement must be accepted";
+    }
+    return null;
+  }
+
+  // Multi-guest submit
+  async function handleMultiGuestSubmit(payerData: BaseFormData) {
     setSubmitError(null);
+    setIsSubmitting(true);
+
+    // Validate all guests
+    for (let i = 0; i < guests.length; i++) {
+      const g = guests[i];
+      if (!g.first_name.trim() || !g.last_name.trim() || !g.email.trim()) {
+        setSubmitError(`Guest ${i + 1}: Name and email are required`);
+        setIsSubmitting(false);
+        return;
+      }
+      const dynamicErr = validateGuestDynamic(g);
+      if (dynamicErr) {
+        setSubmitError(`Guest ${i + 1}: ${dynamicErr}`);
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    // Build guest data
+    const guestDataList: GuestData[] = guests.map((g) => ({
+      first_name: g.first_name,
+      last_name: g.last_name,
+      email: g.email,
+      phone: g.phone || undefined,
+      intake_data: Object.keys(g.dynamicData).length > 0 ? g.dynamicData : undefined,
+      waiver_accepted: true,
+      accommodation_type: g.accommodation_type || undefined,
+      dietary_restrictions: g.dietary_restrictions || undefined,
+    }));
+
+    const selectedMethod =
+      event.allow_cash_payment && paymentMethod === "cash" ? "cash" : "stripe";
+    const isFreeEvent = event.pricing_model === "free";
+
+    try {
+      const result = await register.submitGroup(slug, {
+        payer: {
+          first_name: payerData.first_name,
+          last_name: payerData.last_name,
+          email: payerData.email,
+          phone: payerData.phone || undefined,
+        },
+        guests: guestDataList,
+        payment_method: isFreeEvent ? "free" : selectedMethod,
+      });
+
+      if (result.checkout_url) {
+        window.location.href = result.checkout_url;
+      } else {
+        setFreeSuccess(true);
+      }
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  // Single-guest submit (original flow)
+  const onSubmit = async (data: BaseFormData) => {
+    if (isMultiGuest) {
+      return handleMultiGuestSubmit(data);
+    }
+
+    setSubmitError(null);
+    setIsSubmitting(true);
 
     // Validate required dynamic fields
     for (const link of regularForms) {
@@ -370,6 +660,7 @@ export function RegistrationForm({
           }
           if (isEmpty) {
             setSubmitError(`"${field.label}" is required in ${link.form_template.name}`);
+            setIsSubmitting(false);
             return;
           }
         }
@@ -380,11 +671,13 @@ export function RegistrationForm({
     for (const link of waiverForms) {
       if (!waiverAcceptances[link.id]) {
         setSubmitError(`You must accept the ${link.form_template.name}`);
+        setIsSubmitting(false);
         return;
       }
     }
     if (hasFallbackWaiver && !basicWaiverAccepted) {
       setSubmitError("You must accept the Visitor Agreement to register");
+      setIsSubmitting(false);
       return;
     }
 
@@ -397,6 +690,7 @@ export function RegistrationForm({
         const minCents = event.min_donation_cents || 100;
         if (isNaN(donationCents) || donationCents < minCents) {
           setSubmitError(`Minimum contribution is ${formatCents(minCents)}`);
+          setIsSubmitting(false);
           return;
         }
       }
@@ -425,6 +719,8 @@ export function RegistrationForm({
       const message =
         e instanceof Error ? e.message : "Something went wrong. Please try again.";
       setSubmitError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -440,6 +736,12 @@ export function RegistrationForm({
         : event.fixed_price_cents
           ? formatCents(event.fixed_price_cents)
           : "Free";
+
+  // Calculate total for multi-guest
+  const totalPrice =
+    event.fixed_price_cents && guestCount > 1
+      ? event.fixed_price_cents * guestCount
+      : null;
 
   // Free event success state
   if (freeSuccess) {
@@ -463,7 +765,10 @@ export function RegistrationForm({
               You&apos;re Registered!
             </h1>
             <p className="mx-auto max-w-md text-gray-500">
-              You&apos;re all set for <strong>{event.name}</strong>.
+              {isMultiGuest
+                ? `All ${guestCount} guests are registered for `
+                : "You're all set for "}
+              <strong>{event.name}</strong>.
               {paymentMethod === "cash" && event.allow_cash_payment
                 ? " Please bring your payment to the event."
                 : " A confirmation email is on its way."}
@@ -562,7 +867,7 @@ export function RegistrationForm({
       <Card className="rounded-2xl border-gray-100 shadow-sm">
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Personal information — always shown */}
+            {/* Guest count selector */}
             <div>
               <h2
                 className="mb-4 text-lg font-bold"
@@ -571,7 +876,56 @@ export function RegistrationForm({
                   fontFamily: "'DM Serif Display', serif",
                 }}
               >
-                Your Information
+                How many guests?
+              </h2>
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleGuestCountChange(guestCount - 1)}
+                  disabled={guestCount <= 1}
+                  className="rounded-xl h-10 w-10"
+                >
+                  <Minus size={16} />
+                </Button>
+                <span
+                  className="text-2xl font-bold w-12 text-center"
+                  style={{ color: "#1a3a2a" }}
+                >
+                  {guestCount}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleGuestCountChange(guestCount + 1)}
+                  disabled={
+                    guestCount >= 10 ||
+                    (event.spots_remaining != null && guestCount >= event.spots_remaining)
+                  }
+                  className="rounded-xl h-10 w-10"
+                >
+                  <Plus size={16} />
+                </Button>
+                <span className="text-sm text-gray-500">
+                  {guestCount === 1 ? "Just me" : `${guestCount} guests`}
+                </span>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Payer information — always shown */}
+            <div>
+              <h2
+                className="mb-4 text-lg font-bold"
+                style={{
+                  color: "#1a3a2a",
+                  fontFamily: "'DM Serif Display', serif",
+                }}
+              >
+                {isMultiGuest ? "Payer Information" : "Your Information"}
               </h2>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -635,82 +989,109 @@ export function RegistrationForm({
               </div>
             </div>
 
-            {/* Donation amount for pay-what-you-want */}
-            {event.pricing_model === "donation" && (
+            {/* Single-guest: show donation, forms, waivers inline */}
+            {!isMultiGuest && (
               <>
-                <Separator />
-                <div>
-                  <h2
-                    className="mb-4 text-lg font-bold"
-                    style={{ color: "#1a3a2a", fontFamily: "'DM Serif Display', serif" }}
-                  >
-                    Your Contribution
-                  </h2>
-                  <div className="space-y-2">
-                    <Label htmlFor="donation_amount">Amount (USD)</Label>
-                    <div className="relative">
-                      <DollarSign
-                        size={16}
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                      />
-                      <Input
-                        id="donation_amount"
-                        type="number"
-                        step="0.01"
-                        min={
-                          event.min_donation_cents
-                            ? (event.min_donation_cents / 100).toFixed(2)
-                            : "1.00"
-                        }
-                        placeholder={
-                          event.min_donation_cents
-                            ? (event.min_donation_cents / 100).toFixed(2)
-                            : "25.00"
-                        }
-                        {...registerField("donation_amount")}
-                        className="rounded-xl pl-8"
-                      />
+                {/* Donation amount for pay-what-you-want */}
+                {event.pricing_model === "donation" && (
+                  <>
+                    <Separator />
+                    <div>
+                      <h2
+                        className="mb-4 text-lg font-bold"
+                        style={{ color: "#1a3a2a", fontFamily: "'DM Serif Display', serif" }}
+                      >
+                        Your Contribution
+                      </h2>
+                      <div className="space-y-2">
+                        <Label htmlFor="donation_amount">Amount (USD)</Label>
+                        <div className="relative">
+                          <DollarSign
+                            size={16}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                          />
+                          <Input
+                            id="donation_amount"
+                            type="number"
+                            step="0.01"
+                            min={
+                              event.min_donation_cents
+                                ? (event.min_donation_cents / 100).toFixed(2)
+                                : "1.00"
+                            }
+                            placeholder={
+                              event.min_donation_cents
+                                ? (event.min_donation_cents / 100).toFixed(2)
+                                : "25.00"
+                            }
+                            {...registerField("donation_amount")}
+                            className="rounded-xl pl-8"
+                          />
+                        </div>
+                        {event.min_donation_cents && (
+                          <p className="text-xs text-gray-400">
+                            Suggested minimum: {formatCents(event.min_donation_cents)}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    {event.min_donation_cents && (
-                      <p className="text-xs text-gray-400">
-                        Suggested minimum: {formatCents(event.min_donation_cents)}
-                      </p>
-                    )}
+                  </>
+                )}
+
+                {/* Dynamic form sections — regular (non-waiver) linked forms */}
+                {regularForms.map((link) => (
+                  <div key={link.id}>
+                    <Separator />
+                    <div className="pt-6">
+                      <h2
+                        className="mb-4 text-lg font-bold"
+                        style={{ color: "#1a3a2a", fontFamily: "'DM Serif Display', serif" }}
+                      >
+                        {link.form_template.name}
+                      </h2>
+                      {link.form_template.description && (
+                        <p className="text-sm text-gray-500 mb-4">{link.form_template.description}</p>
+                      )}
+                      <div className="space-y-4">
+                        {link.form_template.fields.map((field) => (
+                          <DynamicField
+                            key={field.id}
+                            field={field}
+                            value={dynamicData[link.form_template_id]?.[field.id]}
+                            onChange={(val) =>
+                              updateDynamicField(link.form_template_id, field.id, val)
+                            }
+                            templateId={link.form_template_id}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </>
             )}
 
-            {/* Dynamic form sections — regular (non-waiver) linked forms */}
-            {regularForms.map((link) => (
-              <div key={link.id}>
+            {/* Multi-guest: per-guest sections */}
+            {isMultiGuest && (
+              <>
                 <Separator />
-                <div className="pt-6">
-                  <h2
-                    className="mb-4 text-lg font-bold"
-                    style={{ color: "#1a3a2a", fontFamily: "'DM Serif Display', serif" }}
-                  >
-                    {link.form_template.name}
-                  </h2>
-                  {link.form_template.description && (
-                    <p className="text-sm text-gray-500 mb-4">{link.form_template.description}</p>
-                  )}
-                  <div className="space-y-4">
-                    {link.form_template.fields.map((field) => (
-                      <DynamicField
-                        key={field.id}
-                        field={field}
-                        value={dynamicData[link.form_template_id]?.[field.id]}
-                        onChange={(val) =>
-                          updateDynamicField(link.form_template_id, field.id, val)
-                        }
-                        templateId={link.form_template_id}
+                <div className="space-y-6">
+                  {guests.map((guest, i) => (
+                    <div key={i}>
+                      {i > 0 && <Separator className="mb-6" />}
+                      <GuestSection
+                        index={i}
+                        guest={guest}
+                        onChange={(g) => updateGuest(i, g)}
+                        event={event}
+                        linkedForms={linkedForms}
+                        isPayer={i === 0}
                       />
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
+              </>
+            )}
 
             {/* Payment method selector */}
             {event.allow_cash_payment && event.pricing_model !== "free" && (
@@ -777,51 +1158,74 @@ export function RegistrationForm({
               </>
             )}
 
-            <Separator />
+            {/* Single-guest waivers */}
+            {!isMultiGuest && (
+              <>
+                <Separator />
 
-            {/* Waiver forms from linked templates */}
-            {waiverForms.map((link) => (
-              <div key={link.id}>
-                <WaiverSection
-                  link={link}
-                  accepted={waiverAcceptances[link.id] || false}
-                  onAcceptChange={(v) =>
-                    setWaiverAcceptances((prev) => ({ ...prev, [link.id]: v }))
-                  }
-                />
-                <Separator className="mt-6" />
-              </div>
-            ))}
-
-            {/* Fallback basic waiver when no waiver templates are linked */}
-            {hasFallbackWaiver && (
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <Checkbox
-                    id="waiver_accepted"
-                    checked={basicWaiverAccepted}
-                    onCheckedChange={(checked) => setBasicWaiverAccepted(checked === true)}
-                    className="mt-0.5"
-                    style={
-                      basicWaiverAccepted
-                        ? ({ background: "#2d5a3d", borderColor: "#2d5a3d" } as React.CSSProperties)
-                        : undefined
-                    }
-                  />
-                  <div className="space-y-1">
-                    <Label htmlFor="waiver_accepted" className="cursor-pointer leading-snug">
-                      I accept the Visitor Agreement{" "}
-                      <span className="text-red-400">*</span>
-                    </Label>
-                    <p className="text-xs text-gray-400">
-                      By checking this box, I agree to the Just Love Forest visitor
-                      agreement, waiver of liability, and community guidelines. I
-                      understand this is a nature sanctuary and agree to respect the
-                      land and all living beings.
-                    </p>
+                {/* Waiver forms from linked templates */}
+                {waiverForms.map((link) => (
+                  <div key={link.id}>
+                    <WaiverSection
+                      link={link}
+                      accepted={waiverAcceptances[link.id] || false}
+                      onAcceptChange={(v) =>
+                        setWaiverAcceptances((prev) => ({ ...prev, [link.id]: v }))
+                      }
+                    />
+                    <Separator className="mt-6" />
                   </div>
+                ))}
+
+                {/* Fallback basic waiver when no waiver templates are linked */}
+                {hasFallbackWaiver && (
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="waiver_accepted"
+                        checked={basicWaiverAccepted}
+                        onCheckedChange={(checked) => setBasicWaiverAccepted(checked === true)}
+                        className="mt-0.5"
+                        style={
+                          basicWaiverAccepted
+                            ? ({ background: "#2d5a3d", borderColor: "#2d5a3d" } as React.CSSProperties)
+                            : undefined
+                        }
+                      />
+                      <div className="space-y-1">
+                        <Label htmlFor="waiver_accepted" className="cursor-pointer leading-snug">
+                          I accept the Visitor Agreement{" "}
+                          <span className="text-red-400">*</span>
+                        </Label>
+                        <p className="text-xs text-gray-400">
+                          By checking this box, I agree to the Just Love Forest visitor
+                          agreement, waiver of liability, and community guidelines. I
+                          understand this is a nature sanctuary and agree to respect the
+                          land and all living beings.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Total price for multi-guest */}
+            {totalPrice && isMultiGuest && (
+              <>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-600">
+                    Total ({guestCount} guests × {formatCents(event.fixed_price_cents!)})
+                  </span>
+                  <span
+                    className="text-xl font-bold"
+                    style={{ color: "#1a3a2a", fontFamily: "'DM Serif Display', serif" }}
+                  >
+                    {formatCents(totalPrice)}
+                  </span>
                 </div>
-              </div>
+              </>
             )}
 
             {/* Submit error */}
@@ -846,7 +1250,11 @@ export function RegistrationForm({
               ) : event.pricing_model === "free" ? (
                 "Complete Registration"
               ) : paymentMethod === "cash" && event.allow_cash_payment ? (
-                "Register — Pay at Event"
+                isMultiGuest
+                  ? `Register ${guestCount} Guests — Pay at Event`
+                  : "Register — Pay at Event"
+              ) : isMultiGuest ? (
+                `Continue to Payment (${guestCount} guests)`
               ) : (
                 "Continue to Payment"
               )}
@@ -859,7 +1267,7 @@ export function RegistrationForm({
             )}
             {paymentMethod === "cash" && event.allow_cash_payment && (
               <p className="text-center text-xs text-gray-400">
-                Your spot will be reserved. Please bring payment to the event.
+                Your spot{isMultiGuest ? "s" : ""} will be reserved. Please bring payment to the event.
               </p>
             )}
           </form>
