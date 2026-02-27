@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import JSONType, Base, TimestampMixin, gen_uuid
@@ -86,6 +86,7 @@ class Registration(TimestampMixin, Base):
         default=RegistrationSource.registration_form,
     )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    member_discount_applied: Mapped[bool] = mapped_column(Boolean, default=False)
 
     attendee = relationship("Attendee", back_populates="registrations", lazy="selectin")
     event = relationship("Event", back_populates="registrations", lazy="selectin")

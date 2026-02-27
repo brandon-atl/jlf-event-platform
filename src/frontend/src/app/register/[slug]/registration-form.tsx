@@ -15,14 +15,17 @@ import {
   UserPlus,
   Minus,
   Plus,
+  Tag,
 } from "lucide-react";
 
 import {
   register,
+  scholarshipLinks,
   type EventPublicInfo,
   type FormTemplateField,
   type EventFormLinkResponse,
   type GuestData,
+  type ScholarshipLinkValidation,
 } from "@/lib/api";
 import { formatCents, formatDateLong, formatDateShort } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
@@ -488,6 +491,12 @@ export function RegistrationForm({
   const [guestCount, setGuestCount] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Scholarship code state
+  const [scholarshipCode, setScholarshipCode] = useState("");
+  const [scholarshipValidation, setScholarshipValidation] = useState<ScholarshipLinkValidation | null>(null);
+  const [scholarshipValidating, setScholarshipValidating] = useState(false);
+  const [scholarshipError, setScholarshipError] = useState<string | null>(null);
+
   // Multi-guest state
   const [guests, setGuests] = useState<GuestFormState[]>([createEmptyGuest()]);
 
@@ -538,6 +547,37 @@ export function RegistrationForm({
       }
       return prev.slice(0, clamped);
     });
+  }
+
+  // Validate scholarship code
+  async function validateScholarshipCode() {
+    const code = scholarshipCode.trim();
+    if (!code) {
+      setScholarshipValidation(null);
+      setScholarshipError(null);
+      return;
+    }
+    setScholarshipValidating(true);
+    setScholarshipError(null);
+    try {
+      const result = await scholarshipLinks.validate(code);
+      if (result.valid) {
+        if (result.event_id && event.slug) {
+          setScholarshipValidation(result);
+          setScholarshipError(null);
+        } else {
+          setScholarshipValidation(result);
+        }
+      } else {
+        setScholarshipValidation(null);
+        setScholarshipError("Invalid or fully redeemed scholarship code");
+      }
+    } catch {
+      setScholarshipValidation(null);
+      setScholarshipError("Could not validate code. Please try again.");
+    } finally {
+      setScholarshipValidating(false);
+    }
   }
 
   // Update a specific guest
@@ -619,6 +659,7 @@ export function RegistrationForm({
         },
         guests: guestDataList,
         payment_method: isFreeEvent ? "free" : selectedMethod,
+        scholarship_code: scholarshipValidation?.valid ? scholarshipCode.trim() : undefined,
       });
 
       if (result.checkout_url) {
@@ -708,6 +749,7 @@ export function RegistrationForm({
         donation_amount_cents: donationCents,
         intake_data: Object.keys(dynamicData).length > 0 ? dynamicData : undefined,
         payment_method: isFreeEvent ? undefined : selectedMethod,
+        scholarship_code: scholarshipValidation?.valid ? scholarshipCode.trim() : undefined,
       });
 
       if (result.checkout_url) {
@@ -728,19 +770,24 @@ export function RegistrationForm({
     ? `${formatDateShort(event.event_date)} – ${formatDateShort(event.event_end_date)}`
     : formatDateLong(event.event_date);
 
+  // Effective per-guest price (scholarship overrides event price)
+  const effectivePrice = scholarshipValidation?.valid && scholarshipValidation.scholarship_price_cents != null
+    ? scholarshipValidation.scholarship_price_cents
+    : event.fixed_price_cents;
+
   const priceDisplay =
     event.pricing_model === "free"
       ? "Free"
       : event.pricing_model === "donation"
         ? "Pay what you can"
-        : event.fixed_price_cents
-          ? formatCents(event.fixed_price_cents)
+        : effectivePrice
+          ? formatCents(effectivePrice)
           : "Free";
 
   // Calculate total for multi-guest
   const totalPrice =
-    event.fixed_price_cents && guestCount > 1
-      ? event.fixed_price_cents * guestCount
+    effectivePrice && guestCount > 1
+      ? effectivePrice * guestCount
       : null;
 
   // Free event success state
@@ -1093,6 +1140,65 @@ export function RegistrationForm({
               </>
             )}
 
+            {/* Scholarship code */}
+            {event.pricing_model !== "free" && (
+              <>
+                <Separator />
+                <div>
+                  <h2
+                    className="mb-4 text-lg font-bold"
+                    style={{ color: "#1a3a2a", fontFamily: "'DM Serif Display', serif" }}
+                  >
+                    Scholarship Code
+                  </h2>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Tag
+                        size={16}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      />
+                      <Input
+                        value={scholarshipCode}
+                        onChange={(e) => {
+                          setScholarshipCode(e.target.value);
+                          if (!e.target.value.trim()) {
+                            setScholarshipValidation(null);
+                            setScholarshipError(null);
+                          }
+                        }}
+                        placeholder="Enter code (optional)"
+                        className="rounded-xl pl-9"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={validateScholarshipCode}
+                      disabled={!scholarshipCode.trim() || scholarshipValidating}
+                      className="rounded-xl"
+                    >
+                      {scholarshipValidating ? (
+                        <Loader2 className="animate-spin" size={16} />
+                      ) : (
+                        "Apply"
+                      )}
+                    </Button>
+                  </div>
+                  {scholarshipValidation?.valid && (
+                    <div className="mt-2 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3">
+                      <CheckCircle size={16} className="text-green-600" />
+                      <span className="text-sm text-green-700">
+                        Scholarship applied — {formatCents(scholarshipValidation.scholarship_price_cents!)} per guest
+                      </span>
+                    </div>
+                  )}
+                  {scholarshipError && (
+                    <p className="mt-2 text-sm text-red-500">{scholarshipError}</p>
+                  )}
+                </div>
+              </>
+            )}
+
             {/* Payment method selector */}
             {event.allow_cash_payment && event.pricing_model !== "free" && (
               <>
@@ -1216,7 +1322,7 @@ export function RegistrationForm({
                 <Separator />
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-600">
-                    Total ({guestCount} guests × {formatCents(event.fixed_price_cents!)})
+                    Total ({guestCount} guests × {formatCents(effectivePrice!)})
                   </span>
                   <span
                     className="text-xl font-bold"

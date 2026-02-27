@@ -8,6 +8,13 @@ from app.models.base import Base, gen_uuid
 
 
 class Membership(Base):
+    """JLF membership record.
+
+    Note: attendee_id here is the source of truth for the membership↔attendee
+    relationship. attendees.membership_id is a denormalized cache (circular FK)
+    kept in sync via membership CRUD operations.
+    """
+
     __tablename__ = "memberships"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=gen_uuid)

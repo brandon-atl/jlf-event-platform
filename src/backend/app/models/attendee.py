@@ -15,6 +15,9 @@ class Attendee(TimestampMixin, Base):
     last_name: Mapped[str] = mapped_column(String(100))
     phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
     is_member: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Denormalized FK — creates circular dependency with memberships.attendee_id.
+    # memberships.attendee_id is the source of truth for the relationship.
+    # This field is a convenience cache for fast lookups; keep in sync via membership CRUD.
     membership_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("memberships.id", use_alter=True), nullable=True
     )
