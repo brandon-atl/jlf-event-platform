@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -173,15 +173,8 @@ function MessageTemplateDialog({
   const [showPreview, setShowPreview] = useState(false);
   const [preview, setPreview] = useState<{ rendered_subject: string | null; rendered_body: string } | null>(null);
 
-  useEffect(() => {
-    setName(template?.name || "");
-    setCategory(template?.category || "custom");
-    setChannel(template?.channel || "email");
-    setSubject(template?.subject || "");
-    setBody(template?.body || "");
-    setShowPreview(false);
-    setPreview(null);
-  }, [template]);
+  // Dialog component will remount when template changes, no need for useEffect
+
 
   const cardBg = isDark ? darkColors.surface : "#ffffff";
   const borderColor = isDark ? darkColors.surfaceBorder : "#e5e7eb";
@@ -740,6 +733,7 @@ export default function MessageTemplatesPage() {
       {/* Dialog */}
       {dialogOpen && (
         <MessageTemplateDialog
+          key={editingTemplate?.id || "new"}
           open={dialogOpen}
           onClose={() => {
             setDialogOpen(false);
