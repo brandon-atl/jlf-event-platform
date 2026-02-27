@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..database import get_db
 from ..models import AuditLog, Event, EventStatus, FormTemplate, EventFormLink
@@ -121,6 +122,7 @@ async def create_form_template(
         created_by=current_user.id,
     )
     db.add(template)
+    await db.flush()
 
     await _audit(
         db,
@@ -272,6 +274,7 @@ async def duplicate_form_template(
         created_by=current_user.id,
     )
     db.add(new_template)
+    await db.flush()
 
     await _audit(
         db,
@@ -308,28 +311,23 @@ async def list_event_forms(
 
     result = await db.execute(
         select(EventFormLink)
+        .options(selectinload(EventFormLink.form_template))
         .where(EventFormLink.event_id == event_id)
         .order_by(EventFormLink.sort_order)
     )
     links = result.scalars().all()
 
-    out = []
-    for link in links:
-        ft_result = await db.execute(
-            select(FormTemplate).where(FormTemplate.id == link.form_template_id)
+    return [
+        EventFormLinkResponse(
+            id=link.id,
+            event_id=link.event_id,
+            form_template_id=link.form_template_id,
+            is_waiver=link.is_waiver,
+            sort_order=link.sort_order,
+            form_template=_template_to_response(link.form_template) if link.form_template else None,
         )
-        ft = ft_result.scalar_one_or_none()
-        out.append(
-            EventFormLinkResponse(
-                id=link.id,
-                event_id=link.event_id,
-                form_template_id=link.form_template_id,
-                is_waiver=link.is_waiver,
-                sort_order=link.sort_order,
-                form_template=_template_to_response(ft) if ft else None,
-            )
-        )
-    return out
+        for link in links
+    ]
 
 
 @event_forms_router.post(

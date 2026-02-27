@@ -12,13 +12,12 @@ Changes:
 - ADD to registrations: payment_method, group_id, estimated_arrival
 - REMOVE from registrations: reminder_sent_at, escalation_sent_at
 - DATA: migrate accommodation_type nylon_tent→tipi_twin, yurt_shared→none
+- UPDATE CHECK constraints for new enum values
 """
 from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy import Text
-from sqlalchemy.dialects import postgresql
 
 revision: str = "c8e4f2a61d3b"
 down_revision: Union[str, None] = "b7f3a1e92c5d"
@@ -52,9 +51,7 @@ def upgrade() -> None:
             ),
             nullable=False,
         ),
-        sa.Column(
-            "fields", postgresql.JSONB(astext_type=Text()), nullable=True
-        ),
+        sa.Column("fields", sa.JSON(), nullable=True),
         sa.Column("is_default", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("created_by", sa.Uuid(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
@@ -100,70 +97,113 @@ def upgrade() -> None:
     )
 
     # ------------------------------------------------------------------ #
-    # ADD columns to events                                                #
+    # ADD columns to events (batch for SQLite compat)                      #
     # ------------------------------------------------------------------ #
-    op.add_column(
-        "events",
-        sa.Column(
-            "allow_cash_payment",
-            sa.Boolean(),
-            nullable=False,
-            server_default="false",
-        ),
-    )
-    op.add_column(
-        "events",
-        sa.Column(
-            "max_member_discount_slots",
-            sa.Integer(),
-            nullable=False,
-            server_default="3",
-        ),
-    )
-    op.add_column(
-        "events",
-        sa.Column("location_text", sa.Text(), nullable=True),
-    )
-    op.add_column(
-        "events",
-        sa.Column("zoom_link", sa.String(length=500), nullable=True),
-    )
+    with op.batch_alter_table("events") as batch_op:
+        batch_op.add_column(
+            sa.Column(
+                "allow_cash_payment",
+                sa.Boolean(),
+                nullable=False,
+                server_default="false",
+            ),
+        )
+        batch_op.add_column(
+            sa.Column(
+                "max_member_discount_slots",
+                sa.Integer(),
+                nullable=False,
+                server_default="3",
+            ),
+        )
+        batch_op.add_column(
+            sa.Column("location_text", sa.Text(), nullable=True),
+        )
+        batch_op.add_column(
+            sa.Column("zoom_link", sa.String(length=500), nullable=True),
+        )
+        # REMOVE columns from events
+        batch_op.drop_column("reminder_delay_minutes")
+        batch_op.drop_column("auto_expire_hours")
 
     # ------------------------------------------------------------------ #
-    # REMOVE columns from events                                           #
+    # UPDATE CHECK constraint: pricing_model (add 'composite')             #
     # ------------------------------------------------------------------ #
-    op.drop_column("events", "reminder_delay_minutes")
-    op.drop_column("events", "auto_expire_hours")
+    with op.batch_alter_table("events") as batch_op:
+        # Drop old constraint and create new one with 'composite' added
+        batch_op.drop_constraint("ck_events_pricing_model", type_="check")
+        batch_op.create_check_constraint(
+            "ck_events_pricing_model",
+            sa.column("pricing_model").in_(["fixed", "donation", "free", "composite"]),
+        )
 
     # ------------------------------------------------------------------ #
-    # ADD columns to registrations                                         #
+    # ADD columns to registrations (batch for SQLite compat)               #
     # ------------------------------------------------------------------ #
-    op.add_column(
-        "registrations",
-        sa.Column(
-            "payment_method",
-            sa.String(length=20),
-            nullable=False,
-            server_default="stripe",
-        ),
-    )
-    op.add_column(
-        "registrations",
-        sa.Column("group_id", sa.Uuid(), nullable=True),
-    )
-    op.add_column(
-        "registrations",
-        sa.Column("estimated_arrival", sa.DateTime(timezone=True), nullable=True),
-    )
+    with op.batch_alter_table("registrations") as batch_op:
+        batch_op.add_column(
+            sa.Column(
+                "payment_method",
+                sa.Enum(
+                    "stripe",
+                    "cash",
+                    "scholarship",
+                    "free",
+                    name="paymentmethod",
+                    native_enum=False,
+                ),
+                nullable=False,
+                server_default="stripe",
+            ),
+        )
+        batch_op.add_column(
+            sa.Column("group_id", sa.Uuid(), nullable=True),
+        )
+        batch_op.add_column(
+            sa.Column("estimated_arrival", sa.DateTime(timezone=True), nullable=True),
+        )
+        # REMOVE columns from registrations
+        batch_op.drop_column("reminder_sent_at")
+        batch_op.drop_column("escalation_sent_at")
+
     op.create_index(
         "ix_registrations_group_id", "registrations", ["group_id"], unique=False
     )
 
     # ------------------------------------------------------------------ #
-    # REMOVE columns from registrations                                    #
+    # UPDATE CHECK constraints for new enum values                         #
     # ------------------------------------------------------------------ #
-    op.drop_column("registrations", "reminder_sent_at")
-    op.drop_column("registrations", "escalation_sent_at")
+
+    # registrations.status: add 'cash_pending'
+    with op.batch_alter_table("registrations") as batch_op:
+        batch_op.drop_constraint("ck_registrations_status", type_="check")
+        batch_op.create_check_constraint(
+            "ck_registrations_status",
+            sa.column("status").in_([
+                "pending_payment", "cash_pending", "complete",
+                "expired", "cancelled", "refunded",
+            ]),
+        )
+
+    # registrations.accommodation_type: update to new values
+    with op.batch_alter_table("registrations") as batch_op:
+        batch_op.drop_constraint("ck_registrations_accommodation_type", type_="check")
+        batch_op.create_check_constraint(
+            "ck_registrations_accommodation_type",
+            sa.column("accommodation_type").in_([
+                "bell_tent", "tipi_twin", "self_camping", "day_only", "none",
+            ]),
+        )
+
+    # registrations.source: add 'group'
+    with op.batch_alter_table("registrations") as batch_op:
+        batch_op.drop_constraint("ck_registrations_source", type_="check")
+        batch_op.create_check_constraint(
+            "ck_registrations_source",
+            sa.column("source").in_([
+                "registration_form", "manual", "walk_in", "group",
+            ]),
+        )
 
     # ------------------------------------------------------------------ #
     # DATA MIGRATION: accommodation_type enum rename                       #
@@ -181,38 +221,70 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # Restore removed registration columns
-    op.add_column(
-        "registrations",
-        sa.Column("escalation_sent_at", sa.DateTime(timezone=True), nullable=True),
-    )
-    op.add_column(
-        "registrations",
-        sa.Column("reminder_sent_at", sa.DateTime(timezone=True), nullable=True),
-    )
+    with op.batch_alter_table("registrations") as batch_op:
+        batch_op.add_column(
+            sa.Column("escalation_sent_at", sa.DateTime(timezone=True), nullable=True),
+        )
+        batch_op.add_column(
+            sa.Column("reminder_sent_at", sa.DateTime(timezone=True), nullable=True),
+        )
 
     # Remove added registration columns
     op.drop_index("ix_registrations_group_id", table_name="registrations")
-    op.drop_column("registrations", "estimated_arrival")
-    op.drop_column("registrations", "group_id")
-    op.drop_column("registrations", "payment_method")
+    with op.batch_alter_table("registrations") as batch_op:
+        batch_op.drop_column("estimated_arrival")
+        batch_op.drop_column("group_id")
+        batch_op.drop_column("payment_method")
+
+    # Restore CHECK constraints to original values
+    with op.batch_alter_table("registrations") as batch_op:
+        batch_op.drop_constraint("ck_registrations_status", type_="check")
+        batch_op.create_check_constraint(
+            "ck_registrations_status",
+            sa.column("status").in_([
+                "pending_payment", "complete", "expired", "cancelled", "refunded",
+            ]),
+        )
+        batch_op.drop_constraint("ck_registrations_accommodation_type", type_="check")
+        batch_op.create_check_constraint(
+            "ck_registrations_accommodation_type",
+            sa.column("accommodation_type").in_([
+                "bell_tent", "nylon_tent", "self_camping", "yurt_shared", "none",
+            ]),
+        )
+        batch_op.drop_constraint("ck_registrations_source", type_="check")
+        batch_op.create_check_constraint(
+            "ck_registrations_source",
+            sa.column("source").in_([
+                "registration_form", "manual", "walk_in",
+            ]),
+        )
 
     # Restore removed event columns
-    op.add_column(
-        "events",
-        sa.Column("auto_expire_hours", sa.Integer(), nullable=False, server_default="24"),
-    )
-    op.add_column(
-        "events",
-        sa.Column(
-            "reminder_delay_minutes", sa.Integer(), nullable=False, server_default="60"
-        ),
-    )
+    with op.batch_alter_table("events") as batch_op:
+        batch_op.add_column(
+            sa.Column("auto_expire_hours", sa.Integer(), nullable=False, server_default="24"),
+        )
+        batch_op.add_column(
+            sa.Column(
+                "reminder_delay_minutes", sa.Integer(), nullable=False, server_default="60"
+            ),
+        )
 
     # Remove added event columns
-    op.drop_column("events", "zoom_link")
-    op.drop_column("events", "location_text")
-    op.drop_column("events", "max_member_discount_slots")
-    op.drop_column("events", "allow_cash_payment")
+    with op.batch_alter_table("events") as batch_op:
+        batch_op.drop_column("zoom_link")
+        batch_op.drop_column("location_text")
+        batch_op.drop_column("max_member_discount_slots")
+        batch_op.drop_column("allow_cash_payment")
+
+    # Restore pricing_model constraint
+    with op.batch_alter_table("events") as batch_op:
+        batch_op.drop_constraint("ck_events_pricing_model", type_="check")
+        batch_op.create_check_constraint(
+            "ck_events_pricing_model",
+            sa.column("pricing_model").in_(["fixed", "donation", "free"]),
+        )
 
     # Drop new tables
     op.drop_index("ix_event_form_links_event_sort", table_name="event_form_links")

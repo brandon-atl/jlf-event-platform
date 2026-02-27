@@ -26,7 +26,8 @@ from app.services.auth_service import hash_password
 # File-based SQLite for tests — ensures all sessions/connections share the same DB
 # (in-memory SQLite with multiple connections each get isolated DBs)
 import tempfile, os as _os
-_tmp_db = _os.path.join(tempfile.gettempdir(), "jlf_test.db")
+_tmp_fd, _tmp_db = tempfile.mkstemp(suffix=".db", prefix="jlf_test_")
+_os.close(_tmp_fd)  # close the fd; SQLAlchemy opens its own connection
 TEST_DATABASE_URL = f"sqlite+aiosqlite:///{_tmp_db}"
 
 engine = create_async_engine(TEST_DATABASE_URL, echo=False)
@@ -54,6 +55,12 @@ async def setup_database():
     yield
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Clean up temp DB file after test session."""
+    if _os.path.exists(_tmp_db):
+        _os.unlink(_tmp_db)
 
 
 @pytest_asyncio.fixture

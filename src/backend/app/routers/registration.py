@@ -80,6 +80,7 @@ async def get_event_info(event_slug: str, db: AsyncSession = Depends(get_db)):
             Registration.event_id == event.id,
             Registration.status.in_([
                 RegistrationStatus.pending_payment,
+                RegistrationStatus.cash_pending,
                 RegistrationStatus.complete,
             ]),
         )
@@ -193,6 +194,13 @@ async def create_registration(
             detail="This event does not accept cash payments",
         )
 
+    # Free payment method only allowed for free events
+    if payment_method == PaymentMethod.free and event.pricing_model.value != "free":
+        raise HTTPException(
+            status_code=422,
+            detail="Free payment method is only allowed for free events",
+        )
+
     # Sanitize intake_data (arbitrary JSON from user input)
     try:
         safe_intake = sanitize_intake_data(data.intake_data)
@@ -253,6 +261,8 @@ async def create_registration(
         )
 
     # Stripe / scholarship — create Checkout session
+    registration.attendee = attendee
+    registration.event = event
     checkout_url = await create_checkout_session(
         registration, event, custom_amount_cents=data.donation_amount_cents
     )
