@@ -170,6 +170,20 @@ def upgrade() -> None:
     )
 
     # ------------------------------------------------------------------ #
+    # DATA MIGRATION: accommodation_type enum rename                       #
+    # Must run BEFORE CHECK constraints that reference the new values.     #
+    # nylon_tent → tipi_twin, yurt_shared → none                         #
+    # ------------------------------------------------------------------ #
+    op.execute(
+        "UPDATE registrations SET accommodation_type = 'tipi_twin' "
+        "WHERE accommodation_type = 'nylon_tent'"
+    )
+    op.execute(
+        "UPDATE registrations SET accommodation_type = 'none' "
+        "WHERE accommodation_type = 'yurt_shared'"
+    )
+
+    # ------------------------------------------------------------------ #
     # UPDATE CHECK constraints for new enum values                         #
     # ------------------------------------------------------------------ #
 
@@ -203,19 +217,6 @@ def upgrade() -> None:
                 "registration_form", "manual", "walk_in", "group",
             ]),
         )
-
-    # ------------------------------------------------------------------ #
-    # DATA MIGRATION: accommodation_type enum rename                       #
-    # nylon_tent → tipi_twin, yurt_shared → none                         #
-    # ------------------------------------------------------------------ #
-    op.execute(
-        "UPDATE registrations SET accommodation_type = 'tipi_twin' "
-        "WHERE accommodation_type = 'nylon_tent'"
-    )
-    op.execute(
-        "UPDATE registrations SET accommodation_type = 'none' "
-        "WHERE accommodation_type = 'yurt_shared'"
-    )
 
 
 def downgrade() -> None:
