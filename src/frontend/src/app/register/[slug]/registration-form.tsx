@@ -497,7 +497,9 @@ export function RegistrationForm({
   const [scholarshipValidating, setScholarshipValidating] = useState(false);
   const [scholarshipError, setScholarshipError] = useState<string | null>(null);
 
-  // Sub-event selection state (for composite events)
+  // Composite sub-event selection is per-group, not per-guest. All guests in a
+  // group get the same sub-event selections. The per-guest backend field exists
+  // for future extensibility.
   const [selectedSubEvents, setSelectedSubEvents] = useState<Set<string>>(() => {
     const required = new Set<string>();
     if (event.sub_events) {
@@ -573,11 +575,13 @@ export function RegistrationForm({
     try {
       const result = await scholarshipLinks.validate(code);
       if (result.valid) {
-        if (result.event_id && event.slug) {
-          setScholarshipValidation(result);
-          setScholarshipError(null);
+        // Verify the scholarship belongs to this event (if event-scoped)
+        if (result.event_slug && result.event_slug !== slug) {
+          setScholarshipValidation(null);
+          setScholarshipError("This scholarship code is not valid for this event.");
         } else {
           setScholarshipValidation(result);
+          setScholarshipError(null);
         }
       } else {
         setScholarshipValidation(null);

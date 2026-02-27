@@ -31,5 +31,6 @@ class ScholarshipLinkResponse(BaseModel):
 class ScholarshipLinkValidation(BaseModel):
     valid: bool
     event_id: UUID | None = None
+    event_slug: str | None = None
     scholarship_price_cents: int | None = None
     remaining_uses: int | None = None

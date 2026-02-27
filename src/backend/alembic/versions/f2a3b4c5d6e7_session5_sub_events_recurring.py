@@ -16,7 +16,7 @@ depends_on = None
 
 def upgrade() -> None:
     # Add recurring fields to events table
-    op.add_column("events", sa.Column("is_recurring", sa.Boolean(), server_default="0", nullable=False))
+    op.add_column("events", sa.Column("is_recurring", sa.Boolean(), server_default=sa.text("false"), nullable=False))
     op.add_column("events", sa.Column("recurrence_rule", sa.String(255), nullable=True))
 
     # Create sub_events table
@@ -36,7 +36,7 @@ def upgrade() -> None:
         sa.Column("stripe_price_id", sa.String(100), nullable=True),
         sa.Column("capacity", sa.Integer(), nullable=True),
         sa.Column("sort_order", sa.Integer(), server_default="0", nullable=False),
-        sa.Column("is_required", sa.Boolean(), server_default="0", nullable=False),
+        sa.Column("is_required", sa.Boolean(), server_default=sa.text("false"), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
     )
@@ -52,9 +52,11 @@ def upgrade() -> None:
         sa.UniqueConstraint("registration_id", "sub_event_id", name="uq_registration_sub_event"),
     )
     op.create_index("ix_registration_sub_events_registration_id", "registration_sub_events", ["registration_id"])
+    op.create_index("ix_registration_sub_events_sub_event_id", "registration_sub_events", ["sub_event_id"])
 
 
 def downgrade() -> None:
+    op.drop_index("ix_registration_sub_events_sub_event_id", table_name="registration_sub_events")
     op.drop_table("registration_sub_events")
     op.drop_table("sub_events")
     op.drop_column("events", "recurrence_rule")

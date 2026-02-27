@@ -225,27 +225,32 @@ async def event_dashboard(
         )
         sub_events = se_result.scalars().all()
 
-        sub_event_headcounts = []
-        for se in sub_events:
-            count_result = await db.execute(
-                select(func.count(RegistrationSubEvent.id))
-                .join(Registration, Registration.id == RegistrationSubEvent.registration_id)
-                .where(
-                    RegistrationSubEvent.sub_event_id == se.id,
-                    Registration.status.in_([
-                        RegistrationStatus.complete,
-                        RegistrationStatus.cash_pending,
-                    ]),
-                )
+        # Single grouped query instead of N+1 per sub-event
+        counts_result = await db.execute(
+            select(
+                RegistrationSubEvent.sub_event_id,
+                func.count(RegistrationSubEvent.id).label("count"),
             )
-            count = count_result.scalar() or 0
-            sub_event_headcounts.append(
-                SubEventHeadcount(
-                    sub_event_id=str(se.id),
-                    sub_event_name=se.name,
-                    count=count,
-                )
+            .join(Registration, Registration.id == RegistrationSubEvent.registration_id)
+            .where(
+                RegistrationSubEvent.sub_event_id.in_([se.id for se in sub_events]),
+                Registration.status.in_([
+                    RegistrationStatus.complete,
+                    RegistrationStatus.cash_pending,
+                ]),
             )
+            .group_by(RegistrationSubEvent.sub_event_id)
+        )
+        counts_map = {row.sub_event_id: row.count for row in counts_result}
+
+        sub_event_headcounts = [
+            SubEventHeadcount(
+                sub_event_id=str(se.id),
+                sub_event_name=se.name,
+                count=counts_map.get(se.id, 0),
+            )
+            for se in sub_events
+        ]
 
     return EventDashboard(
         event_id=event.id,

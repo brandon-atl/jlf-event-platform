@@ -1,14 +1,14 @@
 """Sub-events CRUD and recurring dates endpoints."""
 
 import uuid as _uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
-from ..models import AuditLog, Event, PricingModel, Registration, RegistrationStatus, User
+from ..models import AuditLog, Event, User
 from ..models.sub_event import SubEvent, SubEventPricingModel
 from ..models.registration_sub_event import RegistrationSubEvent
 from ..schemas.sub_events import (
@@ -274,44 +274,24 @@ async def get_recurring_dates(
 
     from dateutil.rrule import rrulestr
 
-    now = datetime.now(timezone.utc)
-
     try:
         rule = rrulestr(event.recurrence_rule, dtstart=event.event_date)
     except (ValueError, TypeError) as e:
         raise HTTPException(status_code=422, detail=f"Invalid recurrence rule: {e}")
 
-    # Generate upcoming dates
+    # Use naive UTC now to match rrule's naive datetimes (dtstart is typically naive)
+    now = datetime.now(UTC).replace(tzinfo=None)
+
+    # Generate upcoming dates using xafter for efficiency (avoids iterating past dates)
+    occurrences = list(rule.xafter(now, count=count, inc=True))
+
     dates = []
-    for dt in rule:
-        if dt.date() < now.date():
-            continue
-        if len(dates) >= count:
-            break
+    for dt in occurrences:
         date_str = dt.strftime("%Y-%m-%d")
-
-        # Compute spots remaining for this specific date
-        spots_remaining = None
-        is_full = False
-        if event.capacity is not None:
-            reg_count_result = await db.execute(
-                select(func.count(Registration.id)).where(
-                    Registration.event_id == event.id,
-                    Registration.status.in_([
-                        RegistrationStatus.complete,
-                        RegistrationStatus.cash_pending,
-                        RegistrationStatus.pending_payment,
-                    ]),
-                )
-            )
-            reg_count = reg_count_result.scalar() or 0
-            spots_remaining = max(0, event.capacity - reg_count)
-            is_full = spots_remaining <= 0
-
+        # spots_remaining and is_full omitted: event-wide capacity doesn't reflect
+        # per-occurrence availability. Will be added when per-date tracking exists.
         dates.append(RecurringDateInfo(
             date=date_str,
-            spots_remaining=spots_remaining,
-            is_full=is_full,
         ))
 
     return {
