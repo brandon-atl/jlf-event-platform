@@ -18,6 +18,9 @@ import {
   X,
   Bell,
   FileText,
+  MessageSquareText,
+  MessageCircle,
+  Megaphone,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useDarkMode } from "@/hooks/use-dark-mode";
@@ -32,6 +35,9 @@ const nav = [
   { icon: UserPlus, label: "Co-Creators", href: "/co-creators" },
   { icon: FileText, label: "Form Builder", href: "/form-templates" },
   { icon: Bell, label: "Notifications", href: "/notifications" },
+  { icon: MessageSquareText, label: "Templates", href: "/message-templates" },
+  { icon: MessageCircle, label: "SMS Inbox", href: "/sms-inbox" },
+  { icon: Megaphone, label: "Bulk Messaging", href: "/bulk-messaging" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 

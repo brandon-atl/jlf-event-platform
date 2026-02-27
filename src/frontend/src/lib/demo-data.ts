@@ -253,7 +253,7 @@ const REG_DATA: Record<string, DemoRegistration[]> = {
     mkReg("e4",9, "fern",   "complete",        5000,"self_camping", undefined,     "2026-03-06T19:03:00Z", daysAgo(5)),
     mkReg("e4",10,"sol",    "complete",        5000,"bell_tent",    undefined,      null,                  daysAgo(4)),
     mkReg("e4",11,"lark",   "complete",        5000,"bell_tent",    undefined,     "2026-03-06T19:22:00Z", daysAgo(3)),
-    mkReg("e4",12,"willow", "complete",        5000,"none",        "Vegan",         null,                  daysAgo(2)),
+    { ...mkReg("e4",12,"willow", "complete",        5000,"none",        "Vegan",         null,                  daysAgo(2)), notes: "[CANCEL REQUEST] Schedule conflict — requested via email 2026-02-25" },
     mkReg("e4",13,"rowan",  "pending_payment",    0,"nylon_tent",  "Gluten-Free",   null,                  daysAgo(1)),
     mkReg("e4",14,"sky",    "complete",        5000,"self_camping", undefined,       null,                  daysAgo(0)),
   ],

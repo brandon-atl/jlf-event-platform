@@ -94,6 +94,7 @@ function transformEvent(raw: BackendEventResponse): EventResponse {
     total_registrations: stats?.total_registrations ?? 0,
     complete_count: stats?.complete ?? 0,
     pending_count: stats?.pending_payment ?? 0,
+    cash_pending_count: stats?.cash_pending ?? 0,
     total_revenue_cents: stats?.total_revenue_cents ?? 0,
     spots_remaining: stats?.spots_remaining,
   };
@@ -351,11 +352,55 @@ export const notifications = {
       method: "POST",
       body: JSON.stringify({ message }),
     }),
+  sendBulk: (eventId: string, data: BulkNotificationRequest) =>
+    request<BulkNotificationResponse>(`/events/${eventId}/notifications/bulk`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   log: (params?: { page?: number }) => {
     const qs = new URLSearchParams();
     if (params?.page) qs.set("page", String(params.page));
     return request(`/notifications/log?${qs}`);
   },
+};
+
+// ── Message Templates ──────────────────────────
+export const messageTemplates = {
+  list: (params?: { category?: string; channel?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.category) qs.set("category", params.category);
+    if (params?.channel) qs.set("channel", params.channel);
+    return request<MessageTemplateResponse[]>(`/message-templates?${qs}`);
+  },
+  create: (data: MessageTemplateCreate) =>
+    request<MessageTemplateResponse>("/message-templates", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: Partial<MessageTemplateCreate>) =>
+    request<MessageTemplateResponse>(`/message-templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<void>(`/message-templates/${id}`, { method: "DELETE" }),
+  preview: (id: string, sampleData?: Record<string, string>) =>
+    request<MessageTemplatePreview>(`/message-templates/${id}/preview`, {
+      method: "POST",
+      body: JSON.stringify({ sample_data: sampleData || {} }),
+    }),
+};
+
+// ── SMS Conversations ──────────────────────────
+export const smsConversations = {
+  list: () => request<SMSConversationSummary[]>("/sms/conversations"),
+  thread: (phone: string) =>
+    request<SMSConversationThread>(`/sms/conversations/${encodeURIComponent(phone)}`),
+  reply: (phone: string, message: string) =>
+    request<SMSReplyResponse>(`/sms/conversations/${encodeURIComponent(phone)}/reply`, {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    }),
 };
 
 // ── Co-Creators ────────────────────────────────
@@ -649,6 +694,7 @@ export interface EventResponse {
   total_registrations: number;
   complete_count: number;
   pending_count: number;
+  cash_pending_count: number;
   total_revenue_cents: number;
   spots_remaining?: number;
 }
@@ -679,7 +725,7 @@ export interface RegistrationDetail {
   id: string;
   attendee_id: string;
   event_id: string;
-  status: "pending_payment" | "complete" | "expired" | "cancelled" | "refunded";
+  status: "pending_payment" | "cash_pending" | "complete" | "expired" | "cancelled" | "refunded";
   payment_amount_cents?: number;
   accommodation_type: string;
   dietary_restrictions?: string;
@@ -1018,4 +1064,87 @@ export interface MembershipUpdate {
   tier?: string;
   discount_value_cents?: number;
   is_active?: boolean;
+}
+
+// ── Message Templates ───────────────────────────
+
+export type TemplateCategory = "reminder" | "day_of" | "post_event" | "confirmation" | "cancellation" | "custom";
+export type TemplateChannel = "sms" | "email" | "both";
+
+export interface MessageTemplateResponse {
+  id: string;
+  name: string;
+  category: TemplateCategory;
+  channel: TemplateChannel;
+  subject: string | null;
+  body: string;
+  variables: string[];
+  is_default: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MessageTemplateCreate {
+  name: string;
+  category: TemplateCategory;
+  channel: TemplateChannel;
+  subject?: string | null;
+  body: string;
+  variables?: string[];
+  is_default?: boolean;
+}
+
+export interface MessageTemplatePreview {
+  rendered_subject: string | null;
+  rendered_body: string;
+}
+
+// ── SMS Conversations ───────────────────────────
+
+export interface SMSConversationSummary {
+  attendee_phone: string;
+  attendee_name: string | null;
+  last_message: string;
+  last_message_at: string;
+  message_count: number;
+}
+
+export interface SMSConversationEntry {
+  id: string;
+  registration_id: string | null;
+  attendee_phone: string;
+  direction: "inbound" | "outbound";
+  body: string;
+  twilio_sid: string | null;
+  sent_by: string | null;
+  created_at: string;
+}
+
+export interface SMSConversationThread {
+  attendee_phone: string;
+  attendee_name: string | null;
+  messages: SMSConversationEntry[];
+  last_message_at: string;
+}
+
+export interface SMSReplyResponse {
+  success: boolean;
+  message_id: string | null;
+}
+
+// ── Bulk Notifications ──────────────────────────
+
+export interface BulkNotificationRequest {
+  channel: "sms" | "email" | "both";
+  template_id?: string | null;
+  custom_message?: string | null;
+  subject?: string | null;
+  idempotency_key?: string | null;
+}
+
+export interface BulkNotificationResponse {
+  sent_count: number;
+  failed_count: number;
+  channel: string;
 }

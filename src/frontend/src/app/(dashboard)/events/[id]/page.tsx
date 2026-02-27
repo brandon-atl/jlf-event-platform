@@ -66,6 +66,16 @@ const STATUS_CONFIG: Record<
     darkBdr: `${darkColors.sun}40`,
     Icon: Clock,
   },
+  cash_pending: {
+    label: "Cash Pending",
+    bg: `${colors.sun}20`,
+    tx: "#92700c",
+    bdr: `${colors.sun}50`,
+    darkBg: `${darkColors.sun}20`,
+    darkTx: darkColors.sun,
+    darkBdr: `${darkColors.sun}40`,
+    Icon: CreditCard,
+  },
   expired: {
     label: "Expired",
     bg: "#f4f4f5",
@@ -154,6 +164,7 @@ const FILTER_TABS = [
   { key: "pending_payment", label: "Pending" },
   { key: "expired", label: "Expired" },
   { key: "cancelled", label: "Cancelled" },
+  { key: "cancel_requested", label: "Cancel Requests" },
 ];
 
 export default function AttendeesPage({
@@ -190,25 +201,28 @@ export default function AttendeesPage({
     },
   });
 
+  // For cancel_requested filter, we fetch all and filter client-side by notes
+  const apiStatusFilter = statusFilter === "cancel_requested" ? undefined : statusFilter;
+
   const { data, isLoading } = useQuery({
     queryKey: [
       "registrations",
       eventId,
-      statusFilter === "all" ? undefined : statusFilter,
+      statusFilter,
       search || undefined,
     ],
     queryFn: () => {
       if (isDemoMode()) {
         const demo = DEMO_REGISTRATIONS(eventId);
         let filtered = demo.data;
-        if (statusFilter !== "all") filtered = filtered.filter(r => r.status === statusFilter);
+        if (statusFilter !== "all" && statusFilter !== "cancel_requested") filtered = filtered.filter(r => r.status === statusFilter);
         if (search) filtered = filtered.filter(r => r.attendee_name?.toLowerCase().includes(search.toLowerCase()) || r.attendee_email?.toLowerCase().includes(search.toLowerCase()));
         return Promise.resolve({ data: filtered as unknown as RegistrationDetail[], meta: { ...demo.meta, total: filtered.length } });
       }
       return registrations.list(eventId, {
-        status: statusFilter === "all" ? undefined : statusFilter,
+        status: apiStatusFilter === "all" ? undefined : apiStatusFilter,
         search: search || undefined,
-        per_page: 100,
+        per_page: 500,
       });
     },
   });
@@ -225,8 +239,11 @@ export default function AttendeesPage({
     },
   });
 
-  const attendees = data?.data ?? [];
-  const totalCount = data?.meta?.total ?? 0;
+  const rawAttendees = data?.data ?? [];
+  const attendees = statusFilter === "cancel_requested"
+    ? rawAttendees.filter((a) => a.notes?.includes("[CANCEL REQUEST]"))
+    : rawAttendees;
+  const totalCount = statusFilter === "cancel_requested" ? attendees.length : (data?.meta?.total ?? 0);
 
   // Selection helpers
   const toggleSelect = useCallback((id: string) => {
@@ -552,6 +569,7 @@ export default function AttendeesPage({
     const name = a.attendee_name || "Unknown";
     const email = a.attendee_email || "";
     const hasFlag = a.notes && a.notes.toLowerCase().includes("flag");
+    const hasCancelRequest = a.notes?.includes("[CANCEL REQUEST]") || false;
 
     // C3: Determine if this row needs special indicators
     const isManualPending =
@@ -624,6 +642,19 @@ export default function AttendeesPage({
             <StatusBadge status={a.status} isDark={isDark} />
             {isManualPending && <NeedsActionBadge isDark={isDark} />}
             {isAutoConfirmed && <AutoBadge isDark={isDark} />}
+            {hasCancelRequest && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                style={{
+                  background: isDark ? `${darkColors.ember}18` : "#fef2f2",
+                  color: isDark ? darkColors.ember : colors.ember,
+                  borderColor: isDark ? `${darkColors.ember}40` : "#fecaca",
+                }}
+              >
+                <XCircle size={10} />
+                Cancel Request
+              </span>
+            )}
           </div>
         </td>
         <td
@@ -748,6 +779,47 @@ export default function AttendeesPage({
               )}
             </div>
             <div className="flex gap-2 mt-3 flex-wrap">
+              {hasCancelRequest && a.status !== "cancelled" && (
+                <>
+                  <Button
+                    size="sm"
+                    className="text-white rounded-xl text-[11px] h-7"
+                    style={{ background: isDark ? darkColors.ember : colors.ember }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Approve cancellation for ${name}? This will set their status to cancelled.`)) {
+                        updateMutation.mutate({ id: a.id, status: "cancelled" });
+                      }
+                    }}
+                  >
+                    <CheckCircle size={11} />
+                    Approve Cancellation
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl text-[11px] h-7"
+                    style={isDark ? { borderColor, color: textSub } : {}}
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (confirm(`Deny cancellation for ${name}? The cancel request flag will be cleared.`)) {
+                        const cleanedNotes = (a.notes || "")
+                          .replace(/\[CANCEL REQUEST\][^\n]*/g, "")
+                          .trim();
+                        try {
+                          await registrations.update(a.id, { notes: cleanedNotes || undefined });
+                          queryClient.invalidateQueries({ queryKey: ["registrations", eventId] });
+                          toast.success(`Cancellation request denied for ${name}`);
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : "Failed to update registration");
+                        }
+                      }
+                    }}
+                  >
+                    Deny Request
+                  </Button>
+                </>
+              )}
               {a.status !== "complete" && (
                 <Button
                   size="sm"
