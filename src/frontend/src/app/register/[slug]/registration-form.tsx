@@ -52,10 +52,12 @@ function DynamicField({
   field,
   value,
   onChange,
+  templateId,
 }: {
   field: FormTemplateField;
   value: unknown;
   onChange: (val: unknown) => void;
+  templateId?: string;
 }) {
   switch (field.type) {
     case "text":
@@ -140,11 +142,15 @@ function DynamicField({
               <SelectValue placeholder={field.placeholder || "Select an option..."} />
             </SelectTrigger>
             <SelectContent>
-              {(field.options || []).map((opt) => (
-                <SelectItem key={opt} value={opt}>
-                  {opt}
-                </SelectItem>
-              ))}
+              {(field.options || []).length === 0 ? (
+                <SelectItem value="__no_options" disabled>No options configured</SelectItem>
+              ) : (
+                (field.options || []).map((opt) => (
+                  <SelectItem key={opt} value={opt}>
+                    {opt}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
           {field.help_text && <p className="text-xs text-gray-400">{field.help_text}</p>}
@@ -183,7 +189,7 @@ function DynamicField({
               <label key={opt} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
-                  name={field.id}
+                  name={`${templateId || "form"}_${field.id}`}
                   value={opt}
                   checked={value === opt}
                   onChange={() => onChange(opt)}
@@ -313,8 +319,9 @@ export function RegistrationForm({
   const waiverForms = linkedForms.filter((l) => l.is_waiver);
   const hasLinkedForms = linkedForms.length > 0;
 
-  // If no linked forms, we still need a basic waiver
-  const hasFallbackWaiver = !hasLinkedForms || waiverForms.length === 0;
+  // Only show fallback waiver when there are NO linked forms at all
+  // (if forms exist but no waiver is linked, that's intentional)
+  const hasFallbackWaiver = !hasLinkedForms;
 
   const {
     register: registerField,
@@ -333,7 +340,6 @@ export function RegistrationForm({
     },
   });
 
-  const fallbackWaiverAccepted = watch("payment_method"); // Reuse for reactivity
   const [basicWaiverAccepted, setBasicWaiverAccepted] = useState(false);
 
   const updateDynamicField = (templateId: string, fieldId: string, value: unknown) => {
@@ -352,7 +358,17 @@ export function RegistrationForm({
       for (const field of link.form_template.fields) {
         if (field.required) {
           const val = templateData[field.id];
-          if (!val || (typeof val === "string" && !val.trim())) {
+          let isEmpty = false;
+          if (field.type === "checkbox") {
+            isEmpty = val !== true;
+          } else if (field.type === "multi_select") {
+            isEmpty = !Array.isArray(val) || val.length === 0;
+          } else if (val === undefined || val === null) {
+            isEmpty = true;
+          } else if (typeof val === "string") {
+            isEmpty = !val.trim();
+          }
+          if (isEmpty) {
             setSubmitError(`"${field.label}" is required in ${link.form_template.name}`);
             return;
           }
@@ -688,6 +704,7 @@ export function RegistrationForm({
                         onChange={(val) =>
                           updateDynamicField(link.form_template_id, field.id, val)
                         }
+                        templateId={link.form_template_id}
                       />
                     ))}
                   </div>

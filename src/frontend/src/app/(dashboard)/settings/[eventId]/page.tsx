@@ -130,22 +130,30 @@ function LinkedFormsSection({ eventId, isDark }: { eventId: string; isDark: bool
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update"),
   });
 
-  const handleMoveUp = (index: number) => {
+  const handleMoveUp = async (index: number) => {
     if (index <= 0) return;
     const sorted = [...links].sort((a, b) => a.sort_order - b.sort_order);
     const current = sorted[index];
     const above = sorted[index - 1];
-    reorderMutation.mutate({ linkId: current.id, sortOrder: above.sort_order });
-    reorderMutation.mutate({ linkId: above.id, sortOrder: current.sort_order });
+    try {
+      await reorderMutation.mutateAsync({ linkId: current.id, sortOrder: above.sort_order });
+      await reorderMutation.mutateAsync({ linkId: above.id, sortOrder: current.sort_order });
+    } catch {
+      toast.error("Failed to reorder forms");
+    }
   };
 
-  const handleMoveDown = (index: number) => {
+  const handleMoveDown = async (index: number) => {
     const sorted = [...links].sort((a, b) => a.sort_order - b.sort_order);
     if (index >= sorted.length - 1) return;
     const current = sorted[index];
     const below = sorted[index + 1];
-    reorderMutation.mutate({ linkId: current.id, sortOrder: below.sort_order });
-    reorderMutation.mutate({ linkId: below.id, sortOrder: current.sort_order });
+    try {
+      await reorderMutation.mutateAsync({ linkId: current.id, sortOrder: below.sort_order });
+      await reorderMutation.mutateAsync({ linkId: below.id, sortOrder: current.sort_order });
+    } catch {
+      toast.error("Failed to reorder forms");
+    }
   };
 
   const sortedLinks = [...links].sort((a, b) => a.sort_order - b.sort_order);
@@ -325,7 +333,9 @@ export default function SettingsPage({
   // Sync allowCash from loaded event data
   useEffect(() => {
     if (event) {
-      setAllowCash((event as unknown as Record<string, unknown>).allow_cash_payment === true);
+      setAllowCash(
+        "allow_cash_payment" in event ? (event as EventResponse & { allow_cash_payment?: boolean }).allow_cash_payment === true : false
+      );
     }
   }, [event]);
 

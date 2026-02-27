@@ -379,7 +379,7 @@ export const portal = {
 
 // ── Form Templates ─────────────────────────────
 export const formTemplates = {
-  list: (params?: { form_type?: string; page?: number; per_page?: number }) => {
+  list: (params?: { form_type?: FormType; page?: number; per_page?: number }) => {
     const qs = new URLSearchParams();
     if (params?.form_type) qs.set("form_type", params.form_type);
     if (params?.page) qs.set("page", String(params.page));

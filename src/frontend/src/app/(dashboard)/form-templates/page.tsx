@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus,
@@ -84,10 +84,12 @@ const TYPE_COLORS: Record<string, { bg: string; text: string; darkBg: string; da
 };
 
 function makeFieldId(label: string): string {
-  return label
+  const base = label
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_|_$/g, "") || `field_${Date.now()}`;
+    .replace(/^_|_$/g, "");
+  const suffix = Math.random().toString(36).slice(2, 6);
+  return base ? `${base}_${suffix}` : `field_${Date.now()}_${suffix}`;
 }
 
 function emptyField(): FormTemplateField {
@@ -368,6 +370,16 @@ function FormTemplateDialog({
   );
   const [showPreview, setShowPreview] = useState(false);
 
+  // Reset state when template prop changes (fixes stale data when switching templates)
+  useEffect(() => {
+    setName(template?.name || "");
+    setDescription(template?.description || "");
+    setFormType(template?.form_type || "custom");
+    setIsDefault(template?.is_default || false);
+    setFields(template?.fields || [emptyField()]);
+    setShowPreview(false);
+  }, [template]);
+
   const cardBg = isDark ? darkColors.surface : "#ffffff";
   const borderColor = isDark ? darkColors.surfaceBorder : "#e5e7eb";
   const textMain = isDark ? darkColors.textPrimary : colors.forest;
@@ -401,7 +413,12 @@ function FormTemplateDialog({
       toast.error("Name is required");
       return;
     }
-    const validFields = fields.filter((f) => f.label.trim());
+    const hasEmptyLabel = fields.some((f) => !f.label.trim());
+    if (hasEmptyLabel) {
+      toast.error("All fields must have a label. Remove empty fields or add labels.");
+      return;
+    }
+    const validFields = fields;
     const data: FormTemplateCreate = {
       name: name.trim(),
       description: description.trim() || undefined,
@@ -641,7 +658,7 @@ export default function FormTemplatesPage() {
     queryFn: () => {
       if (isDemoMode()) return Promise.resolve({ data: [], meta: { total: 0, page: 1, per_page: 50 } });
       return formTemplatesApi.list({
-        form_type: filterType === "all" ? undefined : filterType,
+        form_type: filterType === "all" ? undefined : filterType as FormType,
         per_page: 100,
       });
     },
@@ -820,11 +837,9 @@ export default function FormTemplatesPage() {
                         e.stopPropagation();
                         duplicateMutation.mutate(t.id);
                       }}
-                      className="p-1.5 rounded-lg transition"
+                      className="p-1.5 rounded-lg transition hover:bg-gray-100 dark:hover:bg-gray-800"
                       style={{ color: textMuted }}
                       title="Duplicate"
-                      onMouseEnter={(e) => { e.currentTarget.style.background = hoverBg; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     >
                       <Copy size={13} />
                     </button>
@@ -833,11 +848,9 @@ export default function FormTemplatesPage() {
                         e.stopPropagation();
                         handleDelete(t);
                       }}
-                      className="p-1.5 rounded-lg transition"
+                      className="p-1.5 rounded-lg transition hover:bg-gray-100 dark:hover:bg-gray-800"
                       style={{ color: textMuted }}
                       title="Delete"
-                      onMouseEnter={(e) => { e.currentTarget.style.background = hoverBg; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                     >
                       <Trash2 size={13} />
                     </button>
