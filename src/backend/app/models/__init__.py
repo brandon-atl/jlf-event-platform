@@ -15,6 +15,8 @@ from app.models.audit import AuditLog
 from app.models.user import User, UserRole
 from app.models.form_template import FormTemplate, FormType
 from app.models.event_form_link import EventFormLink
+from app.models.membership import Membership
+from app.models.scholarship_link import ScholarshipLink
 
 __all__ = [
     "Base",
@@ -39,4 +41,6 @@ __all__ = [
     "FormTemplate",
     "FormType",
     "EventFormLink",
+    "Membership",
+    "ScholarshipLink",
 ]

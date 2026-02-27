@@ -437,6 +437,46 @@ export const register = {
       `/register/${slug}`,
       { method: "POST", body: JSON.stringify(data) }
     ),
+  submitGroup: (slug: string, data: GroupRegistrationCreate) =>
+    request<GroupRegistrationResponse>(
+      `/register/${slug}/group`,
+      { method: "POST", body: JSON.stringify(data) }
+    ),
+};
+
+// ── Scholarship Links ──────────────────────────
+export const scholarshipLinks = {
+  list: (params?: { event_id?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.event_id) qs.set("event_id", params.event_id);
+    return request<ScholarshipLinkResponse[]>(`/scholarship-links?${qs}`);
+  },
+  create: (data: ScholarshipLinkCreate) =>
+    request<ScholarshipLinkResponse>("/scholarship-links", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<void>(`/scholarship-links/${id}`, { method: "DELETE" }),
+  validate: (code: string) =>
+    request<ScholarshipLinkValidation>(`/scholarship-links/validate/${code}`),
+};
+
+// ── Memberships ────────────────────────────────
+export const memberships = {
+  list: () => request<MembershipResponse[]>("/memberships"),
+  create: (data: MembershipCreate) =>
+    request<MembershipResponse>("/memberships", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: MembershipUpdate) =>
+    request<MembershipResponse>(`/memberships/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<void>(`/memberships/${id}`, { method: "DELETE" }),
 };
 
 // ── Backend response types (internal) ───────────
@@ -651,6 +691,39 @@ export interface RegistrationCreate {
   intake_data?: Record<string, Record<string, unknown>>;
   donation_amount_cents?: number;
   payment_method?: "stripe" | "cash";
+  scholarship_code?: string;
+}
+
+export interface GuestData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  intake_data?: Record<string, Record<string, unknown>>;
+  waiver_accepted: boolean;
+  accommodation_type?: string;
+  dietary_restrictions?: string;
+}
+
+export interface GroupRegistrationCreate {
+  payer: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone?: string;
+  };
+  guests: GuestData[];
+  payment_method: string;
+  scholarship_code?: string;
+  donation_amount_cents?: number;
+}
+
+export interface GroupRegistrationResponse {
+  group_id: string;
+  registrations: Array<{ registration_id: string; attendee_name: string }>;
+  checkout_url?: string | null;
+  status: string;
+  message?: string;
 }
 
 export interface EventPublicInfo {
@@ -820,4 +893,63 @@ export interface AttendeeDirectory {
   event_count: number;
   total_paid_cents: number;
   last_registration: string;
+}
+
+// ── Scholarship Links ─────────────────────────
+
+export interface ScholarshipLinkResponse {
+  id: string;
+  event_id: string;
+  attendee_id?: string | null;
+  code: string;
+  scholarship_price_cents: number;
+  stripe_coupon_id?: string | null;
+  max_uses: number;
+  uses: number;
+  created_by: string;
+  created_at: string;
+  event_name?: string | null;
+}
+
+export interface ScholarshipLinkCreate {
+  event_id: string;
+  code: string;
+  scholarship_price_cents?: number;
+  max_uses?: number;
+  attendee_id?: string;
+}
+
+export interface ScholarshipLinkValidation {
+  valid: boolean;
+  event_id?: string | null;
+  scholarship_price_cents?: number | null;
+  remaining_uses?: number | null;
+}
+
+// ── Memberships ───────────────────────────────
+
+export interface MembershipResponse {
+  id: string;
+  attendee_id: string;
+  tier: string;
+  discount_type: string;
+  discount_value_cents: number;
+  started_at: string;
+  expires_at?: string | null;
+  is_active: boolean;
+  created_at: string;
+  attendee_name?: string | null;
+  attendee_email?: string | null;
+}
+
+export interface MembershipCreate {
+  attendee_id: string;
+  tier?: string;
+  discount_value_cents?: number;
+}
+
+export interface MembershipUpdate {
+  tier?: string;
+  discount_value_cents?: number;
+  is_active?: boolean;
 }

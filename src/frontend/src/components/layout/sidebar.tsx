@@ -13,6 +13,8 @@ import { LucideIcon,
   ChevronLeft,
   ChevronRight,
   X,
+  GraduationCap,
+  Crown,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { colors } from "@/lib/theme";
@@ -30,6 +32,8 @@ const NAV_ITEMS: Array<{ icon: LucideIcon; label: string; href: string; adminOnl
   { icon: BarChart3, label: "Dashboard", href: "/dashboard" },
   { icon: Sun, label: "Day-of View", href: "/day-of" },
   { icon: UserPlus, label: "Co-Creators", href: "/co-creators" },
+  { icon: GraduationCap, label: "Scholarships", href: "/scholarship-links", adminOnly: true },
+  { icon: Crown, label: "Memberships", href: "/memberships", adminOnly: true },
   { icon: Shield, label: "Admin Users", href: "/admin", adminOnly: true },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
