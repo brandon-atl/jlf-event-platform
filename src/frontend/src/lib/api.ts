@@ -377,6 +377,55 @@ export const portal = {
   event: (eventId: string) => request<PortalEventDetail>("/portal/events/" + eventId),
 };
 
+// ── Form Templates ─────────────────────────────
+export const formTemplates = {
+  list: (params?: { form_type?: string; page?: number; per_page?: number }) => {
+    const qs = new URLSearchParams();
+    if (params?.form_type) qs.set("form_type", params.form_type);
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.per_page) qs.set("per_page", String(params.per_page));
+    return request<{ data: FormTemplateResponse[]; meta: PaginationMeta }>(
+      `/form-templates?${qs}`
+    );
+  },
+  get: (id: string) =>
+    request<FormTemplateResponse>(`/form-templates/${id}`),
+  create: (data: FormTemplateCreate) =>
+    request<FormTemplateResponse>("/form-templates", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (id: string, data: Partial<FormTemplateCreate>) =>
+    request<FormTemplateResponse>(`/form-templates/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (id: string) =>
+    request<void>(`/form-templates/${id}`, { method: "DELETE" }),
+  duplicate: (id: string) =>
+    request<FormTemplateResponse>(`/form-templates/${id}/duplicate`, {
+      method: "POST",
+    }),
+};
+
+// ── Event Form Links ───────────────────────────
+export const eventFormLinks = {
+  list: (eventId: string) =>
+    request<EventFormLinkResponse[]>(`/events/${eventId}/forms`),
+  create: (eventId: string, data: EventFormLinkCreate) =>
+    request<EventFormLinkResponse>(`/events/${eventId}/forms`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (eventId: string, linkId: string, data: { sort_order?: number; is_waiver?: boolean }) =>
+    request<EventFormLinkResponse>(`/events/${eventId}/forms/${linkId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (eventId: string, linkId: string) =>
+    request<void>(`/events/${eventId}/forms/${linkId}`, { method: "DELETE" }),
+};
+
 // ── Public Registration ─────────────────────────
 export const register = {
   eventInfo: async (slug: string) => {
@@ -599,8 +648,9 @@ export interface RegistrationCreate {
   accommodation_type?: string;
   dietary_restrictions?: string;
   waiver_accepted: boolean;
-  intake_data?: Record<string, unknown>;
+  intake_data?: Record<string, Record<string, unknown>>;
   donation_amount_cents?: number;
+  payment_method?: "stripe" | "cash";
 }
 
 export interface EventPublicInfo {
@@ -617,6 +667,66 @@ export interface EventPublicInfo {
   spots_remaining?: number;
   registration_fields?: Record<string, unknown>;
   meeting_point_a?: string;
+  allow_cash_payment?: boolean;
+  linked_forms?: EventFormLinkResponse[];
+}
+
+// ── Form Templates ─────────────────────────────
+
+export interface FormTemplateField {
+  id: string;
+  type: "text" | "textarea" | "dropdown" | "checkbox" | "multi_select" | "radio" | "date" | "number";
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+  help_text?: string;
+  options?: string[];
+}
+
+export type FormType =
+  | "intake"
+  | "waiver"
+  | "accommodation"
+  | "dietary"
+  | "travel"
+  | "logistics"
+  | "health"
+  | "legal"
+  | "custom";
+
+export interface FormTemplateResponse {
+  id: string;
+  name: string;
+  description?: string;
+  form_type: FormType;
+  fields: FormTemplateField[];
+  is_default: boolean;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FormTemplateCreate {
+  name: string;
+  description?: string;
+  form_type: FormType;
+  fields: FormTemplateField[];
+  is_default?: boolean;
+}
+
+export interface EventFormLinkResponse {
+  id: string;
+  event_id: string;
+  form_template_id: string;
+  is_waiver: boolean;
+  sort_order: number;
+  form_template: FormTemplateResponse;
+}
+
+export interface EventFormLinkCreate {
+  form_template_id: string;
+  is_waiver?: boolean;
+  sort_order?: number;
 }
 
 export interface OverviewDashboard {
