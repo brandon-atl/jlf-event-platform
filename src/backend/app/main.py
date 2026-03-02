@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -66,14 +67,17 @@ def create_app() -> FastAPI:
         co_creators,
         dashboard,
         events,
+        expenses,
         form_templates,
         memberships,
         message_templates,
         notifications,
+        operating_expenses,
         portal,
         registration,
         registrations,
         scholarship_links,
+        settlements,
         sms_conversations,
         sub_events,
         users,
@@ -99,6 +103,21 @@ def create_app() -> FastAPI:
     app.include_router(message_templates.router, prefix="/api/v1")
     app.include_router(sms_conversations.router, prefix="/api/v1")
     app.include_router(admin_import.router, prefix="/api/v1")
+
+    # Financial module routers
+    app.include_router(expenses.router, prefix="/api/v1/events/{event_id}/expenses", tags=["Expenses"])
+    app.include_router(settlements.router, prefix="/api/v1/events/{event_id}/settlement", tags=["Settlements"])
+    app.include_router(operating_expenses.router, prefix="/api/v1")
+
+    # Static file serving for uploads
+    try:
+        from pathlib import Path
+        upload_dir = Path(getattr(settings, 'UPLOAD_DIR', './uploads'))
+        if upload_dir.exists():
+            app.mount("/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
+    except Exception:
+        # If upload directory doesn't exist or there's an issue, continue without static files
+        pass
 
     # Health check
     @app.get("/health")

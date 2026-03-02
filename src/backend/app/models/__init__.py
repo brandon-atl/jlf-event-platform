@@ -21,6 +21,9 @@ from app.models.membership import Membership
 from app.models.scholarship_link import ScholarshipLink
 from app.models.message_template import MessageTemplate, TemplateCategory, TemplateChannel
 from app.models.sms_conversation import SmsConversation, SmsDirection
+from app.models.expense import Expense, ExpenseCategory, ActorType
+from app.models.event_settlement import EventSettlement
+from app.models.operating_expense import OperatingExpense, OperatingExpenseCategory
 
 __all__ = [
     "Base",
@@ -55,4 +58,10 @@ __all__ = [
     "TemplateChannel",
     "SmsConversation",
     "SmsDirection",
+    "Expense",
+    "ExpenseCategory",
+    "ActorType",
+    "EventSettlement",
+    "OperatingExpense",
+    "OperatingExpenseCategory",
 ]

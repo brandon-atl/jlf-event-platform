@@ -16,8 +16,11 @@ limiter.enabled = False
 from app.models import (
     AccommodationType,
     Attendee,
+    CoCreator,
     Event,
+    EventCoCreator,
     EventStatus,
+    Expense,
     PricingModel,
     Registration,
     RegistrationSource,
@@ -25,7 +28,8 @@ from app.models import (
     User,
     UserRole,
 )
-from app.services.auth_service import hash_password
+from app.models.expense import ActorType, ExpenseCategory
+from app.services.auth_service import create_access_token, hash_password
 
 # File-based SQLite for tests — ensures all sessions/connections share the same DB
 # (in-memory SQLite with multiple connections each get isolated DBs)
@@ -224,3 +228,121 @@ async def sample_user(db_session: AsyncSession) -> User:
     await db_session.commit()
     await db_session.refresh(user)
     return user
+
+
+@pytest_asyncio.fixture
+async def sample_admin(sample_user: User) -> User:
+    """Create a sample admin user."""
+    return sample_user
+
+
+@pytest_asyncio.fixture
+async def auth_client(client, sample_admin):
+    """HTTP client with admin authentication."""
+    token = create_access_token({"sub": str(sample_admin.id), "role": "admin"})
+    client.headers.update({"Authorization": f"Bearer {token}"})
+    return client
+
+
+@pytest_asyncio.fixture
+async def session(db_session):
+    """Alias for db_session to match test usage."""
+    return db_session
+
+
+@pytest_asyncio.fixture
+async def sample_expense(db_session: AsyncSession, sample_event: Event) -> Expense:
+    """Create a sample expense."""
+    expense = Expense(
+        event_id=sample_event.id,
+        submitted_by=None,
+        actor_type=ActorType.admin,
+        description="Test expense",
+        amount_cents=2500,  # $25.00
+        category=ExpenseCategory.groceries,
+        notes="Test notes"
+    )
+    db_session.add(expense)
+    await db_session.commit()
+    await db_session.refresh(expense)
+    return expense
+
+
+@pytest_asyncio.fixture
+async def sample_co_creator(db_session: AsyncSession) -> CoCreator:
+    """Create a sample co-creator."""
+    co_creator = CoCreator(
+        name="Test Co-Creator",
+        email="cocreator@test.com"
+    )
+    db_session.add(co_creator)
+    await db_session.flush()
+    await db_session.refresh(co_creator)
+    return co_creator
+
+
+@pytest_asyncio.fixture
+async def event_with_co_creator(db_session: AsyncSession, sample_event: Event, sample_co_creator: CoCreator) -> Event:
+    """Link co-creator to event with split percentage."""
+    from decimal import Decimal
+    event_co_creator = EventCoCreator(
+        event_id=sample_event.id,
+        co_creator_id=sample_co_creator.id,
+        can_see_amounts=True,
+        can_upload_expenses=True,
+        split_percentage=Decimal('100.00')  # 100% split (single co-creator in tests)
+    )
+    db_session.add(event_co_creator)
+    await db_session.commit()
+    return sample_event
+
+
+@pytest_asyncio.fixture
+async def completed_registrations(db_session: AsyncSession, event_with_co_creator: Event) -> list[Registration]:
+    """Create some completed registrations for revenue calculation."""
+    registrations = []
+    for i in range(3):
+        # Each registration needs a unique attendee (UNIQUE constraint on attendee_id + event_id)
+        attendee = Attendee(
+            first_name=f"TestAttendee{i}",
+            last_name=f"Settlement{i}",
+            email=f"settlement{i}@test.com",
+            phone=f"555000{i}",
+        )
+        db_session.add(attendee)
+        await db_session.flush()
+
+        registration = Registration(
+            attendee_id=attendee.id,
+            event_id=event_with_co_creator.id,
+            status=RegistrationStatus.complete,
+            payment_amount_cents=10000,  # $100 each
+            payment_method="stripe",
+            source="registration_form",
+            waiver_accepted_at=datetime(2026, 3, 1, tzinfo=timezone.utc)
+        )
+        db_session.add(registration)
+        registrations.append(registration)
+
+    await db_session.commit()
+    return registrations
+
+
+@pytest_asyncio.fixture
+async def sample_expenses(db_session: AsyncSession, event_with_co_creator: Event) -> list[Expense]:
+    """Create some expenses for the event."""
+    expenses = []
+    for i, amount in enumerate([2000, 1500], 1):  # $20 + $15 = $35 total
+        expense = Expense(
+            event_id=event_with_co_creator.id,
+            submitted_by=None,
+            actor_type=ActorType.admin,
+            description=f"Test expense {i}",
+            amount_cents=amount,
+            category=ExpenseCategory.groceries
+        )
+        db_session.add(expense)
+        expenses.append(expense)
+
+    await db_session.commit()
+    return expenses
