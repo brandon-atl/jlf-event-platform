@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, gen_uuid
@@ -17,6 +18,7 @@ class CoCreator(Base):
     token_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    venmo_handle: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: __import__("datetime").datetime.now(
@@ -39,3 +41,7 @@ class EventCoCreator(Base):
         ForeignKey("co_creators.id"), primary_key=True
     )
     can_see_amounts: Mapped[bool] = mapped_column(Boolean, default=False)
+    can_upload_expenses: Mapped[bool] = mapped_column(Boolean, default=True)
+    split_percentage: Mapped[Decimal | None] = mapped_column(
+        Numeric(5, 2), nullable=True
+    )
